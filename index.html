@@ -441,7 +441,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <input type="checkbox" id="mostrarVendidosEquipos" onchange="renderEquipos()" style="width:auto;"> Mostrar equipos ya vendidos
         </label>
         <div style="overflow-x:auto;"><table>
-          <thead><tr><th>Modelo</th><th>Proveedor</th><th>Color</th><th>Batería</th><th>IMEI</th><th>Compra</th><th>Sugerido</th><th>Venta</th><th>Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
+          <thead><tr><th>Modelo</th><th>Proveedor</th><th>Color</th><th>Batería</th><th>IMEI</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
           <tbody id="equiposBody"></tbody>
         </table></div>
         <div class="empty" id="equiposEmpty" style="display:none;">Todavía no cargaste equipos.</div>
@@ -474,7 +474,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <input type="checkbox" id="mostrarVendidosAcc" onchange="renderAccesorios()" style="width:auto;"> Mostrar accesorios ya vendidos
         </label>
         <div style="overflow-x:auto;"><table>
-          <thead><tr><th>Nombre</th><th>Proveedor</th><th>Color</th><th>Compra</th><th>Sugerido</th><th>Venta</th><th>Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Proveedor</th><th>Color</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
           <tbody id="accBody"></tbody>
         </table></div>
         <div class="empty" id="accEmpty" style="display:none;">Todavía no cargaste accesorios.</div>
@@ -522,7 +522,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="filTodasBtn" onclick="filtrarVentas('todas')">Todas</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Ganancia</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Acciones</th></tr></thead>
         <tbody id="ventasBody"></tbody>
       </table></div>
       <div class="empty" id="ventasEmpty" style="display:none;">No hay ventas registradas en este período.</div>
@@ -916,7 +916,7 @@ function hoyISO(){ return new Date().toISOString().slice(0,10); }
 
 /* ---------- SESIÓN / LOGIN ---------- */
 let adminCred = ls_get('admin_cred', null);
-if(!adminCred){ adminCred = { usuario:'admin', clave:'admin' }; syncGuardar('admin_cred', adminCred); }
+if(!adminCred){ adminCred = { usuario:'admin', clave:'admin' }; ls_set('admin_cred', adminCred); }
 let sesionActual = ls_get('sesion_actual', null);
 
 function esAdmin(){ return !!(sesionActual && sesionActual.rol==='admin'); }
@@ -1158,10 +1158,10 @@ function editarEquipo(id){
     <td data-label="Color"><input class="ed-color" value="${e.color}"></td>
     <td data-label="Batería"><input class="ed-bateria" type="number" value="${e.bateria}"></td>
     <td data-label="IMEI"><input class="ed-imei" value="${e.imei}"></td>
-    <td data-label="Compra"><input class="ed-compra" type="number" value="${e.compra}"></td>
+    <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${e.compra}"></td>
     <td data-label="Sugerido"><input class="ed-sugerido" type="number" value="${e.sugerido}"></td>
     <td data-label="Venta"><input class="ed-venta" type="number" value="${e.venta}"></td>
-    <td data-label="Ganancia">—</td>
+    <td data-label="Ganancia" class="solo-admin">—</td>
     <td data-label="Estado"><select class="ed-estado">
       <option value="disponible" ${e.estado==='disponible'?'selected':''}>Disponible</option>
       <option value="reservado" ${e.estado==='reservado'?'selected':''}>Reservado</option>
@@ -1211,10 +1211,10 @@ function renderEquipos(){
       <td data-label="Color">${e.color||'-'}</td>
       <td data-label="Batería">${e.bateria?e.bateria+'%':'-'}</td>
       <td data-label="IMEI">${e.imei}</td>
-      <td data-label="Compra">$${fmt(e.compra)}</td>
+      <td data-label="Compra" class="solo-admin">$${fmt(e.compra)}</td>
       <td data-label="Sugerido">$${fmt(e.sugerido)}</td>
       <td data-label="Venta">${e.venta?'$'+fmt(e.venta):'-'}</td>
-      <td data-label="Ganancia" class="ganancia">$${fmt(g)}</td>
+      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(g)}</td>
       <td data-label="Estado"><span class="badge ${e.estado}">${e.estado}</span></td>
       <td data-label="Acciones" class="solo-admin"><div class="actions">
         <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">Etiqueta</button>
@@ -1260,10 +1260,10 @@ function editarAccesorio(id){
     <td data-label="Nombre"><input class="ed-nombre" value="${a.nombre}"></td>
     <td data-label="Proveedor"><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===a.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
     <td data-label="Color"><input class="ed-color" value="${a.color}"></td>
-    <td data-label="Compra"><input class="ed-compra" type="number" value="${a.compra}"></td>
+    <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${a.compra}"></td>
     <td data-label="Sugerido"><input class="ed-sugerido" type="number" value="${a.sugerido}"></td>
     <td data-label="Venta"><input class="ed-venta" type="number" value="${a.venta||''}"></td>
-    <td data-label="Ganancia">—</td>
+    <td data-label="Ganancia" class="solo-admin">—</td>
     <td data-label="Estado"><select class="ed-estado">
       <option value="disponible" ${a.estado==='disponible'?'selected':''}>Disponible</option>
       <option value="reservado" ${a.estado==='reservado'?'selected':''}>Reservado</option>
@@ -1303,10 +1303,10 @@ function renderAccesorios(){
       <td data-label="Nombre">${a.nombre}</td>
       <td data-label="Proveedor">${nombreProveedor(a.proveedorId)}</td>
       <td data-label="Color">${a.color||'-'}</td>
-      <td data-label="Compra">$${fmt(a.compra)}</td>
+      <td data-label="Compra" class="solo-admin">$${fmt(a.compra)}</td>
       <td data-label="Sugerido">$${fmt(a.sugerido)}</td>
       <td data-label="Venta">${a.venta?'$'+fmt(a.venta):'-'}</td>
-      <td data-label="Ganancia" class="ganancia">$${fmt(g)}</td>
+      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(g)}</td>
       <td data-label="Estado"><span class="badge ${a.estado}">${a.estado}</span></td>
       <td data-label="Acciones" class="solo-admin"><div class="actions">
         <button class="btn ghost small" onclick="editarAccesorio('${a.id}')">Editar</button>
@@ -1501,7 +1501,7 @@ function renderVentas(){
       <td data-label="IMEI">${v.imei||'-'}</td>
       <td data-label="Cliente">${v.cliente||'-'}</td>
       <td data-label="Venta">$${fmt(v.precioVenta)}</td>
-      <td data-label="Ganancia" class="ganancia">$${fmt(g)}</td>
+      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(g)}</td>
       <td data-label="Acciones"><div class="actions">
         <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">Factura</button>
         <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
