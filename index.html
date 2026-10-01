@@ -248,13 +248,6 @@ td input, td select{padding:6px 8px; font-size:13px;}
 .rank-row .n{color:var(--txt3); width:22px;}
 .act-row{display:flex; justify-content:space-between; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13.5px;}
 .act-row .txt{flex:1;}
-.msg-columns{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px,1fr); gap:16px; overflow-x:auto; padding-bottom:8px; align-items:start;}
-@media (max-width:760px){ .msg-columns{grid-auto-columns:minmax(240px,85%);} }
-.msg-inbox{
-  margin-top:16px; border:1px solid var(--card-b); border-radius:14px; background:rgba(0,0,0,0.18);
-  min-height:220px; display:flex; align-items:center; justify-content:center; padding:20px; text-align:center;
-}
-.msg-inbox p{color:var(--txt3); font-size:12.5px; line-height:1.6;}
 
 @media (max-width:760px){
   table, thead, tbody, th, td, tr{display:block;}
@@ -326,10 +319,6 @@ body.rol-usuario .solo-admin{display:none !important;}
     <div class="nav-group">
       <div class="nav-label">Marketing</div>
       <a id="navMarketing" onclick="switchModule('marketing')">Marketing</a>
-    </div>
-    <div class="nav-group solo-admin">
-      <div class="nav-label">Mensajes</div>
-      <a id="navMensajes" onclick="switchModule('mensajes')">Mensajes</a>
     </div>
     <div class="nav-group solo-admin">
       <div class="nav-label">Análisis</div>
@@ -702,14 +691,6 @@ body.rol-usuario .solo-admin{display:none !important;}
     </div>
   </div>
 
-  <!-- MODULO MENSAJES -->
-  <div id="moduloMensajes" style="display:none;">
-    <header class="top"><h1>Mensajes</h1></header>
-    <div class="note" style="margin-bottom:8px;">Configurá acá los tokens de cada API (WhatsApp Business, Messenger, Instagram). Los mensajes van a aparecer solos en cada bandeja apenas lleguen.</div>
-    <div id="sbEstadoConexion" style="font-size:12px; margin-bottom:18px;"></div>
-    <div id="mensajesGrid" class="msg-columns"></div>
-  </div>
-
   <!-- MODULO ANALISIS -->
   <div id="moduloAnalisis" style="display:none;">
     <header class="top"><h1>Rentabilidad</h1></header>
@@ -921,7 +902,7 @@ let sesionActual = ls_get('sesion_actual', null);
 
 function esAdmin(){ return !!(sesionActual && sesionActual.rol==='admin'); }
 
-const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','mensajes','analisis','comercios','sueldos','micuenta','actividad'];
+const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','analisis','comercios','sueldos','micuenta','actividad'];
 
 function intentarLogin(){
   const u = document.getElementById('loginUsuario').value.trim();
@@ -969,7 +950,6 @@ function switchModule(m){
   document.getElementById('moduloConsignaciones').style.display = m==='consignaciones' ? 'block':'none';
   document.getElementById('moduloReparaciones').style.display = m==='reparaciones' ? 'block':'none';
   document.getElementById('moduloMarketing').style.display = m==='marketing' ? 'block':'none';
-  document.getElementById('moduloMensajes').style.display = m==='mensajes' ? 'block':'none';
   document.getElementById('moduloAnalisis').style.display = m==='analisis' ? 'block':'none';
   document.getElementById('moduloComercios').style.display = m==='comercios' ? 'block':'none';
   document.getElementById('moduloUsuarios').style.display = m==='usuarios' ? 'block':'none';
@@ -985,7 +965,6 @@ function switchModule(m){
   document.getElementById('navConsignaciones').classList.toggle('active', m==='consignaciones');
   document.getElementById('navReparaciones').classList.toggle('active', m==='reparaciones');
   document.getElementById('navMarketing').classList.toggle('active', m==='marketing');
-  document.getElementById('navMensajes').classList.toggle('active', m==='mensajes');
   document.getElementById('navAnalisis').classList.toggle('active', m==='analisis');
   document.getElementById('navComercios').classList.toggle('active', m==='comercios');
   document.getElementById('navUsuarios').classList.toggle('active', m==='usuarios');
@@ -1000,7 +979,6 @@ function switchModule(m){
   if(m==='consignaciones'){ renderConsignaciones(); }
   if(m==='reparaciones'){ renderReparaciones(); }
   if(m==='marketing'){ renderMarketing(); }
-  if(m==='mensajes'){ renderMensajes(); }
   if(m==='analisis'){ renderAnalisis(); }
   if(m==='comercios'){ renderComercios(); }
   if(m==='usuarios'){ renderUsuarios(); }
@@ -2168,7 +2146,7 @@ function renderMarketing(){
   });
 }
 
-/* ---------- MENSAJES ---------- */
+/* ---------- CONEXIÓN A LA BASE DE DATOS (para sincronización en la nube) ---------- */
 const SUPABASE_URL = 'https://vbbdxqxnjzziqteomuxp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiYmR4cXhuanp6aXF0ZW9tdXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NTE3MzUsImV4cCI6MjEwNjIyNzczNX0.1mFzuiOIsfZZvJnALkoUOiIspyzGdJKhUGm7dzZnnds';
 let sbClient = null;
@@ -2270,152 +2248,6 @@ async function sincronizarDesdeNube(mostrarCartel){
     console.error('No se pudo sincronizar con la nube', e);
     if(el){ el.textContent='No se pudo conectar con la nube — mostrando lo último guardado en este dispositivo.'; el.style.color='var(--red)'; }
   }
-}
-
-const CANALES = [
-  { id:'whatsapp', nombre:'WhatsApp Business', glow:'78,224,138', campos:[
-      {k:'numero', label:'Número (con código de país)', placeholder:'Ej: 5491122334455'},
-      {k:'phoneId', label:'Phone Number ID', placeholder:'De Meta for Developers'},
-      {k:'token', label:'Access Token', placeholder:'Token de acceso de la API'}
-    ], armarUrl: cfg => cfg.numero ? `https://wa.me/${cfg.numero.replace(/\D/g,'')}` : null },
-  { id:'messenger', nombre:'Messenger', glow:'0,132,255', campos:[
-      {k:'pagina', label:'Nombre de la página', placeholder:'Ej: nombredetupagina'},
-      {k:'pageId', label:'Page ID', placeholder:'ID de la página de Facebook'},
-      {k:'token', label:'Page Access Token', placeholder:'Token de acceso de la página'}
-    ], armarUrl: cfg => cfg.pagina ? `https://m.me/${cfg.pagina}` : null },
-  { id:'instagram', nombre:'Instagram', glow:'255,140,0', campos:[
-      {k:'usuario', label:'Usuario', placeholder:'Ej: tuusuario (sin @)'},
-      {k:'igId', label:'IG Business Account ID', placeholder:'De Meta for Developers'},
-      {k:'token', label:'Access Token', placeholder:'Token de acceso de la API'}
-    ], armarUrl: cfg => cfg.usuario ? `https://ig.me/m/${cfg.usuario}` : null }
-];
-
-const ultimoContactoPorCanal = {};
-let mensajesSuscripcion = null;
-
-function getConfigCanal(id){ return ls_get('mensajes_cfg_'+id, {}); }
-
-async function guardarConfigCanal(id){
-  const canal = CANALES.find(c=>c.id===id);
-  const cfg = {};
-  canal.campos.forEach(f=>{ cfg[f.k] = document.getElementById(`mc_${id}_${f.k}`).value.trim(); });
-  ls_set('mensajes_cfg_'+id, cfg);
-  const btn = document.getElementById(`mc_${id}_guardarBtn`);
-  const estado = document.getElementById(`mc_${id}_estado`);
-  if(btn) btn.textContent = 'Guardando...';
-  if(estado){ estado.textContent = ''; estado.style.color = ''; }
-  try{
-    if(!sbClient) throw new Error(sbInitError || 'No hay conexión con la base de datos.');
-    const { error } = await sbClient.functions.invoke('guardar-config-canal', { body: { canal:id, config:cfg } });
-    if(error) throw error;
-    if(estado){ estado.textContent = 'Guardado en el servidor ✓'; estado.style.color = 'var(--green)'; }
-    const badge = document.getElementById(`mc_${id}_badge`);
-    if(badge) badge.textContent = 'credenciales cargadas';
-  }catch(e){
-    if(estado){ estado.textContent = 'No se pudo guardar: '+(e.message||e); estado.style.color = 'var(--red)'; }
-  }
-  if(btn) btn.textContent = 'Guardar';
-}
-
-function estaConectado(canal, cfg){
-  return canal.campos.some(f=>f.k!=='numero' && f.k!=='pagina' && f.k!=='usuario' ? !!cfg[f.k] : false);
-}
-
-function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function pintarMensaje(canalId, m){
-  const cont = document.getElementById(`msg-list-${canalId}`);
-  if(!cont) return;
-  const vacio = cont.querySelector('.msg-vacio');
-  if(vacio) vacio.remove();
-  const esEntrante = m.direccion==='entrante';
-  if(esEntrante && m.de) ultimoContactoPorCanal[canalId] = m.de;
-  const burbuja = document.createElement('div');
-  burbuja.style.cssText = `max-width:85%; margin-bottom:8px; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.4; ${esEntrante ? 'background:rgba(255,255,255,0.06); align-self:flex-start;' : 'background:linear-gradient(135deg,var(--grad1),var(--grad2)); color:#fff; align-self:flex-end; margin-left:auto;'}`;
-  burbuja.innerHTML = `${esEntrante && m.nombre_contacto ? `<div style="font-size:11px; color:var(--txt3); margin-bottom:2px;">${escapeHtml(m.nombre_contacto)}</div>` : ''}${escapeHtml(m.texto)}`;
-  cont.appendChild(burbuja);
-  cont.scrollTop = cont.scrollHeight;
-}
-
-async function cargarHistorial(canalId){
-  const cont = document.getElementById(`msg-list-${canalId}`);
-  if(!cont || !sbClient) return;
-  const { data, error } = await sbClient.from('mensajes').select('*').eq('canal', canalId).order('creado_en', { ascending:true }).limit(50);
-  if(error){ cont.innerHTML = `<div class="msg-vacio" style="color:var(--txt3); font-size:12px;">No se pudo cargar el historial.</div>`; return; }
-  cont.innerHTML = data.length ? '' : `<div class="msg-vacio" style="color:var(--txt3); font-size:12px; text-align:center; margin:auto;">Sin conversaciones todavía.</div>`;
-  data.forEach(m=>pintarMensaje(canalId, m));
-}
-
-async function enviarRespuesta(canalId){
-  const input = document.getElementById(`msg-input-${canalId}`);
-  const texto = input.value.trim();
-  const destinatario = ultimoContactoPorCanal[canalId];
-  const cont = document.getElementById(`msg-list-${canalId}`);
-  if(!texto) return;
-  if(!destinatario){
-    if(cont){ const av=document.createElement('div'); av.style.cssText='color:var(--red); font-size:11px; text-align:center;'; av.textContent='Todavía no hay ningún contacto que te haya escrito en este canal.'; cont.appendChild(av); }
-    return;
-  }
-  input.disabled = true;
-  try{
-    if(!sbClient) throw new Error(sbInitError || 'No hay conexión con la base de datos.');
-    const { data, error } = await sbClient.functions.invoke('enviar-mensaje', { body: { canal:canalId, destinatario, texto } });
-    if(error || (data && data.error)) throw new Error((data&&data.error)||error.message);
-    input.value = '';
-  }catch(e){
-    if(cont){ const av=document.createElement('div'); av.style.cssText='color:var(--red); font-size:11px; text-align:center;'; av.textContent='No se pudo enviar: '+(e.message||e); cont.appendChild(av); }
-  }
-  input.disabled = false;
-  input.focus();
-}
-
-function suscribirseAMensajes(){
-  if(!sbClient || mensajesSuscripcion) return;
-  mensajesSuscripcion = sbClient.channel('mensajes-en-vivo')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'mensajes' }, payload=>{
-      pintarMensaje(payload.new.canal, payload.new);
-      if(payload.new.direccion==='entrante') registrarActividad(`Mensaje nuevo (${payload.new.canal}): ${payload.new.texto||''}`.slice(0,140));
-    })
-    .subscribe();
-}
-
-function renderMensajes(){
-  mostrarEstadoConexion();
-  const grid = document.getElementById('mensajesGrid');
-  grid.innerHTML = '';
-  CANALES.forEach(c=>{
-    const cfg = getConfigCanal(c.id);
-    const conectado = estaConectado(c, cfg);
-    const url = c.armarUrl(cfg);
-    const card = document.createElement('div');
-    card.className = 'card glow-card';
-    card.style.setProperty('--glow-rgb', c.glow);
-    card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h2 style="margin:0;">${c.nombre}</h2>
-        <span class="badge vendido" id="mc_${c.id}_badge">${conectado ? 'credenciales cargadas' : 'no conectado'}</span>
-        <span id="mc_${c.id}_estado" style="font-size:11px; margin-left:8px;"></span>
-      </div>
-      <div class="form-grid">
-        ${c.campos.map(f=>`
-          <div class="field"><label>${f.label}</label><input id="mc_${c.id}_${f.k}" value="${cfg[f.k]||''}" placeholder="${f.placeholder}"></div>
-        `).join('')}
-        <div class="field"><button class="btn ghost" id="mc_${c.id}_guardarBtn" onclick="guardarConfigCanal('${c.id}')" style="width:100%;">Guardar</button></div>
-        <div class="field">${url ? `<a class="btn" style="width:100%; display:block; text-align:center; text-decoration:none;" href="${url}" target="_blank" rel="noopener">Abrir chat</a>` : `<button class="btn ghost" style="width:100%;" disabled>Completá el usuario/número</button>`}</div>
-      </div>
-      <div class="msg-inbox" id="msg-list-${c.id}" style="flex-direction:column; align-items:stretch; justify-content:flex-start; overflow-y:auto; max-height:280px; text-align:left;">
-        <div class="msg-vacio" style="color:var(--txt3); font-size:12px; text-align:center; margin:auto;">Cargando...</div>
-      </div>
-      <div class="form-row" style="margin-top:10px; flex-wrap:nowrap;">
-        <div class="field" style="flex:1; min-width:0;"><input id="msg-input-${c.id}" placeholder="Escribí una respuesta..." onkeydown="if(event.key==='Enter') enviarRespuesta('${c.id}')"></div>
-        <div class="field" style="flex:0 0 auto;"><button class="btn" onclick="enviarRespuesta('${c.id}')">Enviar</button></div>
-      </div>`;
-    grid.appendChild(card);
-  });
-  CANALES.forEach(c=>cargarHistorial(c.id));
-  suscribirseAMensajes();
 }
 
 /* ---------- ANALISIS ---------- */
