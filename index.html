@@ -2825,10 +2825,22 @@ function renderActividad(){
   });
 }
 
-function borrarTodosLosDatos(){
+async function borrarTodosLosDatos(){
   const texto = document.getElementById('confirmarBorrado').value.trim().toUpperCase();
   if(texto!=='BORRAR'){ alert('Escribí BORRAR (en mayúsculas) en el campo para confirmar.'); return; }
-  try{ localStorage.clear(); }catch(e){ alert('No se pudo borrar: '+e.message); return; }
+  const clavesABorrar = ['stock_equipos','stock_accesorios','ventas','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','dolar_blue'];
+  try{
+    clavesABorrar.forEach(k=> localStorage.removeItem(k));
+  }catch(e){ alert('No se pudo borrar: '+e.message); return; }
+  if(sbClient){
+    try{
+      await sbClient.from('crm_datos').delete().in('clave', clavesABorrar);
+    }catch(e){ console.error('Error borrando datos en la nube:', e); }
+  }
+  equipos=[]; accesorios=[]; ventas=[]; clientes=[]; movimientos=[]; proveedores=[];
+  consignaciones=[]; reparaciones=[]; usuarios=[]; comercios=[]; empleados=[];
+  pagosSueldo=[]; pagosVendedor=[]; actividad=[];
+  alert('Todos los datos fueron borrados. La página se va a recargar.');
   location.reload();
 }
 
