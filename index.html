@@ -1662,20 +1662,51 @@ async function actualizarReservaMensaje(nroVenta, cambios, confirmMsg){
   if(document.getElementById('usuariosBody')) renderUsuarios(); // refresca Ranking de vendedores
   return true;
 }
+// Cambia el estado del equipo asociado a una reserva de Mensajes (si tiene uno)
+async function setEstadoEquipoReserva(equipoId, nuevoEstado){
+  if(!equipoId) return;
+  if(sbClient){
+    try{
+      const { data } = await sbClient.from('crm_datos').select('valor').eq('clave','stock_equipos').maybeSingle();
+      if(data && Array.isArray(data.valor)){ equipos = data.valor; ls_set('stock_equipos', equipos); }
+    }catch(e){ /* usamos lo que tengamos en memoria */ }
+  }
+  const e = equipos.find(x=>x.id===equipoId);
+  if(e){
+    e.estado = nuevoEstado;
+    syncGuardar('stock_equipos', equipos);
+    if(document.getElementById('equiposBody')) renderEquipos();
+    if(typeof renderStockResumen==='function') renderStockResumen();
+  }
+}
+function equipoIdDeReserva(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  return r ? (r.equipo_id||null) : null;
+}
 async function marcarReservaEntregada(nro){
+  const equipoId = equipoIdDeReserva(nro);
   const ok = await actualizarReservaMensaje(nro, { estado:'vendido', entregado_en:new Date().toISOString() },
     `¿Confirmás que la venta Nº ${nro} fue entregada en el local? Pasará a "Vendido".`);
-  if(ok) registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido).`);
+  if(ok){
+    await setEstadoEquipoReserva(equipoId, 'vendido');
+    registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido).`);
+  }
 }
 async function revertirReservaMensaje(nro){
-  await actualizarReservaMensaje(nro, { estado:'reservado' },
+  const equipoId = equipoIdDeReserva(nro);
+  const ok = await actualizarReservaMensaje(nro, { estado:'reservado' },
     `¿Volver la venta Nº ${nro} al estado "Reservado"?`);
+  if(ok) await setEstadoEquipoReserva(equipoId, 'reservado');
 }
 async function borrarReservaMensaje(nro){
   if(!esAdmin()) return;
+  const equipoId = equipoIdDeReserva(nro);
   const ok = await actualizarReservaMensaje(nro, null,
     `¿Borrar la venta por Mensajes Nº ${nro} del historial? Esta acción no se puede deshacer.`);
-  if(ok) registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
+  if(ok){
+    await setEstadoEquipoReserva(equipoId, 'disponible'); // el equipo vuelve a quedar disponible
+    registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
+  }
 }
 
 function renderVentas(){
@@ -1693,8 +1724,13 @@ function renderVentas(){
   // Ventas cerradas desde la app de Mensajes (entran como "reservado")
   const reservas = (ventasMensajes||[]).map(r=>({
     kind:'reserva', id:r.nro_venta, fecha:r.fecha, nro:r.nro_venta,
-    modelo:'Venta por Mensajes', imei:'—', cliente:r.cliente||'-',
-    agente:r.agente||'', estado:r.estado||'reservado'
+    modelo: r.modelo || 'Venta por Mensajes',
+    color: r.color || '',
+    imei: r.imei || '—',
+    cliente:r.cliente||'-',
+    precio: (r.precio!=null && r.precio!=='') ? r.precio : null,
+    ganancia: (r.precio!=null && r.precio!=='' && r.compra!=null && r.compra!=='') ? (Number(r.precio)-Number(r.compra)) : null,
+    agente:r.agente||'', estado:r.estado||'reservado', equipo_id:r.equipo_id||null
   }));
 
   let filtradas = manuales.concat(reservas);
@@ -1713,11 +1749,11 @@ function renderVentas(){
       tr.innerHTML = `
         <td data-label="Fecha">${v.fecha||'-'}</td>
         <td data-label="Nro. de Venta"><b>${v.nro}</b></td>
-        <td data-label="Modelo">${v.modelo}${v.agente?`<br><span style="color:var(--txt3); font-size:11px;">Agente: ${v.agente}</span>`:''}</td>
+        <td data-label="Modelo">${v.modelo}${v.color?` · ${v.color}`:''}${v.agente?`<br><span style="color:var(--txt3); font-size:11px;">Agente: ${v.agente}</span>`:''}</td>
         <td data-label="IMEI">${v.imei}</td>
         <td data-label="Cliente">${v.cliente}</td>
-        <td data-label="Venta">—</td>
-        <td data-label="Ganancia" class="ganancia solo-admin">—</td>
+        <td data-label="Venta">${v.precio!=null ? '$'+fmt(v.precio) : '—'}</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia) : '—'}</td>
         <td data-label="Estado">${badge}</td>
         <td data-label="Acciones"><div class="actions">
           ${accEstado}
@@ -3041,8 +3077,20 @@ function ventasMensajesEntregadas(){
 function fechaComisionMensaje(r){
   return (r.entregado_en ? String(r.entregado_en).slice(0,10) : (r.fecha||''));
 }
+// Comisión acumulada por ventas cerradas desde Mensajes y ya entregadas, para este vendedor.
+// Se asigna por vendedor_id; si un registro viejo no lo tiene, se usa el nombre/usuario.
+function comisionMensajesVendedor(u){
+  if(!u) return 0;
+  const norm = s => (s||'').trim().toLowerCase();
+  const coincide = r => r.vendedor_id
+    ? (r.vendedor_id === u.id)
+    : (norm(r.agente)===norm(`${u.nombre} ${u.apellido}`) || norm(r.agente)===norm(u.nombre) || (u.usuario && norm(r.agente)===norm(u.usuario)));
+  return ventasMensajesEntregadas().filter(coincide).length * COMISION_MENSAJE_VENTA;
+}
 function gananciaBrutaVendedor(id){
-  return ventas.filter(v=>v.vendedorId===id).reduce((s,v)=>s+comisionVenta(v),0);
+  const u = usuarios.find(x=>x.id===id);
+  const base = ventas.filter(v=>v.vendedorId===id).reduce((s,v)=>s+comisionVenta(v),0);
+  return base + comisionMensajesVendedor(u);
 }
 function totalPagadoVendedor(id){
   return pagosVendedor.filter(p=>p.vendedorId===id).reduce((s,p)=>s+(Number(p.monto)||0),0);
