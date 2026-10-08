@@ -388,6 +388,8 @@ td input, td select{padding:6px 8px; font-size:13px;}
 .sesion-info a:hover{text-decoration:underline;}
 body.rol-usuario .solo-admin{display:none !important;}
 @media print{
+  html, body{background:#fff !important; background-image:none !important;}
+  body::before, body::after{display:none !important;}
   body > *{display:none !important;}
   #docOverlay{display:none !important;}
   #printArea{display:block !important; position:fixed; top:0; left:0; width:100%; padding:24px; background:#fff; color:#000; font-family:'Inter';}
