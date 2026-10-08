@@ -686,7 +686,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="vcFilTodasBtn" onclick="filtrarVentasCuotas('todas')">Total</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Cuota</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
         <tbody id="vcHistBody"></tbody>
       </table></div>
       <div class="empty" id="vcHistEmpty" style="display:none;">No hay ventas en cuotas registradas en este período.</div>
@@ -2065,6 +2065,7 @@ function renderVentasCuotas(){
   filtradas.forEach(vc=>{
     const gTotal = (Number(vc.precioCuotas)||0) - (Number(vc.precioCompra)||0);
     const gMensual = vc.cantCuotas > 0 ? gTotal / vc.cantCuotas : 0;
+    const valorCuota = vc.cantCuotas > 0 ? (Number(vc.precioCuotas)||0) / vc.cantCuotas : 0;
     const fraccion = `${vc.cuotasPagadas}/${vc.cantCuotas}`;
     const esFinalizdo = vc.estado === 'finalizado';
     const tr = document.createElement('tr');
@@ -2074,10 +2075,13 @@ function renderVentasCuotas(){
       <td data-label="IMEI">${vc.imei||'-'}</td>
       <td data-label="Cliente">${vc.cliente||'-'}</td>
       <td data-label="Venta"><span class="badge ${esFinalizdo?'vendido':'reservado'}">${fraccion}</span></td>
+      <td data-label="Cuota">$${fmt(valorCuota)}</td>
       <td data-label="Ganancia mensual" class="ganancia solo-admin">$${fmt(gMensual)}</td>
       <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)}</td>
       <td data-label="Acciones"><div class="actions">
-        ${esFinalizdo ? '<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span>' : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
+        ${esFinalizdo
+          ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
+          : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
         <button class="btn danger small solo-admin" onclick="anularVentaCuotas('${vc.id}')">Anular</button>
       </div></td>`;
     body.appendChild(tr);
@@ -2088,6 +2092,29 @@ function renderVentasCuotas(){
   const gananciaTotal = ventasCuotas.reduce((s,v)=>s+((Number(v.precioCuotas)||0)-(Number(v.precioCompra)||0)),0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
   document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
+}
+
+function imprimirComprobanteCuotas(id){
+  const vc = ventasCuotas.find(x=>x.id===id);
+  if(!vc) return;
+  const valorCuota = vc.cantCuotas>0 ? (Number(vc.precioCuotas)||0)/vc.cantCuotas : 0;
+  const filas = (vc.cronograma||[]).map(c=>
+    `<tr><td>Cuota ${c.nro}</td><td>${c.vencimiento||'-'}</td><td>${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td>$${fmt(c.monto)}</td></tr>`
+  ).join('');
+  document.getElementById('printArea').innerHTML = `
+    <h3>Comprobante de venta en cuotas</h3>
+    <p><b>Aruba Apple</b></p>
+    <p>Fecha de venta: ${vc.fecha}</p>
+    <p>Cliente: ${vc.cliente||'-'}</p>
+    <p>Equipo: ${vc.modelo}${vc.color?' · '+vc.color:''}${vc.imei?' · IMEI '+vc.imei:''}</p>
+    <p>Plan: ${vc.cantCuotas} cuotas de $${fmt(valorCuota)} — frecuencia ${vc.frecuencia||'-'}</p>
+    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+      <tr><th style="text-align:left; border-bottom:1px solid #000;">Cuota</th><th style="text-align:left; border-bottom:1px solid #000;">Vencimiento</th><th style="text-align:left; border-bottom:1px solid #000;">Pago</th><th style="text-align:left; border-bottom:1px solid #000;">Monto</th></tr>
+      ${filas}
+    </table>
+    <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado: USD ${fmt(vc.precioCuotas)}</p>
+    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
+  window.print();
 }
 
 function anularVentaCuotas(id){
