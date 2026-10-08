@@ -620,7 +620,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="filTodasBtn" onclick="filtrarVentas('todas')">Todas</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Nro. de Venta</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="ventasBody"></tbody>
       </table></div>
       <div class="empty" id="ventasEmpty" style="display:none;">No hay ventas registradas en este período.</div>
@@ -975,7 +975,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       </table></div>
       <div class="empty" id="rankingVendedoresEmpty" style="display:none;">Todavía no hay ventas de ningún vendedor.</div>
       <div style="overflow-x:auto; margin-top:18px;"><div class="bar-chart" id="rankingVendedoresChart" style="min-width:400px;"></div></div>
-      <div class="note">Este ranking es solo para comparar el desempeño del mes — no se ve afectado por el botón "Pagar" de arriba.</div>
+      <div class="note">Este ranking es solo para comparar el desempeño del mes — no se ve afectado por el botón "Pagar" de arriba. Cada venta cerrada desde la app de Mensajes suma una comisión de $10 USD al agente, y se habilita recién cuando esa venta se marca como "Entregar (Vendido)".</div>
     </div>
   </div>
 
@@ -1474,6 +1474,7 @@ function renderAccesorios(){
 
 /* ---------- VENTA ---------- */
 let ventas = ls_get('ventas', []);
+let ventasMensajes = ls_get('ventas_mensajes', []); // ventas cerradas desde la app de Mensajes
 let filtroVentas = 'hoy';
 
 function toggleTipoVenta(){
@@ -1639,29 +1640,104 @@ function borrarVenta(id){
   renderVentas();
 }
 
+/* ---------- VENTAS CERRADAS DESDE MENSAJES (reservas) ---------- */
+async function actualizarReservaMensaje(nroVenta, cambios, confirmMsg){
+  if(confirmMsg && !confirm(confirmMsg)) return false;
+  // Traer lo último de la nube para no pisar cambios hechos desde otro dispositivo
+  if(sbClient){
+    try{
+      const { data } = await sbClient.from('crm_datos').select('valor').eq('clave','ventas_mensajes').maybeSingle();
+      if(data && Array.isArray(data.valor)) ventasMensajes = data.valor;
+    }catch(e){ /* usamos lo que tengamos en memoria */ }
+  }
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nroVenta);
+  if(!r){ renderVentas(); return false; }
+  if(cambios === null){
+    ventasMensajes = ventasMensajes.filter(x=>x.nro_venta!==nroVenta);
+  } else {
+    Object.assign(r, cambios);
+  }
+  syncGuardar('ventas_mensajes', ventasMensajes);
+  renderVentas();
+  if(document.getElementById('usuariosBody')) renderUsuarios(); // refresca Ranking de vendedores
+  return true;
+}
+async function marcarReservaEntregada(nro){
+  const ok = await actualizarReservaMensaje(nro, { estado:'vendido', entregado_en:new Date().toISOString() },
+    `¿Confirmás que la venta Nº ${nro} fue entregada en el local? Pasará a "Vendido".`);
+  if(ok) registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido).`);
+}
+async function revertirReservaMensaje(nro){
+  await actualizarReservaMensaje(nro, { estado:'reservado' },
+    `¿Volver la venta Nº ${nro} al estado "Reservado"?`);
+}
+async function borrarReservaMensaje(nro){
+  if(!esAdmin()) return;
+  const ok = await actualizarReservaMensaje(nro, null,
+    `¿Borrar la venta por Mensajes Nº ${nro} del historial? Esta acción no se puede deshacer.`);
+  if(ok) registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
+}
+
 function renderVentas(){
   const hoy = hoyISO(); const mes = hoy.slice(0,7);
   const body = document.getElementById('ventasBody');
   body.innerHTML = '';
-  let filtradas = ventas;
-  if(filtroVentas==='hoy') filtradas = ventas.filter(v=>v.fecha===hoy);
-  else if(filtroVentas==='mes') filtradas = ventas.filter(v=>v.fecha.slice(0,7)===mes);
-  filtradas = [...filtradas].sort((a,b)=> b.fecha.localeCompare(a.fecha));
+
+  // Ventas propias del CRM (ya concretadas)
+  const manuales = ventas.map(v=>({
+    kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, imei:v.imei||'-',
+    cliente:v.cliente||'-', precio:v.precioVenta,
+    ganancia:(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)
+  }));
+
+  // Ventas cerradas desde la app de Mensajes (entran como "reservado")
+  const reservas = (ventasMensajes||[]).map(r=>({
+    kind:'reserva', id:r.nro_venta, fecha:r.fecha, nro:r.nro_venta,
+    modelo:'Venta por Mensajes', imei:'—', cliente:r.cliente||'-',
+    agente:r.agente||'', estado:r.estado||'reservado'
+  }));
+
+  let filtradas = manuales.concat(reservas);
+  if(filtroVentas==='hoy') filtradas = filtradas.filter(v=>v.fecha===hoy);
+  else if(filtroVentas==='mes') filtradas = filtradas.filter(v=>(v.fecha||'').slice(0,7)===mes);
+  filtradas = [...filtradas].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
   document.getElementById('ventasEmpty').style.display = filtradas.length ? 'none' : 'block';
+
   filtradas.forEach(v=>{
-    const g = (Number(v.precioVenta)||0)-(Number(v.precioCompra)||0);
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td data-label="Fecha">${v.fecha}</td>
-      <td data-label="Modelo">${v.modelo}</td>
-      <td data-label="IMEI">${v.imei||'-'}</td>
-      <td data-label="Cliente">${v.cliente||'-'}</td>
-      <td data-label="Venta">$${fmt(v.precioVenta)}</td>
-      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(g)}</td>
-      <td data-label="Acciones"><div class="actions">
-        <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">Factura</button>
-        <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
-      </div></td>`;
+    if(v.kind==='reserva'){
+      const badge = v.estado==='vendido' ? '<span class="badge vendido">Vendido</span>' : '<span class="badge reservado">Reservado</span>';
+      const accEstado = v.estado==='reservado'
+        ? `<button class="btn small" onclick="marcarReservaEntregada('${v.nro}')">Entregar (Vendido)</button>`
+        : `<button class="btn ghost small" onclick="revertirReservaMensaje('${v.nro}')">Volver a reservado</button>`;
+      tr.innerHTML = `
+        <td data-label="Fecha">${v.fecha||'-'}</td>
+        <td data-label="Nro. de Venta"><b>${v.nro}</b></td>
+        <td data-label="Modelo">${v.modelo}${v.agente?`<br><span style="color:var(--txt3); font-size:11px;">Agente: ${v.agente}</span>`:''}</td>
+        <td data-label="IMEI">${v.imei}</td>
+        <td data-label="Cliente">${v.cliente}</td>
+        <td data-label="Venta">—</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">—</td>
+        <td data-label="Estado">${badge}</td>
+        <td data-label="Acciones"><div class="actions">
+          ${accEstado}
+          <button class="btn danger small solo-admin" onclick="borrarReservaMensaje('${v.nro}')">Borrar</button>
+        </div></td>`;
+    } else {
+      tr.innerHTML = `
+        <td data-label="Fecha">${v.fecha}</td>
+        <td data-label="Nro. de Venta">${v.nro}</td>
+        <td data-label="Modelo">${v.modelo}</td>
+        <td data-label="IMEI">${v.imei}</td>
+        <td data-label="Cliente">${v.cliente}</td>
+        <td data-label="Venta">$${fmt(v.precio)}</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)}</td>
+        <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
+        <td data-label="Acciones"><div class="actions">
+          <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">Factura</button>
+          <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
+        </div></td>`;
+    }
     body.appendChild(tr);
   });
   const th = totalesVentas('hoy'); const tm = totalesVentas('mes');
@@ -2469,17 +2545,30 @@ async function mktListar(equipoId){
     });
   }catch(e){ console.error('No se pudo leer la galería de marketing', e); return []; }
 }
-function mktAgregar(equipoId, file){
-  return mktAbrirDB().then(db=>{
-    const tipo = file.type.startsWith('video') ? 'video' : 'imagen';
-    const item = { id: equipoId+'_'+uid(), equipoId, tipo, nombre: file.name, blob: file, creado: Date.now() };
-    return new Promise((resolve,reject)=>{
-      const tx = db.transaction('media','readwrite');
-      tx.objectStore('media').put(item);
-      tx.oncomplete = ()=>resolve(item);
-      tx.onerror = ()=>reject(tx.error);
-    });
+async function mktAgregar(equipoId, file){
+  const db = await mktAbrirDB();
+  const tipo = file.type.startsWith('video') ? 'video' : 'imagen';
+  const itemId = equipoId+'_'+uid();
+  const item = { id: itemId, equipoId, tipo, nombre: file.name, blob: file, creado: Date.now() };
+  await new Promise((resolve,reject)=>{
+    const tx = db.transaction('media','readwrite');
+    tx.objectStore('media').put(item);
+    tx.oncomplete = ()=>resolve(item);
+    tx.onerror = ()=>reject(tx.error);
   });
+  // Subir a Supabase Storage + registrar en marketing_media
+  try{
+    const ext = file.name.split('.').pop() || (tipo==='video'?'mp4':'jpg');
+    const path = `${equipoId}/${itemId}.${ext}`;
+    if(!sbClient) throw new Error('sin conexión');
+    const { error:upErr } = await sbClient.storage.from('marketing-fotos').upload(path, file, { contentType: file.type, upsert:true });
+    if(!upErr){
+      const { data:urlData } = sbClient.storage.from('marketing-fotos').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      await sbClient.from('marketing_media').insert({ equipo_id: equipoId, tipo, url: publicUrl, nombre: file.name });
+    }
+  }catch(e){ console.warn('No se pudo subir a la nube:', e); }
+  return item;
 }
 function mktBorrar(id){
   return mktAbrirDB().then(db=> new Promise((resolve,reject)=>{
@@ -2536,6 +2625,14 @@ async function eliminarMedia(id, equipoId){
   if(!esAdmin()) return;
   if(!confirm('¿Borrar este archivo?')) return;
   await mktBorrar(id);
+  // Borrar de Supabase Storage y marketing_media
+  try{
+    if(!sbClient) throw new Error('sin conexión');
+    const { data:files } = await sbClient.storage.from('marketing-fotos').list(equipoId);
+    const match = (files||[]).find(f => f.name.startsWith(id+'.'));
+    if(match) await sbClient.storage.from('marketing-fotos').remove([`${equipoId}/${match.name}`]);
+    await sbClient.from('marketing_media').delete().like('url', `%/${id}.%`);
+  }catch(e){ console.warn('No se pudo borrar de la nube:', e); }
   renderMediaEquipo(equipoId);
 }
 function descargarArchivo(url, nombre){
@@ -2641,7 +2738,7 @@ function mostrarEstadoConexion(){
 }
 
 /* ---------- SINCRONIZACIÓN EN LA NUBE (Supabase) ---------- */
-const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','ventas','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
+const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
 
 function syncGuardar(clave, valor){
   ls_set(clave, valor);
@@ -2672,6 +2769,9 @@ async function sincronizarDesdeNube(mostrarCartel){
 
     if('ventas' in mapa){ ventas = mapa.ventas; ls_set('ventas', ventas); }
     else if(ventas && ventas.length){ syncGuardar('ventas', ventas); }
+
+    if('ventas_mensajes' in mapa){ ventasMensajes = mapa.ventas_mensajes || []; ls_set('ventas_mensajes', ventasMensajes); }
+    else if(ventasMensajes && ventasMensajes.length){ syncGuardar('ventas_mensajes', ventasMensajes); }
 
     if('clientes' in mapa){ clientes = mapa.clientes; ls_set('clientes', clientes); }
     else if(clientes && clientes.length){ syncGuardar('clientes', clientes); }
@@ -2929,8 +3029,17 @@ let usuarios = ls_get('usuarios', []);
 let pagosVendedor = ls_get('pagos_vendedor', []);
 
 const COMISION_EQUIPO = 20;
+const COMISION_MENSAJE_VENTA = 10; // USD por cada venta cerrada desde Mensajes, se habilita al entregarse
 function comisionVenta(v){
   return (v.tipo||'equipo')==='equipo' ? COMISION_EQUIPO : (Number(v.precioVenta)||0)-(Number(v.precioCompra)||0);
+}
+// Ventas cerradas desde Mensajes que ya fueron entregadas en el local (estado "vendido").
+// La comisión sólo cuenta a partir de la entrega.
+function ventasMensajesEntregadas(){
+  return (ventasMensajes||[]).filter(r => r.estado === 'vendido');
+}
+function fechaComisionMensaje(r){
+  return (r.entregado_en ? String(r.entregado_en).slice(0,10) : (r.fecha||''));
 }
 function gananciaBrutaVendedor(id){
   return ventas.filter(v=>v.vendedorId===id).reduce((s,v)=>s+comisionVenta(v),0);
@@ -3049,12 +3158,44 @@ function renderUsuarios(){
 
 function renderRankingVendedores(){
   const hoy = hoyISO(); const mes = hoy.slice(0,7);
+  const norm = s => (s||'').trim().toLowerCase();
+
+  // Comisiones por ventas cerradas desde Mensajes (sólo las entregadas = "vendido").
+  // Se asignan por vendedor_id (coincidencia exacta con el usuario del CRM); si un
+  // registro viejo no lo tiene, se usa el nombre del agente como respaldo.
+  const comMsg = {}; // clave -> { nombre, hoy, mes }
+  ventasMensajesEntregadas().forEach(r=>{
+    const f = fechaComisionMensaje(r);
+    const k = r.vendedor_id ? ('id:'+r.vendedor_id) : ('name:'+norm(r.agente||''));
+    if(!comMsg[k]) comMsg[k] = { nombre: r.agente || 'Agente de Mensajes', hoy:0, mes:0 };
+    if(f===hoy) comMsg[k].hoy += COMISION_MENSAJE_VENTA;
+    if(f.slice(0,7)===mes) comMsg[k].mes += COMISION_MENSAJE_VENTA;
+  });
+
+  const usados = new Set();
   const datos = usuarios.map(u=>{
     const ventasU = ventas.filter(v=>v.vendedorId===u.id);
-    const gananciaHoy = ventasU.filter(v=>v.fecha===hoy).reduce((s,v)=>s+comisionVenta(v),0);
-    const gananciaMes = ventasU.filter(v=>v.fecha.slice(0,7)===mes).reduce((s,v)=>s+comisionVenta(v),0);
+    let gananciaHoy = ventasU.filter(v=>v.fecha===hoy).reduce((s,v)=>s+comisionVenta(v),0);
+    let gananciaMes = ventasU.filter(v=>v.fecha.slice(0,7)===mes).reduce((s,v)=>s+comisionVenta(v),0);
+    // Sumar comisiones de Mensajes de este vendedor (por id y, de respaldo, por nombre/usuario)
+    ['id:'+u.id, 'name:'+norm(`${u.nombre} ${u.apellido}`), 'name:'+norm(u.nombre), 'name:'+norm(u.usuario)].forEach(k=>{
+      if(comMsg[k] && !usados.has(k)){
+        gananciaHoy += comMsg[k].hoy;
+        gananciaMes += comMsg[k].mes;
+        usados.add(k);
+      }
+    });
     return { nombre: `${u.nombre} ${u.apellido}`, gananciaHoy, gananciaMes };
-  }).sort((a,b)=>b.gananciaMes-a.gananciaMes);
+  });
+
+  // Comisiones de Mensajes que no coinciden con ningún vendedor cargado: filas propias
+  Object.keys(comMsg).forEach(k=>{
+    if(usados.has(k)) return;
+    const c = comMsg[k];
+    datos.push({ nombre: c.nombre + ' (Mensajes)', gananciaHoy: c.hoy, gananciaMes: c.mes });
+  });
+
+  datos.sort((a,b)=>b.gananciaMes-a.gananciaMes);
 
   const body = document.getElementById('rankingVendedoresBody');
   body.innerHTML = '';
@@ -3201,7 +3342,7 @@ function renderActividad(){
 async function borrarTodosLosDatos(){
   const texto = document.getElementById('confirmarBorrado').value.trim().toUpperCase();
   if(texto!=='BORRAR'){ alert('Escribí BORRAR (en mayúsculas) en el campo para confirmar.'); return; }
-  const clavesABorrar = ['stock_equipos','stock_accesorios','ventas','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','dolar_blue'];
+  const clavesABorrar = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','dolar_blue'];
   try{
     clavesABorrar.forEach(k=> localStorage.removeItem(k));
   }catch(e){ alert('No se pudo borrar: '+e.message); return; }
@@ -3210,7 +3351,7 @@ async function borrarTodosLosDatos(){
       await sbClient.from('crm_datos').delete().in('clave', clavesABorrar);
     }catch(e){ console.error('Error borrando datos en la nube:', e); }
   }
-  equipos=[]; accesorios=[]; ventas=[]; clientes=[]; movimientos=[]; proveedores=[];
+  equipos=[]; accesorios=[]; ventas=[]; ventasMensajes=[]; clientes=[]; movimientos=[]; proveedores=[];
   consignaciones=[]; reparaciones=[]; usuarios=[]; comercios=[]; empleados=[];
   pagosSueldo=[]; pagosVendedor=[]; actividad=[];
   alert('Todos los datos fueron borrados. La página se va a recargar.');
