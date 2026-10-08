@@ -258,6 +258,13 @@ td input, td select{padding:6px 8px; font-size:13px;}
 }
 
 #printArea{display:none;}
+#docOverlay{position:fixed; inset:0; z-index:9000; display:none; align-items:flex-start; justify-content:center; padding:24px 12px; background:rgba(0,0,0,0.7); overflow:auto;}
+#docOverlay.open{display:flex;}
+#docOverlay .doc-card{background:#fff; color:#000; width:100%; max-width:640px; border-radius:12px; padding:24px; font-family:'Inter',sans-serif;}
+#docOverlay .doc-card h3{font-size:18px; margin-bottom:10px;}
+#docOverlay .doc-card p{font-size:14px; margin:4px 0; color:#000;}
+#docOverlay .doc-card td, #docOverlay .doc-card th{color:#000; border-bottom:1px solid #ddd; padding:6px 4px;}
+#docOverlay .doc-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:18px;}
 #loginOverlay{position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;
   background:var(--bg); overflow:hidden;}
 #loginOverlay::before{
@@ -382,6 +389,7 @@ td input, td select{padding:6px 8px; font-size:13px;}
 body.rol-usuario .solo-admin{display:none !important;}
 @media print{
   body > *{display:none !important;}
+  #docOverlay{display:none !important;}
   #printArea{display:block !important; position:fixed; top:0; left:0; width:100%; padding:24px; background:#fff; color:#000; font-family:'Inter';}
   #printArea h3{font-size:18px; margin-bottom:10px;}
   #printArea p{font-size:14px; margin:4px 0;}
@@ -1053,6 +1061,9 @@ body.rol-usuario .solo-admin{display:none !important;}
 </main>
 
 <div id="printArea"></div>
+<div id="docOverlay"><div class="doc-card"><div id="docContenido"></div>
+  <div class="doc-actions"><button class="btn ghost" onclick="cerrarDocumento()">Cerrar</button><button class="btn" onclick="window.print()">🖨️ Imprimir</button></div>
+</div></div>
 
 <script>
 const MODELOS = [
@@ -1633,15 +1644,21 @@ function filtrarVentas(f){
   renderVentas();
 }
 
+function mostrarDocumento(html){
+  document.getElementById('printArea').innerHTML = html;
+  document.getElementById('docContenido').innerHTML = html;
+  document.getElementById('docOverlay').classList.add('open');
+}
+function cerrarDocumento(){ document.getElementById('docOverlay').classList.remove('open'); }
+
 function imprimirFactura(id){
   const v = ventas.find(x=>x.id===id);
-  document.getElementById('printArea').innerHTML = `
+  mostrarDocumento(`
     <h3>Factura de venta</h3>
     <p>Fecha: ${v.fecha}</p>
     <p>Cliente: ${v.cliente||'-'}</p>
     <table><tr><td>${v.modelo}${v.color?' · '+v.color:''}${v.imei?' · IMEI '+v.imei:''}</td><td>USD ${fmt(v.precioVenta)}</td></tr></table>
-    <p style="font-size:22px; font-weight:700; margin-top:12px;">Total: USD ${fmt(v.precioVenta)}</p>`;
-  window.print();
+    <p style="font-size:22px; font-weight:700; margin-top:12px;">Total: USD ${fmt(v.precioVenta)}</p>`);
 }
 
 function borrarVenta(id){
@@ -2101,7 +2118,7 @@ function imprimirComprobanteCuotas(id){
   const filas = (vc.cronograma||[]).map(c=>
     `<tr><td>Cuota ${c.nro}</td><td>${c.vencimiento||'-'}</td><td>${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td>$${fmt(c.monto)}</td></tr>`
   ).join('');
-  document.getElementById('printArea').innerHTML = `
+  mostrarDocumento(`
     <h3>Comprobante de venta en cuotas</h3>
     <p><b>Aruba Apple</b></p>
     <p>Fecha de venta: ${vc.fecha}</p>
@@ -2113,8 +2130,7 @@ function imprimirComprobanteCuotas(id){
       ${filas}
     </table>
     <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado: USD ${fmt(vc.precioCuotas)}</p>
-    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
-  window.print();
+    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`);
 }
 
 function anularVentaCuotas(id){
