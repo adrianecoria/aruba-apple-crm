@@ -486,7 +486,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div class="stat"><label>Mensual</label><div class="val" id="ventaMesVal">$ 0</div></div>
         </div>
       </div>
-      <div class="card"><h2>Ganancia</h2>
+      <div class="card"><h2>Ganancia neta <span style="font-size:11px; color:var(--txt3); font-weight:500;">(ya descontadas las comisiones)</span></h2>
         <div class="stat-pair">
           <div class="stat profit"><label>Diaria</label><div class="val" id="gananciaDiaVal">$ 0</div></div>
           <div class="stat profit"><label>Mensual</label><div class="val" id="gananciaMesVal">$ 0</div></div>
@@ -586,8 +586,8 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="grid4 solo-admin" style="grid-template-columns:repeat(3,1fr);">
       <div class="mini-card amber"><label>Venta hoy</label><div class="val" id="vHoy">$ 0</div></div>
-      <div class="mini-card profit"><label>Ganancia hoy</label><div class="val" id="gHoy">$ 0</div></div>
-      <div class="mini-card profit"><label>Ganancia del mes</label><div class="val" id="gMes">$ 0</div></div>
+      <div class="mini-card profit"><label>Ganancia neta hoy</label><div class="val" id="gHoy">$ 0</div></div>
+      <div class="mini-card profit"><label>Ganancia neta del mes</label><div class="val" id="gMes">$ 0</div></div>
     </div>
 
     <div class="card card-destacada">
@@ -730,6 +730,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="mini-card"><label>Gastos</label><div class="val" id="cajaGastos">$ 0</div></div>
       <div class="mini-card amber"><label>Balance en caja</label><div class="val" id="cajaBalance">$ 0</div></div>
     </div>
+    <div class="note" id="cajaConsigNota" style="display:none;"></div>
 
     <div class="card card-neto">
       <h2>Balance total neto</h2>
@@ -871,7 +872,7 @@ body.rol-usuario .solo-admin{display:none !important;}
     <header class="top"><h1>Rentabilidad</h1></header>
 
     <div class="grid4">
-      <div class="mini-card profit"><label>Ganancia total histórica</label><div class="val" id="anGananciaTotal">$ 0</div></div>
+      <div class="mini-card profit"><label>Ganancia neta histórica (descontadas comisiones)</label><div class="val" id="anGananciaTotal">$ 0</div></div>
       <div class="mini-card"><label>Ganancia promedio por venta</label><div class="val" id="anGananciaProm">$ 0</div></div>
       <div class="mini-card"><label>Invertido en stock actual</label><div class="val" id="anInvertido">$ 0</div></div>
       <div class="mini-card amber"><label>Deuda en consignaciones</label><div class="val" id="anDeudaConsig">$ 0</div></div>
@@ -1195,13 +1196,36 @@ function renderStockResumen(){
   document.getElementById('stockTotalResumen').textContent = total;
 }
 
+/* --- FACTURACIÓN / RENTABILIDAD (incluye ventas de Mensajes entregadas) ---
+   La ganancia que se muestra es NETA: ganancia bruta menos las comisiones
+   que se les pagan a los vendedores (CRM $20/equipo o margen en accesorios,
+   y Mensajes $10 por venta entregada). */
+function ventasMensajesContables(){
+  return ventasMensajesEntregadas()
+    .filter(r => r.precio!=null && r.precio!=='')
+    .map(r=>({
+      fecha: (r.entregado_en ? String(r.entregado_en).slice(0,10) : (r.fecha||'')),
+      modelo: r.modelo || 'Venta por Mensajes',
+      tipo: 'equipo',
+      precioVenta: Number(r.precio)||0,
+      precioCompra: Number(r.compra)||0
+    }));
+}
+function comisionDeVentaCRM(v){ return v.vendedorId ? comisionVenta(v) : 0; }
+function comisionesDelPeriodo(coincideFecha){
+  let c = ventas.filter(v=>coincideFecha(v.fecha)).reduce((s,v)=>s+comisionDeVentaCRM(v),0);
+  c += ventasMensajesEntregadas().filter(r=>coincideFecha(fechaComisionMensaje(r))).length * COMISION_MENSAJE_VENTA;
+  return c;
+}
 function totalesVentas(periodo){
   const hoy = hoyISO(); const mes = hoy.slice(0,7);
-  const filtradas = ventas.filter(v => periodo==='hoy' ? v.fecha===hoy : v.fecha.slice(0,7)===mes);
-  return {
-    venta: filtradas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0),
-    ganancia: filtradas.reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0)
-  };
+  const coincide = f => periodo==='hoy' ? f===hoy : (f||'').slice(0,7)===mes;
+  const todas = ventas.concat(ventasMensajesContables());
+  const filtradas = todas.filter(v => coincide(v.fecha));
+  const venta = filtradas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
+  const gananciaBruta = filtradas.reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0);
+  const comisiones = comisionesDelPeriodo(coincide);
+  return { venta, gananciaBruta, comisiones, ganancia: gananciaBruta - comisiones };
 }
 function renderInicioVentaGanancia(){
   const hoy = totalesVentas('hoy'); const mes = totalesVentas('mes');
@@ -1659,7 +1683,9 @@ async function actualizarReservaMensaje(nroVenta, cambios, confirmMsg){
   }
   syncGuardar('ventas_mensajes', ventasMensajes);
   renderVentas();
-  if(document.getElementById('usuariosBody')) renderUsuarios(); // refresca Ranking de vendedores
+  if(document.getElementById('usuariosBody')) renderUsuarios();   // Ranking + Ganancia generada
+  if(document.getElementById('movimientosBody')) renderCaja();    // Caja
+  if(document.getElementById('anGananciaTotal')) renderAnalisis(); // Rentabilidad
   return true;
 }
 // Cambia el estado del equipo asociado a una reserva de Mensajes (si tiene uno)
@@ -2231,14 +2257,24 @@ function renderCaja(){
     body.appendChild(tr);
   });
 
-  const totalVentas = ventas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
+  const totalVentas = ventas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0)
+    + ventasMensajesContables().reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
   const totalIngresos = movimientos.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(Number(m.monto)||0),0);
   const totalGastos = movimientos.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+(Number(m.monto)||0),0);
-  const balance = totalVentas + totalIngresos - totalGastos;
+  // El dinero de consignaciones ya pagadas a su dueño salió de la caja: se descuenta del balance
+  const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
+  const balance = totalVentas + totalIngresos - totalGastos - consignacionesPagadas;
   document.getElementById('cajaVentas').textContent = '$ '+fmt(totalVentas);
   document.getElementById('cajaIngresos').textContent = '$ '+fmt(totalIngresos);
   document.getElementById('cajaGastos').textContent = '$ '+fmt(totalGastos);
   document.getElementById('cajaBalance').textContent = '$ '+fmt(balance);
+  const notaConsig = document.getElementById('cajaConsigNota');
+  if(notaConsig){
+    if(consignacionesPagadas>0){
+      notaConsig.style.display='block';
+      notaConsig.textContent = `Se descontaron $${fmt(consignacionesPagadas)} del balance por consignaciones ya pagadas a sus dueños (ese dinero ya no está en la caja).`;
+    } else { notaConsig.style.display='none'; }
+  }
 
   const mesActual = hoyISO().slice(0,7);
   const gananciaMes = totalesVentas('mes').ganancia;
@@ -2426,6 +2462,7 @@ function avanzarEstadoConsignacion(id){
   else c.estado = 'activa';
   syncGuardar('consignaciones', consignaciones);
   renderConsignaciones();
+  if(document.getElementById('movimientosBody')) renderCaja(); // el pago a consignación afecta el balance de caja
 }
 
 function borrarConsignacion(id){
@@ -2869,9 +2906,11 @@ async function sincronizarDesdeNube(mostrarCartel){
 
 /* ---------- ANALISIS ---------- */
 function renderAnalisis(){
-  const gananciaPorVenta = ventas.map(v=>(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0));
-  const gananciaTotal = gananciaPorVenta.reduce((s,g)=>s+g,0);
-  const gananciaProm = ventas.length ? gananciaTotal/ventas.length : 0;
+  const contables = ventas.concat(ventasMensajesContables());
+  const gananciaBrutaTotal = contables.reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0);
+  const comisionesTotal = comisionesDelPeriodo(()=>true);
+  const gananciaTotal = gananciaBrutaTotal - comisionesTotal; // neta de comisiones
+  const gananciaProm = contables.length ? gananciaTotal/contables.length : 0;
   const stockActual = equipos.filter(e=>e.estado!=='vendido');
   const invertido = stockActual.reduce((s,e)=>s+(Number(e.compra)||0),0);
   const valorStock = stockActual.reduce((s,e)=>s+(Number(e.sugerido)||0),0);
@@ -2882,7 +2921,7 @@ function renderAnalisis(){
   document.getElementById('anGananciaProm').textContent = '$ '+fmt(gananciaProm);
   document.getElementById('anInvertido').textContent = '$ '+fmt(invertido);
   document.getElementById('anDeudaConsig').textContent = '$ '+fmt(deudaConsig);
-  document.getElementById('anCantVendidos').textContent = ventas.filter(v=>(v.tipo||'equipo')==='equipo').length;
+  document.getElementById('anCantVendidos').textContent = ventas.filter(v=>(v.tipo||'equipo')==='equipo').length + ventasMensajesContables().length;
   document.getElementById('anCantStock').textContent = stockActual.length;
   const accStockActual = accesorios.filter(a=>a.estado!=='vendido');
   document.getElementById('anCantVendidosAcc').textContent = ventas.filter(v=>v.tipo==='accesorio').length;
@@ -2896,7 +2935,10 @@ function renderAnalisis(){
     const d = new Date(hoy.getFullYear(), hoy.getMonth()-i, 1);
     meses.push(d.toISOString().slice(0,7));
   }
-  const gananciaMeses = meses.map(m => ventas.filter(v=>v.fecha.slice(0,7)===m).reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0));
+  const gananciaMeses = meses.map(m => {
+    const bruta = contables.filter(v=>(v.fecha||'').slice(0,7)===m).reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0);
+    return bruta - comisionesDelPeriodo(f=>(f||'').slice(0,7)===m); // neta
+  });
   const maxG = Math.max(1, ...gananciaMeses.map(g=>Math.abs(g)));
   const chart = document.getElementById('anBarChart');
   chart.innerHTML = '';
@@ -2912,10 +2954,11 @@ function renderAnalisis(){
   });
 
   const porModelo = {};
-  ventas.forEach(v=>{
-    if(!porModelo[v.modelo]) porModelo[v.modelo] = {cant:0, ganancia:0};
-    porModelo[v.modelo].cant++;
-    porModelo[v.modelo].ganancia += (Number(v.precioVenta)||0)-(Number(v.precioCompra)||0);
+  contables.forEach(v=>{
+    const mod = v.modelo || '-';
+    if(!porModelo[mod]) porModelo[mod] = {cant:0, ganancia:0};
+    porModelo[mod].cant++;
+    porModelo[mod].ganancia += (Number(v.precioVenta)||0)-(Number(v.precioCompra)||0);
   });
   const ranking = Object.entries(porModelo).sort((a,b)=>b[1].cant-a[1].cant).slice(0,5);
   const cont = document.getElementById('anRankingModelos');
