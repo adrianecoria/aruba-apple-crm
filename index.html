@@ -2261,18 +2261,23 @@ function renderCaja(){
     + ventasMensajesContables().reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
   const totalIngresos = movimientos.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(Number(m.monto)||0),0);
   const totalGastos = movimientos.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+(Number(m.monto)||0),0);
-  // El dinero de consignaciones ya pagadas a su dueño salió de la caja: se descuenta del balance
+  // Del balance en caja salen: las comisiones a los vendedores y el dinero de
+  // consignaciones ya pagadas a su dueño.
+  const comisionesTotales = comisionesDelPeriodo(()=>true);
   const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
-  const balance = totalVentas + totalIngresos - totalGastos - consignacionesPagadas;
+  const balance = totalVentas + totalIngresos - totalGastos - comisionesTotales - consignacionesPagadas;
   document.getElementById('cajaVentas').textContent = '$ '+fmt(totalVentas);
   document.getElementById('cajaIngresos').textContent = '$ '+fmt(totalIngresos);
   document.getElementById('cajaGastos').textContent = '$ '+fmt(totalGastos);
   document.getElementById('cajaBalance').textContent = '$ '+fmt(balance);
   const notaConsig = document.getElementById('cajaConsigNota');
   if(notaConsig){
-    if(consignacionesPagadas>0){
+    const partes = [];
+    if(comisionesTotales>0) partes.push(`$${fmt(comisionesTotales)} de comisiones a vendedores`);
+    if(consignacionesPagadas>0) partes.push(`$${fmt(consignacionesPagadas)} de consignaciones ya pagadas a sus dueños`);
+    if(partes.length){
       notaConsig.style.display='block';
-      notaConsig.textContent = `Se descontaron $${fmt(consignacionesPagadas)} del balance por consignaciones ya pagadas a sus dueños (ese dinero ya no está en la caja).`;
+      notaConsig.textContent = `Al balance en caja se le descontaron ${partes.join(' y ')} (ese dinero ya no está en la caja).`;
     } else { notaConsig.style.display='none'; }
   }
 
