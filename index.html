@@ -2037,6 +2037,8 @@ function pagarCuota(ventaId){
 
   syncGuardar('ventas_cuotas', ventasCuotas);
   renderVentasCuotas();
+  if(document.getElementById('movimientosBody')) renderCaja(); // la cuota cobrada entra a la caja
+
 }
 
 function filtrarVentasCuotas(f){
@@ -2106,6 +2108,7 @@ function anularVentaCuotas(id){
   cargarSelectVentaCuotas();
   cargarSelectEquiposVenta();
   renderVentasCuotas();
+  if(document.getElementById('movimientosBody')) renderCaja();
 }
 
 /* ---------- CLIENTES ---------- */
@@ -2265,20 +2268,24 @@ function renderCaja(){
   // consignaciones ya pagadas a su dueño.
   const comisionesTotales = comisionesDelPeriodo(()=>true);
   const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
-  const balance = totalVentas + totalIngresos - totalGastos - comisionesTotales - consignacionesPagadas;
+  // Cuotas ya cobradas de ventas en cuotas: cada pago entra como dinero a la caja
+  const cuotasCobradas = (ventasCuotas||[]).reduce((s,vc)=>
+    s + (vc.cronograma||[]).filter(c=>c.pagada).reduce((ss,c)=>ss+(Number(c.monto)||0),0), 0);
+  const balance = totalVentas + totalIngresos - totalGastos - comisionesTotales - consignacionesPagadas + cuotasCobradas;
   document.getElementById('cajaVentas').textContent = '$ '+fmt(totalVentas);
   document.getElementById('cajaIngresos').textContent = '$ '+fmt(totalIngresos);
   document.getElementById('cajaGastos').textContent = '$ '+fmt(totalGastos);
   document.getElementById('cajaBalance').textContent = '$ '+fmt(balance);
   const notaConsig = document.getElementById('cajaConsigNota');
   if(notaConsig){
-    const partes = [];
-    if(comisionesTotales>0) partes.push(`$${fmt(comisionesTotales)} de comisiones a vendedores`);
-    if(consignacionesPagadas>0) partes.push(`$${fmt(consignacionesPagadas)} de consignaciones ya pagadas a sus dueños`);
-    if(partes.length){
-      notaConsig.style.display='block';
-      notaConsig.textContent = `Al balance en caja se le descontaron ${partes.join(' y ')} (ese dinero ya no está en la caja).`;
-    } else { notaConsig.style.display='none'; }
+    const notas = [];
+    if(cuotasCobradas>0) notas.push(`Se sumaron $${fmt(cuotasCobradas)} de cuotas cobradas de ventas en cuotas.`);
+    const descuentos = [];
+    if(comisionesTotales>0) descuentos.push(`$${fmt(comisionesTotales)} de comisiones a vendedores`);
+    if(consignacionesPagadas>0) descuentos.push(`$${fmt(consignacionesPagadas)} de consignaciones ya pagadas a sus dueños`);
+    if(descuentos.length) notas.push(`Se descontaron ${descuentos.join(' y ')} (ese dinero ya no está en la caja).`);
+    if(notas.length){ notaConsig.style.display='block'; notaConsig.textContent = notas.join(' '); }
+    else { notaConsig.style.display='none'; }
   }
 
   const mesActual = hoyISO().slice(0,7);
