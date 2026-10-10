@@ -1981,7 +1981,7 @@ function venderEnCuotas(){
 
   if(!precioCuotas){ alert('Cargá el precio en cuotas.'); return; }
 
-  let modelo = '', imei = '', color = '', itemId = '', precioCompra = 0;
+  let modelo = '', imei = '', color = '', itemId = '', precioCompra = 0, bateria = '';
 
   if(tipo==='equipo'){
     const id = document.getElementById('vcEquipo').value;
@@ -1992,7 +1992,7 @@ function venderEnCuotas(){
     syncGuardar('stock_equipos', equipos);
     renderEquipos();
     marcarConsignacionVendida(e.id);
-    modelo = e.modelo; imei = e.imei; color = e.color; itemId = e.id; precioCompra = Number(e.compra)||0;
+    modelo = e.modelo; imei = e.imei; color = e.color; itemId = e.id; precioCompra = Number(e.compra)||0; bateria = e.bateria||'';
   } else {
     const id = document.getElementById('vcAccesorio').value;
     if(!id){ alert('Elegí un accesorio.'); return; }
@@ -2000,7 +2000,7 @@ function venderEnCuotas(){
     a.estado = 'vendido';
     syncGuardar('stock_accesorios', accesorios);
     renderAccesorios();
-    modelo = a.nombre; imei = ''; color = a.color; itemId = a.id; precioCompra = Number(a.compra)||0;
+    modelo = a.nombre; imei = ''; color = a.color; itemId = a.id; precioCompra = Number(a.compra)||0; bateria = '';
   }
 
   // Generar cronograma de cuotas
@@ -2022,6 +2022,7 @@ function venderEnCuotas(){
     modelo,
     color,
     imei,
+    bateria,
     cliente,
     clienteId,
     comercioId,
@@ -2131,6 +2132,7 @@ function renderVentasCuotas(){
         ${esFinalizdo
           ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
           : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
+        <button class="btn ghost small" onclick="generarContratoCuotas('${vc.id}')">📄 Contrato compraventa</button>
         <button class="btn danger small solo-admin" onclick="anularVentaCuotas('${vc.id}')">Anular</button>
       </div></td>`;
     body.appendChild(tr);
@@ -2165,6 +2167,151 @@ function imprimirComprobanteCuotas(id){
     <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
     ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:700;">Total de la operación (anticipo + cuotas): USD ${fmt((Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0))}</p>` : ''}
     <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
+  window.print();
+}
+
+// Convierte un número a letras en español (para el monto del contrato)
+function numALetrasVC(num){
+  num = Math.round(Number(num)||0);
+  if(num===0) return 'CERO';
+  const unidades=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE','DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE','VEINTE'];
+  const decenas=['','','VEINTE','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const centenas=['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS','SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  function seccion(n){
+    if(n===100) return 'CIEN';
+    let t='';
+    const c=Math.floor(n/100), resto=n%100;
+    if(c>0) t+=centenas[c]+' ';
+    if(resto<=20){ t+=unidades[resto]; }
+    else if(resto<30){ t+=(resto===21?'VEINTIUNO':'VEINTI'+unidades[resto-20]); }
+    else { const d=Math.floor(resto/10), u=resto%10; t+=decenas[d]; if(u>0) t+=' Y '+unidades[u]; }
+    return t.trim();
+  }
+  let palabras='';
+  const millones=Math.floor(num/1000000);
+  const miles=Math.floor((num%1000000)/1000);
+  const resto=num%1000;
+  if(millones>0) palabras += (millones===1?'UN MILLÓN':seccion(millones)+' MILLONES')+' ';
+  if(miles>0) palabras += (miles===1?'MIL':seccion(miles)+' MIL')+' ';
+  if(resto>0) palabras += seccion(resto);
+  return palabras.replace(/\s+/g,' ').trim();
+}
+
+function generarContratoCuotas(id){
+  const vc = ventasCuotas.find(x=>x.id===id);
+  if(!vc) return;
+
+  // Datos del comprador (cargados previamente en Clientes)
+  const cli = clientes.find(c=>c.id===vc.clienteId);
+  const compradorNombre = cli ? `${cli.nombre} ${cli.apellido}` : (vc.cliente||'__________________________');
+  const compradorDni = cli && cli.dni ? cli.dni : '____________';
+  const compradorDom = cli && cli.direccion ? cli.direccion : '________________________________';
+  const compradorTel = cli && cli.telefono ? cli.telefono : '____________';
+
+  // Datos del equipo
+  let bateria = vc.bateria || '';
+  if(!bateria && vc.tipo==='equipo'){ const e = equipos.find(x=>x.id===vc.itemId); if(e) bateria = e.bateria||''; }
+
+  // Montos
+  const anticipo = Number(vc.anticipo)||0;
+  const precioCuotas = Number(vc.precioCuotas)||0;
+  const sugerido = Number(vc.precioSugerido)||0;
+  const cant = Number(vc.cantCuotas)||1;
+  let capital = Math.max(0, sugerido - anticipo);
+  if(capital === 0) capital = precioCuotas; // compatibilidad con ventas viejas
+  const montoInteres = Math.max(0, precioCuotas - capital);
+  const interesPct = (vc.interes!==undefined && vc.interes!=='') ? Number(vc.interes) : (capital>0 ? (montoInteres/capital*100) : 0);
+  const valorCuota = precioCuotas / cant;
+  const capPorCuota = capital / cant;
+  const intPorCuota = montoInteres / cant;
+
+  // Fechas
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fFirma = new Date((vc.fecha||hoyISO()) + 'T12:00:00');
+  const diaFirma = fFirma.getDate();
+  const mesFirma = meses[fFirma.getMonth()];
+  const anioFirma = fFirma.getFullYear();
+  const cronograma = vc.cronograma||[];
+  const fechaFin = cronograma.length ? cronograma[cronograma.length-1].vencimiento : '-';
+  const frecMap = { semanal:'semanales', quincenal:'quincenales', mensual:'mensuales' };
+  const frecTxt = frecMap[vc.frecuencia] || 'mensuales';
+
+  // Cronograma detallado
+  const filas = cronograma.map(c=>
+    `<tr>
+      <td style="text-align:center;">${c.nro}</td>
+      <td>${c.vencimiento||'-'}</td>
+      <td>U$S ${fmt(capPorCuota)}</td>
+      <td>U$S ${fmt(intPorCuota)}</td>
+      <td><b>U$S ${fmt(c.monto!==undefined?c.monto:valorCuota)}</b></td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('printArea').innerHTML = `
+    <div style="max-width:800px; margin:0 auto; text-align:justify; line-height:1.5;">
+      <h3 style="text-align:center;">CONTRATO DE COMPRAVENTA DE BIEN MUEBLE A PLAZOS</h3>
+      <p>En la Ciudad de San Justo, Provincia de Buenos Aires, a los ${diaFirma} días del mes de ${mesFirma} de ${anioFirma}, entre:</p>
+
+      <p><b>POR UNA PARTE (EL VENDEDOR):</b> Adrian Emmanuel Coria, D.N.I. Nº 37.161.283, domiciliado en la calle Almafuerte Nº 1898, San Justo, Provincia de Buenos Aires.</p>
+
+      <p><b>POR OTRA PARTE (EL COMPRADOR):</b> ${compradorNombre}, D.N.I. Nº ${compradorDni}, domiciliado en ${compradorDom}, Teléfono Nº ${compradorTel}.</p>
+
+      <p><b>(En su caso) CODEUDOR SOLIDARIO Y GARANTE:</b> _________________________, D.N.I. Nº ____________, domiciliado en ________________________________, Teléfono Nº ____________.</p>
+
+      <p>Las partes convienen celebrar el presente CONTRATO DE COMPRAVENTA A PLAZOS, el cual se regirá por las siguientes cláusulas:</p>
+
+      <p><b>PRIMERA: OBJETO.</b> El VENDEDOR vende y transfiere al COMPRADOR, y este adquiere en tales condiciones, un teléfono celular usado marca Apple, modelo ${vc.modelo||'____'}${vc.color?', color '+vc.color:''}, con salud / condición de batería al ${bateria?bateria+'%':'____%'} e identificado con el número de IMEI ${vc.imei||'____________'}.</p>
+
+      <p><b>SEGUNDA: ESTADO Y GARANTÍA.</b> El bien se entrega en el estado de conservación y funcionamiento en que se encuentra, manifestando el COMPRADOR su entera conformidad tras haber realizado la revisión técnica correspondiente. El VENDEDOR otorga sobre el equipo una garantía de funcionamiento por el plazo de un (1) mes corrido a partir de la firma del presente contrato. Esta garantía cubre exclusivamente fallas técnicas o de funcionamiento interno del equipo (tales como fallas en placa madre o degradación anómala de la batería).</p>
+      <p><b>Exclusiones de la garantía:</b> Quedan expresamente excluidos de la cobertura, sin excepción: caídas, golpes, aplastamientos, fisuras o roturas en pantalla, tapa trasera o lentes de cámara; ingreso de líquidos, humedad o sulfatación; manipulación, intervención o apertura del equipo por personal técnico no autorizado por el VENDEDOR; hurtos, robos, extravíos o mal uso derivado del desgaste físico por negligencia del usuario.</p>
+
+      <p><b>TERCERA: PRECIO Y FORMA DE PAGO.</b> El COMPRADOR entrega en concepto de ANTICIPO / SEÑA la suma de U$S ${fmt(anticipo)}, la cual se descuenta del precio total. El saldo financiado pactado es de U$S ${fmt(precioCuotas)} (${numALetrasVC(precioCuotas)} DÓLARES ESTADOUNIDENSES), que el COMPRADOR se obliga a abonar en ${cant} cuotas ${frecTxt}, iguales y consecutivas, compuestas por capital e intereses según el siguiente detalle:</p>
+      <p style="margin-left:18px;">
+        Monto total de financiación (Capital): U$S ${fmt(capital)}<br>
+        Intereses de financiación (${(Math.round(interesPct*10)/10)}%): U$S ${fmt(montoInteres)}<br>
+        Monto Total Adeudado (en cuotas): U$S ${fmt(precioCuotas)}<br>
+        Anticipo / Seña entregado: U$S ${fmt(anticipo)}<br>
+        <b>Total de la operación (anticipo + cuotas): U$S ${fmt(anticipo + precioCuotas)}</b>
+      </p>
+      <p>Valor de cada cuota: <b>U$S ${fmt(valorCuota)}</b>. Frecuencia de pago: ${frecTxt}. Fecha de finalización del plan: <b>${fechaFin}</b>.</p>
+      <p>El pago se realizará conforme al siguiente cronograma de vencimientos:</p>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;">
+        <tr>
+          <th style="text-align:center; border-bottom:1px solid #000;">Cuota Nº</th>
+          <th style="text-align:left; border-bottom:1px solid #000;">Fecha de Vencimiento</th>
+          <th style="text-align:left; border-bottom:1px solid #000;">Capital</th>
+          <th style="text-align:left; border-bottom:1px solid #000;">Intereses</th>
+          <th style="text-align:left; border-bottom:1px solid #000;">Cuota Total</th>
+        </tr>
+        ${filas}
+      </table>
+
+      <p style="margin-top:8px;"><b>Medio y moneda de pago:</b> Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
+
+      <p><b>CUARTA: MORA E INTERESES MORATORIOS.</b> La falta de pago de cualquiera de las cuotas a su correspondiente vencimiento constituirá al COMPRADOR en mora de pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna. Transcurrido un período de gracia de tres (3) días corridos desde el vencimiento, se aplicará un interés moratorio del 3% sobre el monto de la cuota adeudada hasta el día de su efectivo pago.</p>
+
+      <p><b>QUINTA: SISTEMA DE GESTIÓN Y BLOQUEO REMOTO POR MOROSIDAD.</b> El COMPRADOR toma conocimiento y acepta expresamente que el dispositivo cuenta (o podrá contar) con un sistema o aplicación de gestión remota de bloqueo. En caso de mora o falta de pago de cualquier cuota a su vencimiento, el VENDEDOR queda plenamente facultado para ejecutar el bloqueo técnico y remoto de las funciones del dispositivo hasta la cancelación de la cuota e intereses devengados. Dicho bloqueo no otorgará derecho al COMPRADOR a reclamo alguno por daños o imposibilidad de uso. El intento de remoción, vulneración o desinstalación de dicha aplicación constituirá incumplimiento grave del contrato habilitando la exigibilidad total e inmediata de la deuda.</p>
+
+      <p><b>SEXTA: CLÁUSULA ACELERATORIA Y CADUCIDAD DE PLAZOS.</b> El incumplimiento en el pago de una (1) o más cuotas facultará al VENDEDOR a declarar vencidos todos los plazos y exigir de forma inmediata el pago total del saldo adeudado con más sus intereses y moras, o bien optar por rescindir el presente contrato y solicitar la restitución inmediata del equipo.</p>
+
+      <p><b>SÉPTIMA: GASTOS Y COSTAS.</b> Todos los gastos, honorarios y costas derivados del cobro judicial o extrajudicial por incumplimiento serán a cargo exclusivo del COMPRADOR y/o del CODEUDOR SOLIDARIO.</p>
+
+      <p><b>OCTAVA: CODEUDOR SOLIDARIO Y FIADOR PRINCIPAL PAGADOR.</b> El Sra./Sr. _________________________ se constituye en CODEUDOR SOLIDARIO, FIADOR Y PRINCIPAL PAGADOR de todas las obligaciones que asume el COMPRADOR en este contrato, renunciando a los beneficios de excusión y división.</p>
+
+      <p><b>NOVENA: JURISDICCIÓN Y DOMICILIOS.</b> Las partes fijan sus domicilios especiales en los indicados en el encabezado y se someten a la jurisdicción de los Tribunales Ordinarios en lo Comercial del Departamento Judicial de La Matanza, renunciando a cualquier otro fuero.</p>
+
+      <p style="margin-top:10px;">En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor y a un solo efecto, en la fecha y lugar indicados.</p>
+
+      <div style="display:flex; justify-content:space-between; margin-top:60px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>ADRIAN EMMANUEL CORIA<br>VENDEDOR<br>D.N.I. 37.161.283</div>
+        <div style="text-align:center; flex:1;">_______________________<br>${compradorNombre}<br>COMPRADOR<br>D.N.I. ${compradorDni}</div>
+      </div>
+      <div style="display:flex; margin-top:50px;">
+        <div style="text-align:center; flex:1;">_______________________<br>CODEUDOR SOLIDARIO<br>D.N.I. ____________</div>
+      </div>
+    </div>`;
+  document.getElementById('printArea').style.position = 'static'; // permite que el contrato pagine en varias hojas
   window.print();
 }
 
