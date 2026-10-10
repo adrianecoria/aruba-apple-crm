@@ -2133,6 +2133,7 @@ function renderVentasCuotas(){
           ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
           : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
         <button class="btn ghost small" onclick="generarContratoCuotas('${vc.id}')">📄 Contrato compraventa</button>
+        <button class="btn ghost small" onclick="generarPagareCuotas('${vc.id}')">📑 Pagaré</button>
         <button class="btn danger small solo-admin" onclick="anularVentaCuotas('${vc.id}')">Anular</button>
       </div></td>`;
     body.appendChild(tr);
@@ -2312,6 +2313,74 @@ function generarContratoCuotas(id){
       </div>
     </div>`;
   document.getElementById('printArea').style.position = 'static'; // permite que el contrato pagine en varias hojas
+  window.print();
+}
+
+function generarPagareCuotas(id){
+  const vc = ventasCuotas.find(x=>x.id===id);
+  if(!vc) return;
+
+  // Datos del librador / deudor (cargados en Clientes)
+  const cli = clientes.find(c=>c.id===vc.clienteId);
+  const deudorNombre = cli ? `${cli.nombre} ${cli.apellido}` : (vc.cliente||'');
+  const deudorDni = cli && cli.dni ? cli.dni : '';
+  const deudorTel = cli && cli.telefono ? cli.telefono : '';
+  const deudorDom = cli && cli.direccion ? cli.direccion : '';
+  const L = (v, n)=> v && String(v).trim() ? v : '_'.repeat(n); // valor o línea en blanco
+
+  // Monto = total adeudado en cuotas (lo financiado)
+  const precioCuotas = Number(vc.precioCuotas)||0;
+  const montoLetras = numALetrasVC(precioCuotas);
+
+  // Fechas
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fEmision = new Date((vc.fecha||hoyISO()) + 'T12:00:00');
+  const emiDia = String(fEmision.getDate()).padStart(2,'0');
+  const emiMes = String(fEmision.getMonth()+1).padStart(2,'0');
+  const emiAnio = fEmision.getFullYear();
+  const cronograma = vc.cronograma||[];
+  const fVtoStr = cronograma.length ? cronograma[cronograma.length-1].vencimiento : (vc.fecha||hoyISO());
+  const fVto = new Date(fVtoStr + 'T12:00:00');
+  const vtoDia = fVto.getDate();
+  const vtoMes = meses[fVto.getMonth()];
+  const vtoAnio = fVto.getFullYear();
+
+  document.getElementById('printArea').innerHTML = `
+    <div style="max-width:800px; margin:0 auto; text-align:justify; line-height:1.55; font-size:14px;">
+      <div style="border:2px solid #000; padding:14px 16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-weight:700;">
+        <span>PAGARÉ</span>
+        <span>Lugar: San Justo, Buenos Aires</span>
+        <span>Monto: U$S ${fmt(precioCuotas)}</span>
+        <span>Fecha de emisión: ${emiDia} / ${emiMes} / ${emiAnio}</span>
+      </div>
+
+      <p style="margin-top:14px;">Por este PAGARÉ, pagaré / pagaremos SIN PROTESTO (Art. 50 Dec. Ley 5965/63), en forma incondicional, el día <b>${vtoDia}</b> de <b>${vtoMes}</b> de <b>${vtoAnio}</b>, a la orden de <b>ADRIAN EMMANUEL CORIA</b> (D.N.I. N° 37.161.283), o a quien sus derechos represente, la cantidad de DÓLARES ESTADOUNIDENSES <b>${montoLetras}</b> (U$S ${fmt(precioCuotas)}), o en su defecto, su equivalente en Pesos Argentinos pagaderos al tipo de cambio de la cotización del Dólar Informal / Blue (tipo vendedor) del día del efectivo pago.</p>
+
+      <p>El pago deberá hacerse libre de todo descuento, impuesto o retención en el domicilio de la calle Almafuerte N° 1898, San Justo, Partido de La Matanza, Provincia de Buenos Aires, o donde el acreedor posteriormente indique.</p>
+
+      <p>La falta de pago a su correspondiente vencimiento constituirá la mora de pleno derecho, devengando un interés punitorio del 3% mensual desde la fecha de vencimiento hasta la de su efectivo pago, sin necesidad de requerimiento, mora o interpelación alguna.</p>
+
+      <p>Para todas las cuestiones derivadas del presente documento, el suscriptor y el garante se someten a la jurisdicción de los Tribunales Ordinarios en lo Comercial del Departamento Judicial de La Matanza, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponderles, declarando como domicilio especial el abajo indicado.</p>
+
+      <div style="border-top:1px solid #000; margin-top:14px; padding-top:10px;">
+        <p style="font-weight:700; margin:0 0 6px;">DATOS DEL LIBRADOR / DEUDOR PRINCIPAL</p>
+        <p style="margin:4px 0;">Nombre y Apellido: ${L(deudorNombre, 50)}</p>
+        <p style="margin:4px 0;">D.N.I. N°: ${L(deudorDni, 20)} &nbsp;&nbsp; Teléfono: ${L(deudorTel, 20)}</p>
+        <p style="margin:4px 0;">Domicilio Real: ${L(deudorDom, 50)}</p>
+        <p style="margin:34px 0 0;">Firma del Librador: _______________________________________</p>
+      </div>
+
+      <div style="border-top:1px solid #000; margin-top:18px; padding-top:10px;">
+        <p style="font-weight:700; margin:0 0 6px;">AVAL / GARANTE SOLIDARIO (como avalista del librador por el importe total)</p>
+        <p style="margin:4px 0;">Nombre y Apellido: __________________________________________________</p>
+        <p style="margin:4px 0;">D.N.I. N°: ____________________ &nbsp;&nbsp; Teléfono: ____________________</p>
+        <p style="margin:4px 0;">Domicilio Real: _____________________________________________________</p>
+        <p style="margin:34px 0 0;">Firma del Avalista: _______________________________________</p>
+      </div>
+
+      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''} — ${vc.cantCuotas} cuotas.</p>
+    </div>`;
+  document.getElementById('printArea').style.position = 'static';
   window.print();
 }
 
