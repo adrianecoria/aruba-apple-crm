@@ -2198,6 +2198,45 @@ function numALetrasVC(num){
   return palabras.replace(/\s+/g,' ').trim();
 }
 
+// Abre el documento (contrato/pagaré) en una ventana nueva, editable y con botón de imprimir/PDF
+function abrirDocumentoEditable(titulo, cuerpoHTML){
+  const w = window.open('', '_blank');
+  if(!w){ alert('El navegador bloqueó la ventana emergente. Permití las ventanas emergentes de este sitio para generar el documento.'); return; }
+  const doc = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${titulo}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',Arial,sans-serif; background:#525659; margin:0; padding:0; color:#000;}
+  .toolbar{position:sticky; top:0; z-index:10; background:#1f2430; padding:10px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .toolbar button{background:#2563eb; color:#fff; border:0; padding:9px 16px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;}
+  .toolbar button.sec{background:#4b5563;}
+  .toolbar .hint{color:#cbd5e1; font-size:13px;}
+  .hoja{background:#fff; max-width:820px; margin:20px auto; padding:48px 56px; box-shadow:0 2px 14px rgba(0,0,0,.4); line-height:1.55;}
+  .hoja:focus{outline:none;}
+  .hoja h3{text-align:center; margin-top:0;}
+  .hoja table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;}
+  .hoja th,.hoja td{border-bottom:1px solid #000; padding:4px 6px;}
+  @media print{
+    body{background:#fff;}
+    .toolbar{display:none !important;}
+    .hoja{box-shadow:none; margin:0; max-width:100%; padding:0;}
+  }
+</style></head>
+<body>
+  <div class="toolbar">
+    <button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="sec" onclick="window.close()">Cerrar</button>
+    <span class="hint">Podés editar cualquier dato haciendo click sobre el texto antes de imprimir.</span>
+  </div>
+  <div class="hoja" contenteditable="true" spellcheck="false">${cuerpoHTML}</div>
+</body></html>`;
+  w.document.open();
+  w.document.write(doc);
+  w.document.close();
+}
+
 function generarContratoCuotas(id){
   const vc = ventasCuotas.find(x=>x.id===id);
   if(!vc) return;
@@ -2248,8 +2287,8 @@ function generarContratoCuotas(id){
     </tr>`
   ).join('');
 
-  document.getElementById('printArea').innerHTML = `
-    <div style="max-width:800px; margin:0 auto; text-align:justify; line-height:1.5;">
+  const cuerpoContrato = `
+    <div style="text-align:justify; line-height:1.5;">
       <h3 style="text-align:center;">CONTRATO DE COMPRAVENTA DE BIEN MUEBLE A PLAZOS</h3>
       <p>En la Ciudad de San Justo, Provincia de Buenos Aires, a los ${diaFirma} días del mes de ${mesFirma} de ${anioFirma}, entre:</p>
 
@@ -2312,8 +2351,7 @@ function generarContratoCuotas(id){
         <div style="text-align:center; flex:1;">_______________________<br>CODEUDOR SOLIDARIO<br>D.N.I. ____________</div>
       </div>
     </div>`;
-  document.getElementById('printArea').style.position = 'static'; // permite que el contrato pagine en varias hojas
-  window.print();
+  abrirDocumentoEditable('Contrato de compraventa' + (compradorNombre ? ' — ' + compradorNombre : ''), cuerpoContrato);
 }
 
 function generarPagareCuotas(id){
@@ -2345,8 +2383,8 @@ function generarPagareCuotas(id){
   const vtoMes = meses[fVto.getMonth()];
   const vtoAnio = fVto.getFullYear();
 
-  document.getElementById('printArea').innerHTML = `
-    <div style="max-width:800px; margin:0 auto; text-align:justify; line-height:1.55; font-size:14px;">
+  const cuerpoPagare = `
+    <div style="text-align:justify; line-height:1.55; font-size:14px;">
       <div style="border:2px solid #000; padding:14px 16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-weight:700;">
         <span>PAGARÉ</span>
         <span>Lugar: San Justo, Buenos Aires</span>
@@ -2380,8 +2418,7 @@ function generarPagareCuotas(id){
 
       <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''} — ${vc.cantCuotas} cuotas.</p>
     </div>`;
-  document.getElementById('printArea').style.position = 'static';
-  window.print();
+  abrirDocumentoEditable('Pagaré' + (deudorNombre ? ' — ' + deudorNombre : ''), cuerpoPagare);
 }
 
 function anularVentaCuotas(id){
