@@ -1709,6 +1709,84 @@ function imprimirFactura(id){
   abrirDocumentoEditable('Recibo de compra' + (cliNombre?(' — '+cliNombre):''), cuerpo);
 }
 
+function facturaConIVA(id){
+  const v = ventas.find(x=>x.id===id);
+  if(!v) return;
+  const cli = clientes.find(c=>c.id===v.clienteId);
+  const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (v.cliente||'Consumidor Final');
+  const cliDni = cli && cli.dni ? cli.dni : '____________';
+  const cliDom = cli && cli.direccion ? cli.direccion : '____________________________';
+  const esEquipo = (v.tipo||'equipo')==='equipo';
+  let bateria = v.bateria || '';
+  if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===(v.itemId||v.equipoId)); if(e) bateria = e.bateria||''; }
+
+  // IVA discriminado (precio de venta considerado IVA incluido)
+  const IVA = 21;
+  const total = Number(v.precioVenta)||0;
+  const neto = total / (1 + IVA/100);
+  const ivaMonto = total - neto;
+  const nro = (v.id||'').slice(-8).toUpperCase();
+
+  const cuerpo = `
+    <div style="line-height:1.45; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div>Razón Social: _______________________________</div>
+          <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
+          <div>Condición frente al IVA: _______________________</div>
+        </div>
+        <div style="width:64px; border-left:1px solid #000; border-right:1px solid #000; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:800;">B</div>
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:18px; font-weight:700;">FACTURA</div>
+          <div>N° _______________________</div>
+          <div>Fecha: ${v.fecha||hoyISO()}</div>
+          <div>CUIT: __________________________</div>
+          <div>Ingresos Brutos: ________________</div>
+          <div>Inicio de actividades: ___ / ___ / ______</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #000; border-top:0; padding:10px 14px;">
+        <div><b>Cliente:</b> ${cliNombre}</div>
+        <div><b>DNI / CUIT:</b> ${cliDni} &nbsp;&nbsp; <b>Domicilio:</b> ${cliDom}</div>
+        <div><b>Condición frente al IVA:</b> Consumidor Final</div>
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:14px; font-size:13px;">
+        <tr>
+          <th style="text-align:left; border:1px solid #000; padding:6px;">Descripción</th>
+          <th style="text-align:center; border:1px solid #000; padding:6px;">Cant.</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">P. Unit. (neto)</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.color?' · '+v.color:''}${esEquipo&&v.imei?' · IMEI '+v.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+        </tr>
+      </table>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <table style="border-collapse:collapse; font-size:14px; min-width:280px;">
+          <tr><td style="padding:4px 8px;">Importe Neto Gravado:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(neto)}</td></tr>
+          <tr><td style="padding:4px 8px;">IVA ${IVA}%:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(ivaMonto)}</td></tr>
+          <tr><td style="padding:6px 8px; font-weight:800; border-top:2px solid #000; font-size:17px;">IMPORTE TOTAL:</td><td style="padding:6px 8px; text-align:right; font-weight:800; border-top:2px solid #000; font-size:17px;">U$S ${fmt(total)}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
+        <div>CAE N°: _______________________</div>
+        <div>Vto. CAE: ___ / ___ / ______</div>
+      </div>
+
+      <p style="font-size:11px; color:#777; margin-top:20px;">Documento no válido como factura fiscal hasta su emisión por los canales habilitados de AFIP/ARCA. Datos de la empresa a completar.</p>
+    </div>`;
+  abrirDocumentoEditable('Factura' + (cliNombre?(' — '+cliNombre):''), cuerpo);
+}
+
 function borrarVenta(id){
   if(!esAdmin()) return;
   if(!confirm('¿Anular esta venta? El artículo vuelve a quedar disponible.')) return;
@@ -1862,6 +1940,7 @@ function renderVentas(){
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
           <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
+          <button class="btn ghost small" onclick="facturaConIVA('${v.id}')">📄 Factura</button>
           <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
         </div></td>`;
     }
