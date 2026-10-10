@@ -743,6 +743,19 @@ body.rol-usuario .solo-admin{display:none !important;}
     </div>
 
     <div class="card">
+      <h2>Cierre de caja</h2>
+      <p class="note" style="margin-top:0;">Generá e imprimí el reporte de ventas y movimientos del período. Al cerrar la caja podés reiniciar a 0 los totales de esta sección — no se borran ni se modifican Stock, Ventas, Clientes ni ninguna otra sección.</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn ghost" onclick="reporteCaja('dia')">📅 Reporte diario</button>
+        <button class="btn ghost" onclick="reporteCaja('semana')">🗓️ Reporte semanal</button>
+        <button class="btn ghost" onclick="reporteCaja('mes')">📆 Reporte mensual</button>
+        <button class="btn ghost" onclick="reporteCaja('anio')">📈 Reporte anual</button>
+        <button class="btn" onclick="cerrarCaja()">🔒 Cerrar caja y reiniciar a 0</button>
+      </div>
+      <div class="note" id="cajaUltimoCierre" style="display:none;"></div>
+    </div>
+
+    <div class="card">
       <h2>Agregar movimiento</h2>
       <div class="form-grid">
         <div class="field"><label>Tipo</label><select id="mTipo"><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select></div>
@@ -2701,6 +2714,7 @@ function cargarClientesSelectVenta(){
 
 /* ---------- CAJA ---------- */
 let movimientos = ls_get('caja_movimientos', []);
+let cajaCierre = ls_get('caja_cierre', { ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, fecha:null, ts:0 });
 
 function agregarMovimiento(){
   const descripcion = document.getElementById('mDescripcion').value.trim();
@@ -2708,7 +2722,7 @@ function agregarMovimiento(){
   if(!descripcion || !monto){ alert('Completá la descripción y el monto.'); return; }
   movimientos.push({
     id: uid(), tipo: document.getElementById('mTipo').value, descripcion, monto,
-    fecha: document.getElementById('mFecha').value || hoyISO()
+    fecha: document.getElementById('mFecha').value || hoyISO(), creado: Date.now()
   });
   syncGuardar('caja_movimientos', movimientos);
   document.getElementById('mDescripcion').value=''; document.getElementById('mMonto').value='';
@@ -2722,11 +2736,29 @@ function borrarMovimiento(id){
   renderCaja();
 }
 
+// Totales "crudos" de caja (acumulado histórico completo), antes de aplicar el último cierre
+function calcularTotalesCajaRaw(){
+  const totalVentas = ventas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0)
+    + ventasMensajesContables().reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
+  const totalIngresos = movimientos.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(Number(m.monto)||0),0);
+  const totalGastos = movimientos.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+(Number(m.monto)||0),0);
+  const comisionesTotales = comisionesDelPeriodo(()=>true);
+  const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
+  const cuotasCobradas = (ventasCuotas||[]).reduce((s,vc)=>
+    s + (vc.cronograma||[]).filter(c=>c.pagada).reduce((ss,c)=>ss+(Number(c.monto)||0),0), 0);
+  return { totalVentas, totalIngresos, totalGastos, comisionesTotales, consignacionesPagadas, cuotasCobradas };
+}
+
 function renderCaja(){
   document.getElementById('mFecha').value = document.getElementById('mFecha').value || hoyISO();
+  const off = cajaCierre || {};
+  const desdeTs = off.ts || 0;
   const body = document.getElementById('movimientosBody');
   body.innerHTML = '';
-  const ordenados = [...movimientos].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  // Solo se muestran los movimientos cargados desde el último cierre
+  const ordenados = [...movimientos]
+    .filter(m=> desdeTs ? ((m.creado||0) > desdeTs) : true)
+    .sort((a,b)=>b.fecha.localeCompare(a.fecha));
   document.getElementById('movimientosEmpty').style.display = ordenados.length ? 'none' : 'block';
   ordenados.forEach(m=>{
     const tr = document.createElement('tr');
@@ -2739,22 +2771,24 @@ function renderCaja(){
     body.appendChild(tr);
   });
 
-  const totalVentas = ventas.reduce((s,v)=>s+(Number(v.precioVenta)||0),0)
-    + ventasMensajesContables().reduce((s,v)=>s+(Number(v.precioVenta)||0),0);
-  const totalIngresos = movimientos.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(Number(m.monto)||0),0);
-  const totalGastos = movimientos.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+(Number(m.monto)||0),0);
-  // Del balance en caja salen: las comisiones a los vendedores y el dinero de
-  // consignaciones ya pagadas a su dueño.
-  const comisionesTotales = comisionesDelPeriodo(()=>true);
-  const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
-  // Cuotas ya cobradas de ventas en cuotas: cada pago entra como dinero a la caja
-  const cuotasCobradas = (ventasCuotas||[]).reduce((s,vc)=>
-    s + (vc.cronograma||[]).filter(c=>c.pagada).reduce((ss,c)=>ss+(Number(c.monto)||0),0), 0);
+  const raw = calcularTotalesCajaRaw();
+  // Se descuenta la línea base guardada en el último cierre (reinicio a 0 sin borrar datos)
+  const totalVentas = raw.totalVentas - (off.ventas||0);
+  const totalIngresos = raw.totalIngresos - (off.ingresos||0);
+  const totalGastos = raw.totalGastos - (off.gastos||0);
+  const comisionesTotales = raw.comisionesTotales - (off.comisiones||0);
+  const consignacionesPagadas = raw.consignacionesPagadas - (off.consignaciones||0);
+  const cuotasCobradas = raw.cuotasCobradas - (off.cuotas||0);
   const balance = totalVentas + totalIngresos - totalGastos - comisionesTotales - consignacionesPagadas + cuotasCobradas;
   document.getElementById('cajaVentas').textContent = '$ '+fmt(totalVentas);
   document.getElementById('cajaIngresos').textContent = '$ '+fmt(totalIngresos);
   document.getElementById('cajaGastos').textContent = '$ '+fmt(totalGastos);
   document.getElementById('cajaBalance').textContent = '$ '+fmt(balance);
+  const elUltCierre = document.getElementById('cajaUltimoCierre');
+  if(elUltCierre){
+    if(off.fecha){ elUltCierre.style.display='block'; elUltCierre.textContent = `Mostrando los movimientos desde el último cierre (${off.fecha}).`; }
+    else { elUltCierre.style.display='none'; }
+  }
   const notaConsig = document.getElementById('cajaConsigNota');
   if(notaConsig){
     const notas = [];
@@ -2774,6 +2808,127 @@ function renderCaja(){
   const elBalanceNeto = document.getElementById('cajaBalanceNeto');
   elBalanceNeto.textContent = (balanceNeto>=0?'+$ ':'-$ ')+fmt(Math.abs(balanceNeto));
   elBalanceNeto.style.color = balanceNeto>=0 ? 'var(--green)' : 'var(--red)';
+}
+
+// Genera el reporte imprimible de caja para el período indicado ('dia','semana','mes','anio','cierre')
+function reporteCaja(periodo){
+  const hoy = hoyISO();
+  let desde, hasta = hoy, label;
+  if(periodo==='dia'){ desde = hoy; label = 'Cierre diario'; }
+  else if(periodo==='semana'){ const d = new Date(hoy+'T12:00:00'); d.setDate(d.getDate()-6); desde = d.toISOString().slice(0,10); label = 'Cierre semanal (últimos 7 días)'; }
+  else if(periodo==='mes'){ desde = hoy.slice(0,7)+'-01'; label = 'Cierre mensual'; }
+  else if(periodo==='anio'){ desde = hoy.slice(0,4)+'-01-01'; label = 'Cierre anual'; }
+  else { desde = (cajaCierre && cajaCierre.fecha) ? cajaCierre.fecha : '0000-01-01'; label = 'Cierre de caja (desde el último cierre)'; }
+  const enRango = f => !!f && f >= desde && f <= hasta;
+
+  // Ventas del período (CRM + Mensajes)
+  const ventasCRM = ventas.filter(v=>enRango(v.fecha)).map(v=>({
+    fecha:v.fecha, modelo:`${v.modelo||'-'}${v.color?' · '+v.color:''}`, imei:v.imei||'-',
+    cliente:v.cliente||'Consumidor final', monto:Number(v.precioVenta)||0, origen:'Venta'
+  }));
+  const ventasMsg = ventasMensajesContables().filter(v=>enRango(v.fecha)).map(v=>({
+    fecha:v.fecha, modelo:v.modelo||'Venta por Mensajes', imei:'-',
+    cliente:'-', monto:Number(v.precioVenta)||0, origen:'Mensajes'
+  }));
+  const ventasPeriodo = [...ventasCRM, ...ventasMsg].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  // Cuotas cobradas en el período
+  const cuotasPeriodo = [];
+  (ventasCuotas||[]).forEach(vc=>{
+    (vc.cronograma||[]).forEach(c=>{
+      if(c.pagada && enRango(c.fechaPago)){
+        cuotasPeriodo.push({ fecha:c.fechaPago, modelo:vc.modelo||'-', cliente:vc.cliente||'-', nro:c.nro, cant:vc.cantCuotas, monto:Number(c.monto)||0 });
+      }
+    });
+  });
+  cuotasPeriodo.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  // Movimientos (ingresos/gastos) del período
+  const movPeriodo = movimientos.filter(m=>enRango(m.fecha)).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  const totVentas = ventasPeriodo.reduce((s,v)=>s+v.monto,0);
+  const totCuotas = cuotasPeriodo.reduce((s,c)=>s+c.monto,0);
+  const totIngresos = movPeriodo.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(Number(m.monto)||0),0);
+  const totGastos = movPeriodo.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+(Number(m.monto)||0),0);
+  const comisiones = comisionesDelPeriodo(enRango);
+  const neto = totVentas + totCuotas + totIngresos - totGastos - comisiones;
+
+  const filasVentas = ventasPeriodo.length
+    ? ventasPeriodo.map(v=>`<tr><td>${v.fecha}</td><td>${v.modelo}</td><td>${v.imei}</td><td>${v.cliente}</td><td style="text-align:right;">U$S ${fmt(v.monto)}</td></tr>`).join('')
+    : `<tr><td colspan="5" style="text-align:center; color:#777;">Sin ventas en el período.</td></tr>`;
+  const filasCuotas = cuotasPeriodo.length
+    ? cuotasPeriodo.map(c=>`<tr><td>${c.fecha}</td><td>${c.modelo}</td><td>${c.cliente}</td><td style="text-align:center;">${c.nro}/${c.cant}</td><td style="text-align:right;">U$S ${fmt(c.monto)}</td></tr>`).join('')
+    : '';
+  const filasMov = movPeriodo.length
+    ? movPeriodo.map(m=>`<tr><td>${m.fecha}</td><td>${m.tipo}</td><td>${m.descripcion||'-'}</td><td style="text-align:right;">${m.tipo==='ingreso'?'+':'-'}U$S ${fmt(m.monto)}</td></tr>`).join('')
+    : '';
+
+  const cuerpo = `
+    <div style="line-height:1.45; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div><div style="font-size:22px; font-weight:800;">ARUBA APPLE</div><div style="font-size:13px; color:#444;">Reporte de caja</div></div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:700;">${label}</div>
+          <div style="font-size:13px;">Período: ${desde} a ${hasta}</div>
+          <div style="font-size:13px;">Emitido: ${hoy}</div>
+        </div>
+      </div>
+
+      <h3 style="margin:16px 0 4px;">Ventas del período (${ventasPeriodo.length})</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <tr><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Fecha</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Modelo</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">IMEI</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Cliente</th><th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Monto</th></tr>
+        ${filasVentas}
+        <tr><td colspan="4" style="text-align:right; font-weight:700; padding:6px; border-top:1px solid #000;">Subtotal ventas:</td><td style="text-align:right; font-weight:700; padding:6px; border-top:1px solid #000;">U$S ${fmt(totVentas)}</td></tr>
+      </table>
+
+      ${cuotasPeriodo.length?`
+      <h3 style="margin:16px 0 4px;">Cuotas cobradas en el período (${cuotasPeriodo.length})</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <tr><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Fecha</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Modelo</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Cliente</th><th style="text-align:center; border-bottom:1px solid #000; padding:4px 6px;">Cuota</th><th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Monto</th></tr>
+        ${filasCuotas}
+        <tr><td colspan="4" style="text-align:right; font-weight:700; padding:6px; border-top:1px solid #000;">Subtotal cobranzas:</td><td style="text-align:right; font-weight:700; padding:6px; border-top:1px solid #000;">U$S ${fmt(totCuotas)}</td></tr>
+      </table>`:''}
+
+      ${movPeriodo.length?`
+      <h3 style="margin:16px 0 4px;">Ingresos y gastos del período</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <tr><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Fecha</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Tipo</th><th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th><th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Monto</th></tr>
+        ${filasMov}
+      </table>`:''}
+
+      <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+        <table style="border-collapse:collapse; font-size:14px; min-width:320px;">
+          <tr><td style="padding:3px 8px;">Ventas:</td><td style="padding:3px 8px; text-align:right;">U$S ${fmt(totVentas)}</td></tr>
+          <tr><td style="padding:3px 8px;">Cobranzas de cuotas:</td><td style="padding:3px 8px; text-align:right;">U$S ${fmt(totCuotas)}</td></tr>
+          <tr><td style="padding:3px 8px;">Ingresos extra:</td><td style="padding:3px 8px; text-align:right;">U$S ${fmt(totIngresos)}</td></tr>
+          <tr><td style="padding:3px 8px;">Gastos:</td><td style="padding:3px 8px; text-align:right;">- U$S ${fmt(totGastos)}</td></tr>
+          <tr><td style="padding:3px 8px;">Comisiones a vendedores:</td><td style="padding:3px 8px; text-align:right;">- U$S ${fmt(comisiones)}</td></tr>
+          <tr><td style="padding:6px 8px; font-weight:800; border-top:2px solid #000; font-size:17px;">NETO DEL PERÍODO:</td><td style="padding:6px 8px; text-align:right; font-weight:800; border-top:2px solid #000; font-size:17px;">U$S ${fmt(neto)}</td></tr>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Responsable de caja</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Firma</div>
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Reporte de caja — ' + label, cuerpo);
+}
+
+// Cierra la caja: imprime el reporte desde el último cierre y reinicia a 0 los totales de la sección Caja
+function cerrarCaja(){
+  if(!confirm('Se va a generar el reporte desde el último cierre y luego se REINICIARÁN A 0 los totales de la sección Caja.\n\nNo se borran ni modifican Stock, Ventas, Clientes ni ninguna otra sección.\n\n¿Continuar?')) return;
+  reporteCaja('cierre');
+  const t = calcularTotalesCajaRaw();
+  cajaCierre = {
+    ventas: t.totalVentas, ingresos: t.totalIngresos, gastos: t.totalGastos,
+    comisiones: t.comisionesTotales, consignaciones: t.consignacionesPagadas, cuotas: t.cuotasCobradas,
+    fecha: hoyISO(), ts: Date.now()
+  };
+  syncGuardar('caja_cierre', cajaCierre);
+  registrarActividad(`Cierre de caja realizado — totales de Caja reiniciados a 0 (${hoyISO()})`);
+  renderCaja();
+  alert('Caja cerrada. Los totales de la sección Caja se reiniciaron a 0. El resto de las secciones no se modificó.');
 }
 
 /* ---------- PROVEEDORES ---------- */
@@ -3302,7 +3457,7 @@ function mostrarEstadoConexion(){
 }
 
 /* ---------- SINCRONIZACIÓN EN LA NUBE (Supabase) ---------- */
-const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
+const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','caja_cierre','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
 
 function syncGuardar(clave, valor){
   ls_set(clave, valor);
@@ -3342,6 +3497,8 @@ async function sincronizarDesdeNube(mostrarCartel){
 
     if('caja_movimientos' in mapa){ movimientos = mapa.caja_movimientos; ls_set('caja_movimientos', movimientos); }
     else if(movimientos && movimientos.length){ syncGuardar('caja_movimientos', movimientos); }
+
+    if('caja_cierre' in mapa){ cajaCierre = mapa.caja_cierre; ls_set('caja_cierre', cajaCierre); }
 
     if('proveedores' in mapa){ proveedores = mapa.proveedores; ls_set('proveedores', proveedores); }
     else if(proveedores && proveedores.length){ syncGuardar('proveedores', proveedores); }
@@ -3924,7 +4081,7 @@ function renderActividad(){
 async function borrarTodosLosDatos(){
   const texto = document.getElementById('confirmarBorrado').value.trim().toUpperCase();
   if(texto!=='BORRAR'){ alert('Escribí BORRAR (en mayúsculas) en el campo para confirmar.'); return; }
-  const clavesABorrar = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','proveedores','consignaciones','reparaciones','usuarios','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','dolar_blue'];
+  const clavesABorrar = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','caja_cierre','proveedores','consignaciones','reparaciones','usuarios','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','dolar_blue'];
   try{
     clavesABorrar.forEach(k=> localStorage.removeItem(k));
   }catch(e){ alert('No se pudo borrar: '+e.message); return; }
@@ -3936,6 +4093,7 @@ async function borrarTodosLosDatos(){
   equipos=[]; accesorios=[]; ventas=[]; ventasMensajes=[]; clientes=[]; movimientos=[]; proveedores=[];
   consignaciones=[]; reparaciones=[]; usuarios=[]; comercios=[]; empleados=[];
   pagosSueldo=[]; pagosVendedor=[]; actividad=[];
+  cajaCierre={ ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, fecha:null, ts:0 };
   alert('Todos los datos fueron borrados. La página se va a recargar.');
   location.reload();
 }
