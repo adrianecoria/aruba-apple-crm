@@ -2198,6 +2198,14 @@ function numALetrasVC(num){
   return palabras.replace(/\s+/g,' ').trim();
 }
 
+// Tasa de interés punitorio mensual según la cantidad de cuotas
+function tasaPunitoriaVC(cant){
+  cant = Number(cant)||0;
+  if(cant <= 3) return 6;
+  if(cant <= 6) return 5;
+  return 4; // 9 y 12 cuotas
+}
+
 // Abre el documento (contrato/pagaré) en una ventana nueva, editable y con botón de imprimir/PDF
 function abrirDocumentoEditable(titulo, cuerpoHTML){
   const w = window.open('', '_blank');
@@ -2329,7 +2337,7 @@ function generarContratoCuotas(id){
 
       <p style="margin-top:8px;"><b>Medio y moneda de pago:</b> Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
 
-      <p><b>CUARTA: MORA E INTERESES MORATORIOS.</b> La falta de pago de cualquiera de las cuotas a su correspondiente vencimiento constituirá al COMPRADOR en mora de pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna. Transcurrido un período de gracia de tres (3) días corridos desde el vencimiento, se aplicará un interés moratorio del 3% sobre el monto de la cuota adeudada hasta el día de su efectivo pago.</p>
+      <p><b>CUARTA: MORA E INTERESES MORATORIOS.</b> La falta de pago de cualquiera de las cuotas a su correspondiente vencimiento constituirá al COMPRADOR en mora de pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna. Transcurrido un período de gracia de tres (3) días corridos desde el vencimiento, se aplicará un interés punitorio del ${tasaPunitoriaVC(cant)}% mensual sobre el monto de la cuota adeudada hasta el día de su efectivo pago.</p>
 
       <p><b>QUINTA: SISTEMA DE GESTIÓN Y BLOQUEO REMOTO POR MOROSIDAD.</b> El COMPRADOR toma conocimiento y acepta expresamente que el dispositivo cuenta (o podrá contar) con un sistema o aplicación de gestión remota de bloqueo. En caso de mora o falta de pago de cualquier cuota a su vencimiento, el VENDEDOR queda plenamente facultado para ejecutar el bloqueo técnico y remoto de las funciones del dispositivo hasta la cancelación de la cuota e intereses devengados. Dicho bloqueo no otorgará derecho al COMPRADOR a reclamo alguno por daños o imposibilidad de uso. El intento de remoción, vulneración o desinstalación de dicha aplicación constituirá incumplimiento grave del contrato habilitando la exigibilidad total e inmediata de la deuda.</p>
 
@@ -2396,7 +2404,7 @@ function generarPagareCuotas(id){
 
       <p>El pago deberá hacerse libre de todo descuento, impuesto o retención en el domicilio de la calle Almafuerte N° 1898, San Justo, Partido de La Matanza, Provincia de Buenos Aires, o donde el acreedor posteriormente indique.</p>
 
-      <p>La falta de pago a su correspondiente vencimiento constituirá la mora de pleno derecho, devengando un interés punitorio del 3% mensual desde la fecha de vencimiento hasta la de su efectivo pago, sin necesidad de requerimiento, mora o interpelación alguna.</p>
+      <p>La falta de pago a su correspondiente vencimiento constituirá la mora de pleno derecho, devengando un interés punitorio del ${tasaPunitoriaVC(vc.cantCuotas)}% mensual desde la fecha de vencimiento hasta la de su efectivo pago, sin necesidad de requerimiento, mora o interpelación alguna.</p>
 
       <p>Para todas las cuestiones derivadas del presente documento, el suscriptor y el garante se someten a la jurisdicción de los Tribunales Ordinarios en lo Comercial del Departamento Judicial de La Matanza, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponderles, declarando como domicilio especial el abajo indicado.</p>
 
