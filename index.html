@@ -1640,13 +1640,73 @@ function filtrarVentas(f){
 
 function imprimirFactura(id){
   const v = ventas.find(x=>x.id===id);
-  document.getElementById('printArea').innerHTML = `
-    <h3>Factura de venta</h3>
-    <p>Fecha: ${v.fecha}</p>
-    <p>Cliente: ${v.cliente||'-'}</p>
-    <table><tr><td>${v.modelo}${v.color?' · '+v.color:''}${v.imei?' · IMEI '+v.imei:''}</td><td>USD ${fmt(v.precioVenta)}</td></tr></table>
-    <p style="font-size:22px; font-weight:700; margin-top:12px;">Total: USD ${fmt(v.precioVenta)}</p>`;
-  window.print();
+  if(!v) return;
+  const cli = clientes.find(c=>c.id===v.clienteId);
+  const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (v.cliente||'Consumidor final');
+  const cliDni = cli && cli.dni ? cli.dni : '-';
+  const cliTel = cli && cli.telefono ? cli.telefono : '-';
+  const cliDom = cli && cli.direccion ? cli.direccion : '-';
+  const vendedor = usuarios.find(u=>u.id===v.vendedorId);
+  const vendedorTxt = vendedor ? `${vendedor.nombre} ${vendedor.apellido}` : '-';
+  const sucursal = comercios.find(c=>c.id===v.comercioId);
+  const sucursalTxt = sucursal ? sucursal.nombre : '-';
+  const esEquipo = (v.tipo||'equipo')==='equipo';
+  let bateria = v.bateria || '';
+  if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===(v.itemId||v.equipoId)); if(e) bateria = e.bateria||''; }
+  const total = Number(v.precioVenta)||0;
+  const nro = (v.id||'').slice(-6).toUpperCase();
+
+  const cuerpo = `
+    <div style="line-height:1.5;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:700;">RECIBO DE COMPRA</div>
+          <div style="font-size:13px;">N° ${nro}</div>
+          <div style="font-size:13px;">Fecha: ${v.fecha||hoyISO()}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL CLIENTE</div>
+        <div>Nombre y Apellido: ${cliNombre}</div>
+        <div>D.N.I.: ${cliDni} &nbsp;&nbsp; Teléfono: ${cliTel}</div>
+        <div>Domicilio: ${cliDom}</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DETALLE DE LA COMPRA</div>
+        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th>
+            <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
+          </tr>
+          <tr>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.color?' · '+v.color:''}${esEquipo&&v.imei?'<br>IMEI: '+v.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(total)}</td>
+          </tr>
+        </table>
+        <div style="text-align:right; font-size:20px; font-weight:800; margin-top:10px;">TOTAL: U$S ${fmt(total)}</div>
+        <div style="text-align:right; font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
+      </div>
+
+      <div style="margin-top:12px; font-size:13px;">
+        Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
+        Forma de pago: Contado.
+      </div>
+
+      ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
+
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA APPLE</p>
+    </div>`;
+  abrirDocumentoEditable('Recibo de compra' + (cliNombre?(' — '+cliNombre):''), cuerpo);
 }
 
 function borrarVenta(id){
@@ -1801,7 +1861,7 @@ function renderVentas(){
         <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)}</td>
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
-          <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">Factura</button>
+          <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
           <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
         </div></td>`;
     }
