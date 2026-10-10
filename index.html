@@ -739,7 +739,7 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="card card-neto">
       <h2>Balance total neto</h2>
-      <div class="stat profit"><label>Ganancia neta mensual (ganancia del mes − gastos del mes)</label><div class="val" id="cajaBalanceNeto" style="font-size:30px;">$ 0</div></div>
+      <div class="stat profit"><label>Ganancia neta desde el último cierre (ganancia − gastos)</label><div class="val" id="cajaBalanceNeto" style="font-size:30px;">$ 0</div></div>
     </div>
 
     <div class="card">
@@ -2714,7 +2714,7 @@ function cargarClientesSelectVenta(){
 
 /* ---------- CAJA ---------- */
 let movimientos = ls_get('caja_movimientos', []);
-let cajaCierre = ls_get('caja_cierre', { ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, fecha:null, ts:0 });
+let cajaCierre = ls_get('caja_cierre', { ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, balanceNetoRaw:0, fecha:null, ts:0 });
 
 function agregarMovimiento(){
   const descripcion = document.getElementById('mDescripcion').value.trim();
@@ -2746,7 +2746,13 @@ function calcularTotalesCajaRaw(){
   const consignacionesPagadas = consignaciones.filter(c=>c.estado==='pagado').reduce((s,c)=>s+(Number(c.deuda)||0),0);
   const cuotasCobradas = (ventasCuotas||[]).reduce((s,vc)=>
     s + (vc.cronograma||[]).filter(c=>c.pagada).reduce((ss,c)=>ss+(Number(c.monto)||0),0), 0);
-  return { totalVentas, totalIngresos, totalGastos, comisionesTotales, consignacionesPagadas, cuotasCobradas };
+  // Ganancia neta acumulada (ventas + mensajes): ganancia bruta − comisiones
+  const contables = ventas.concat(ventasMensajesContables());
+  const gananciaBruta = contables.reduce((s,v)=>s+((Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)),0);
+  const gananciaNeta = gananciaBruta - comisionesTotales;
+  // Balance neto acumulado (para reiniciarse con el cierre): ganancia neta − gastos
+  const balanceNetoRaw = gananciaNeta - totalGastos;
+  return { totalVentas, totalIngresos, totalGastos, comisionesTotales, consignacionesPagadas, cuotasCobradas, gananciaNeta, balanceNetoRaw };
 }
 
 function renderCaja(){
@@ -2801,10 +2807,8 @@ function renderCaja(){
     else { notaConsig.style.display='none'; }
   }
 
-  const mesActual = hoyISO().slice(0,7);
-  const gananciaMes = totalesVentas('mes').ganancia;
-  const gastosMes = movimientos.filter(m=>m.tipo==='gasto' && m.fecha.slice(0,7)===mesActual).reduce((s,m)=>s+(Number(m.monto)||0),0);
-  const balanceNeto = gananciaMes - gastosMes;
+  // Balance neto desde el último cierre (se reinicia a 0 al cerrar la caja)
+  const balanceNeto = raw.balanceNetoRaw - (off.balanceNetoRaw||0);
   const elBalanceNeto = document.getElementById('cajaBalanceNeto');
   elBalanceNeto.textContent = (balanceNeto>=0?'+$ ':'-$ ')+fmt(Math.abs(balanceNeto));
   elBalanceNeto.style.color = balanceNeto>=0 ? 'var(--green)' : 'var(--red)';
@@ -2923,6 +2927,7 @@ function cerrarCaja(){
   cajaCierre = {
     ventas: t.totalVentas, ingresos: t.totalIngresos, gastos: t.totalGastos,
     comisiones: t.comisionesTotales, consignaciones: t.consignacionesPagadas, cuotas: t.cuotasCobradas,
+    balanceNetoRaw: t.balanceNetoRaw,
     fecha: hoyISO(), ts: Date.now()
   };
   syncGuardar('caja_cierre', cajaCierre);
@@ -4093,7 +4098,7 @@ async function borrarTodosLosDatos(){
   equipos=[]; accesorios=[]; ventas=[]; ventasMensajes=[]; clientes=[]; movimientos=[]; proveedores=[];
   consignaciones=[]; reparaciones=[]; usuarios=[]; comercios=[]; empleados=[];
   pagosSueldo=[]; pagosVendedor=[]; actividad=[];
-  cajaCierre={ ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, fecha:null, ts:0 };
+  cajaCierre={ ventas:0, ingresos:0, gastos:0, comisiones:0, consignaciones:0, cuotas:0, balanceNetoRaw:0, fecha:null, ts:0 };
   alert('Todos los datos fueron borrados. La página se va a recargar.');
   location.reload();
 }
