@@ -518,6 +518,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="form-row">
           <div class="field"><label>Modelo</label><select id="eModelo"></select></div>
           <div class="field"><label>Proveedor</label><select id="eProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
+          <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
           <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos"></div>
@@ -539,7 +540,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <input type="checkbox" id="mostrarVendidosEquipos" onchange="renderEquipos()" style="width:auto;"> Mostrar equipos ya vendidos
         </label>
         <div style="overflow-x:auto;"><table>
-          <thead><tr><th>Modelo</th><th>Proveedor</th><th>Color</th><th>Batería</th><th>IMEI</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
+          <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>Batería</th><th>IMEI</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
           <tbody id="equiposBody"></tbody>
         </table></div>
         <div class="empty" id="equiposEmpty" style="display:none;">Todavía no cargaste equipos.</div>
@@ -1328,6 +1329,7 @@ function agregarEquipo(){
   equipos.push({
     id: uid(), modelo: document.getElementById('eModelo').value,
     proveedorId: document.getElementById('eProveedor').value,
+    clienteVendedorId: document.getElementById('eCliente').value,
     color: document.getElementById('eColor').value.trim(),
     bateria: document.getElementById('eBateria').value, imei,
     compra: document.getElementById('eCompra').value,
@@ -1337,7 +1339,23 @@ function agregarEquipo(){
   });
   syncGuardar('stock_equipos', equipos);
   ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eCliente').value = '';
   renderEquipos();
+}
+
+// Nombre del cliente al que se le compró el equipo (origen del usado)
+function nombreClienteStock(id){
+  const c = clientes.find(x=>x.id===id);
+  return c ? `${c.nombre} ${c.apellido}` : '-';
+}
+// Llena el desplegable "Cliente" del alta de equipos conservando la selección
+function cargarSelectClienteStock(){
+  const sel = document.getElementById('eCliente');
+  if(!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Sin especificar</option>';
+  clientes.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=`${c.nombre} ${c.apellido}`; sel.appendChild(o); });
+  sel.value = actual;
 }
 function borrarEquipo(id){
   if(!esAdmin()) return;
@@ -1353,6 +1371,7 @@ function editarEquipo(id){
   row.innerHTML = `
     <td data-label="Modelo"><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></td>
     <td data-label="Proveedor"><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
+    <td data-label="Cliente"><select class="ed-cliente"><option value="">Sin especificar</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===e.clienteVendedorId?'selected':''}>${c.nombre} ${c.apellido}</option>`).join('')}</select></td>
     <td data-label="Color"><input class="ed-color" value="${e.color}"></td>
     <td data-label="Batería"><input class="ed-bateria" type="number" value="${e.bateria}"></td>
     <td data-label="IMEI"><input class="ed-imei" value="${e.imei}"></td>
@@ -1376,6 +1395,7 @@ function guardarEdicion(id){
   const e = equipos.find(x=>x.id===id);
   e.modelo = row.querySelector('.ed-modelo').value;
   e.proveedorId = row.querySelector('.ed-proveedor').value;
+  e.clienteVendedorId = row.querySelector('.ed-cliente').value;
   e.color = row.querySelector('.ed-color').value.trim();
   e.bateria = row.querySelector('.ed-bateria').value;
   e.imei = row.querySelector('.ed-imei').value.trim();
@@ -1406,6 +1426,7 @@ function renderEquipos(){
     tr.innerHTML = `
       <td data-label="Modelo">${e.modelo}</td>
       <td data-label="Proveedor">${nombreProveedor(e.proveedorId)}</td>
+      <td data-label="Cliente">${nombreClienteStock(e.clienteVendedorId)}</td>
       <td data-label="Color">${e.color||'-'}</td>
       <td data-label="Batería">${e.bateria?e.bateria+'%':'-'}</td>
       <td data-label="IMEI">${e.imei}</td>
@@ -1418,10 +1439,141 @@ function renderEquipos(){
         <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">Etiqueta</button>
         <button class="btn ghost small" onclick="editarEquipo('${e.id}')">Editar</button>
         <button class="btn danger small" onclick="borrarEquipo('${e.id}')">Borrar</button>
+        ${e.clienteVendedorId ? `
+        <button class="btn ghost small" onclick="generarComprobanteCompraUsado('${e.id}')">📄 Comp. compra usado</button>
+        <button class="btn ghost small" onclick="generarReciboPago('${e.id}')">💵 Recibo de pago</button>
+        <button class="btn ghost small" onclick="generarPlanillaPermuta('${e.id}')">🔁 Planilla permuta</button>` : ''}
       </div></td>`;
     body.appendChild(tr);
   });
+  cargarSelectClienteStock();
   renderStockResumen();
+}
+
+// Comprobante de compra de bienes usados a consumidor final (equipo comprado a un cliente)
+function generarComprobanteCompraUsado(id){
+  const e = equipos.find(x=>x.id===id);
+  if(!e) return;
+  const c = clientes.find(x=>x.id===e.clienteVendedorId);
+  const vendNombre = c ? `${c.nombre} ${c.apellido}` : '____________________________';
+  const vendDni = c && c.dni ? c.dni : '____________';
+  const vendDom = c && c.direccion ? c.direccion : '________________________________';
+  const vendTel = c && c.telefono ? c.telefono : '____________';
+  const monto = Number(e.compra)||0;
+  const nro = (e.id||'').slice(-8).toUpperCase();
+  const cuerpo = `
+    <div style="line-height:1.5; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div><div style="font-size:22px; font-weight:800;">ARUBA APPLE</div><div style="font-size:13px; color:#444;">Comprobante de compra de bienes usados a consumidor final</div></div>
+        <div style="text-align:right;"><div>N° ${nro}</div><div>Fecha: ${hoyISO()}</div></div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL COMPRADOR (LA EMPRESA)</div>
+        <div>Razón Social: _______________________________</div>
+        <div>CUIT: __________________________ &nbsp;&nbsp; Representante: Adrian Emmanuel Coria (D.N.I. 37.161.283)</div>
+        <div>Domicilio: Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL VENDEDOR (CONSUMIDOR FINAL)</div>
+        <div>Nombre y Apellido: ${vendNombre}</div>
+        <div>D.N.I. N°: ${vendDni} &nbsp;&nbsp; CUIT / CUIL: ____________________</div>
+        <div>Domicilio: ${vendDom} &nbsp;&nbsp; Teléfono: ${vendTel}</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DETALLE DEL BIEN ADQUIRIDO</div>
+        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____'} &nbsp;&nbsp; Color: ${e.color||'____'}</div>
+        <div>N° de IMEI: ${e.imei||'________________'}${e.bateria?' &nbsp;&nbsp; Batería / condición: '+e.bateria+'%':''}</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">MONTO ABONADO Y MEDIO DE PAGO</div>
+        <div>Monto abonado: <b>U$S ${fmt(monto)}</b> (${numALetrasVC(monto)} dólares estadounidenses).</div>
+        <div>Medio de pago: _______________________________________ (transferencia bancaria / billetera virtual / efectivo).</div>
+      </div>
+
+      <p style="margin-top:14px;">El VENDEDOR declara bajo juramento ser el legítimo propietario del bien descripto, que el mismo es de procedencia lícita y que se encuentra libre de todo gravamen, prenda o impedimento, haciéndose responsable por cualquier reclamo de terceros. Con la firma del presente cede la propiedad del bien al COMPRADOR.</p>
+
+      <div style="margin-top:48px;">
+        <div style="text-align:center; width:60%;">_______________________________<br>Firma del Vendedor<br>Aclaración: ${vendNombre}<br>D.N.I.: ${vendDni}</div>
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Comprobante de compra de usado' + (c?(' — '+vendNombre):''), cuerpo);
+}
+
+// Recibo de pago (para justificar el ingreso cuando se cobra en efectivo o se toma un usado en parte de pago)
+function generarReciboPago(id){
+  const e = equipos.find(x=>x.id===id);
+  if(!e) return;
+  const c = clientes.find(x=>x.id===e.clienteVendedorId);
+  const cliNombre = c ? `${c.nombre} ${c.apellido}` : '____________________________';
+  const credito = Number(e.compra)||0;
+  const nroComp = (e.id||'').slice(-8).toUpperCase();
+  const cuerpo = `
+    <div style="line-height:1.5; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div><div style="font-size:22px; font-weight:800;">ARUBA APPLE</div><div style="font-size:13px; color:#444;">Recibo de pago</div></div>
+        <div style="text-align:right;"><div>Fecha: ${hoyISO()}</div></div>
+      </div>
+
+      <p style="margin-top:14px;">Recibí de <b>${cliNombre}</b> el pago correspondiente a la operación de venta, conformado de la siguiente manera:</p>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:14px;">
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Factura de Venta N° ______________ (total del producto vendido)</td><td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ______________</td></tr>
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Comprobante de Compra de Bienes Usados N° ${nroComp} (crédito por el equipo tomado en parte de pago: ${e.modelo||''}${e.imei?' · IMEI '+e.imei:''})</td><td style="padding:6px; border-bottom:1px solid #ddd; text-align:right; color:#c00;">- U$S ${fmt(credito)}</td></tr>
+        <tr><td style="padding:8px 6px; font-weight:800; font-size:17px; border-top:2px solid #000;">SALDO A ABONAR</td><td style="padding:8px 6px; font-weight:800; font-size:17px; border-top:2px solid #000; text-align:right;">U$S ______________</td></tr>
+      </table>
+
+      <p style="margin-top:14px;">Medio de pago de la diferencia (saldo): _______________________________________<br>
+      (transferencia bancaria / billetera virtual a la cuenta de la empresa, o efectivo).</p>
+
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor / Empresa)</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Recibo de pago' + (c?(' — '+cliNombre):''), cuerpo);
+}
+
+// Planilla de permuta o recepción del usado (declaración jurada del cliente)
+function generarPlanillaPermuta(id){
+  const e = equipos.find(x=>x.id===id);
+  if(!e) return;
+  const c = clientes.find(x=>x.id===e.clienteVendedorId);
+  const cliNombre = c ? `${c.nombre} ${c.apellido}` : '';
+  const cliDni = c && c.dni ? c.dni : '';
+  const L = (v,n)=> v && String(v).trim() ? v : '_'.repeat(n);
+  const cuerpo = `
+    <div style="line-height:1.55; font-size:14px;">
+      <h3 style="text-align:center; margin-top:0;">PLANILLA DE PERMUTA / RECEPCIÓN DE EQUIPO USADO</h3>
+      <div style="text-align:right; font-size:13px;">Fecha: ${hoyISO()}</div>
+
+      <p style="margin-top:12px;"><b>DECLARACIÓN JURADA.</b> El/la abajo firmante declara bajo juramento ser el/la legítimo/a propietario/a del equipo usado que se detalla a continuación, que el mismo es de procedencia lícita, se encuentra libre de todo gravamen, prenda, denuncia o impedimento legal, y que no registra pedido de secuestro ni bloqueo, asumiendo total responsabilidad civil y penal por cualquier reclamo de terceros.</p>
+
+      <div style="margin-top:12px; border:1px solid #000; padding:10px 14px;">
+        <div style="font-weight:700; margin-bottom:6px;">DATOS DEL CLIENTE</div>
+        <div>Nombre y Apellido: ${L(cliNombre, 48)}</div>
+        <div>D.N.I. N°: ${L(cliDni, 20)}</div>
+        <div style="margin-top:28px;">Firma del Cliente: _______________________________________</div>
+      </div>
+
+      <div style="margin-top:12px; border:1px solid #000; padding:10px 14px;">
+        <div style="font-weight:700; margin-bottom:6px;">EQUIPO ENTREGADO EN PARTE DE PAGO</div>
+        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____________'} &nbsp;&nbsp; Color: ${e.color||'________'}</div>
+        <div>N° de IMEI: ${e.imei||'________________'}${e.bateria?' &nbsp;&nbsp; Batería: '+e.bateria+'%':''}</div>
+      </div>
+
+      <p style="margin-top:12px;"><b>CONFORMIDAD.</b> El/la cliente presta plena conformidad para entregar el equipo descripto como parte de pago de la Factura N° ______________, aceptando el valor asignado al mismo en dicha operación.</p>
+
+      <p style="margin-top:18px; font-size:13px; color:#555;">Se adjunta a la presente copia legible del D.N.I. del/la cliente (frente y dorso), la cual forma parte integrante de este documento y del comprobante de compra emitido.</p>
+
+      <div style="margin-top:20px; border:1px dashed #999; padding:28px 14px; text-align:center; color:#777; font-size:13px;">
+        Espacio reservado para adjuntar / pegar la copia del D.N.I. del cliente
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Planilla de permuta' + (c?(' — '+cliNombre):''), cuerpo);
 }
 
 function agregarAccesorio(){
