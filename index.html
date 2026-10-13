@@ -3422,7 +3422,7 @@ async function abrirPublicar(equipoId){
   const descDefault = `📱 ${e.modelo}${e.color?' - '+e.color:''}${e.bateria?' - Batería '+e.bateria+'%':''} - USD ${fmt(precio)} ¡Escribinos!`;
 
   // Cargar medios del equipo
-  _pubMediaItems = await leerGaleriaCloud(equipoId);
+  _pubMediaItems = await mktListar(equipoId);
 
   let fotosHTML = '';
   if(_pubMediaItems.length === 0){
