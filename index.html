@@ -3524,8 +3524,9 @@ async function ejecutarPublicacion(){
     return new File([it.blob], nombre, { type: it.blob.type || 'image/jpeg' });
   });
 
-  // Intentar compartir nativo (móvil) — permite enviar directo a Instagram Stories, WhatsApp Status, etc.
-  const puedeCompartir = navigator.canShare && navigator.canShare({ files: archivos });
+  // Compartir nativo solo en móvil — en PC abrimos las redes directamente
+  const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const puedeCompartir = esMovil && navigator.canShare && navigator.canShare({ files: archivos });
   if(puedeCompartir){
     try{
       await navigator.share({ text: descripcion, files: archivos });
