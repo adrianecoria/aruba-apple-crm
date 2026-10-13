@@ -3569,8 +3569,8 @@ async function ejecutarPublicacion(){
     try{ await navigator.clipboard.writeText(descripcion); }catch(e){}
   }
 
-  // Descargar fotos adicionales (si seleccionó más de 1, la primera ya está en el portapapeles)
-  const descargar = imagenCopiada ? archivos.slice(1) : archivos;
+  // Descargar TODAS las fotos seleccionadas para poder subirlas a las historias
+  const descargar = archivos;
   descargar.forEach((file, i) => {
     setTimeout(()=>{
       const url = URL.createObjectURL(file);
