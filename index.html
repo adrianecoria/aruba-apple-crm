@@ -545,7 +545,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
-          <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos"></div>
+          <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos" maxlength="15" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
           <div class="field" style="min-width:150px;">
             <div style="display:flex; flex-direction:column; gap:8px;">
               <div><label>Precio compra (USD)</label><input id="eCompra" type="number" placeholder="0"></div>
@@ -843,7 +843,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cliente (a quién se lo consigné)</label><select id="csCliente"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Color</label><input id="csColor" placeholder="Ej: Blanco"></div>
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
-        <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos"></div>
+        <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="csFecha" type="date"></div>
         <div class="field"><button class="btn" onclick="agregarConsignacion()" style="width:100%;">Agregar</button></div>
@@ -879,7 +879,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cliente</label><select id="rCliente"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Modelo</label><input id="rModelo" placeholder="Ej: iPhone 13"></div>
         <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
-        <div class="field"><label>IMEI</label><input id="rImei" placeholder="15 dígitos"></div>
+        <div class="field"><label>IMEI</label><input id="rImei" placeholder="15 dígitos" maxlength="15" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1347,8 +1347,9 @@ function ganancia(compra, venta, sugerido){
 
 function agregarEquipo(){
   if(!esAdmin()) return;
-  const imei = document.getElementById('eImei').value.trim();
+  const imei = document.getElementById('eImei').value.trim().replace(/\D/g,'');
   if(!imei){ alert('El IMEI es obligatorio.'); return; }
+  if(imei.length !== 15){ alert('El IMEI debe tener exactamente 15 dígitos.'); return; }
   if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
   equipos.push({
     id: uid(), modelo: document.getElementById('eModelo').value,
@@ -1398,7 +1399,7 @@ function editarEquipo(id){
     <td data-label="Cliente"><select class="ed-cliente"><option value="">Sin especificar</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===e.clienteVendedorId?'selected':''}>${c.nombre} ${c.apellido}</option>`).join('')}</select></td>
     <td data-label="Color"><input class="ed-color" value="${e.color}"></td>
     <td data-label="Batería"><input class="ed-bateria" type="number" value="${e.bateria}"></td>
-    <td data-label="IMEI"><input class="ed-imei" value="${e.imei}"></td>
+    <td data-label="IMEI"><input class="ed-imei" value="${e.imei}" maxlength="15" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'')"></td>
     <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${e.compra}"></td>
     <td data-label="Sugerido"><input class="ed-sugerido" type="number" value="${e.sugerido}"></td>
     <td data-label="Venta"><input class="ed-venta" type="number" value="${e.venta}"></td>
@@ -1422,7 +1423,9 @@ function guardarEdicion(id){
   e.clienteVendedorId = row.querySelector('.ed-cliente').value;
   e.color = row.querySelector('.ed-color').value.trim();
   e.bateria = row.querySelector('.ed-bateria').value;
-  e.imei = row.querySelector('.ed-imei').value.trim();
+  const nuevoImei = row.querySelector('.ed-imei').value.trim().replace(/\D/g,'');
+  if(nuevoImei.length !== 15){ alert('El IMEI debe tener exactamente 15 dígitos.'); return; }
+  e.imei = nuevoImei;
   e.compra = row.querySelector('.ed-compra').value;
   e.sugerido = row.querySelector('.ed-sugerido').value;
   e.venta = row.querySelector('.ed-venta').value;
@@ -3244,8 +3247,9 @@ function marcarConsignacionReabierta(equipoId){
 }
 
 function agregarConsignacion(){
-  const imei = document.getElementById('csImei').value.trim();
+  const imei = document.getElementById('csImei').value.trim().replace(/\D/g,'');
   if(!imei){ alert('El IMEI es obligatorio.'); return; }
+  if(imei.length !== 15){ alert('El IMEI debe tener exactamente 15 dígitos.'); return; }
   if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI en Stock.'); return; }
   const modelo = document.getElementById('csModelo').value;
   const proveedorId = document.getElementById('csProveedor').value;
@@ -3346,10 +3350,12 @@ function agregarReparacion(){
   const modelo = document.getElementById('rModelo').value.trim();
   const descripcion = document.getElementById('rDescripcion').value.trim();
   if(!modelo || !descripcion){ alert('Completá al menos el modelo y la descripción del problema.'); return; }
+  const rImeiVal = document.getElementById('rImei').value.trim().replace(/\D/g,'');
+  if(rImeiVal && rImeiVal.length !== 15){ alert('El IMEI debe tener exactamente 15 dígitos.'); return; }
   reparaciones.push({
     id: uid(), clienteId: document.getElementById('rCliente').value, modelo,
     color: document.getElementById('rColor').value.trim(),
-    imei: document.getElementById('rImei').value.trim(),
+    imei: document.getElementById('rImei').value.trim().replace(/\D/g,''),
     descripcion, costo: document.getElementById('rCosto').value,
     fecha: document.getElementById('rFecha').value || hoyISO(),
     estado: 'a reparar'
