@@ -3515,27 +3515,69 @@ async function ejecutarPublicacion(){
   if(!descripcion.trim()){ alert('Escribí una descripción.'); return; }
 
   const redesTexto = redes.map(r => r.charAt(0).toUpperCase()+r.slice(1)).join(', ');
-  const fotosTexto = fotosSelIdx.length + ' foto' + (fotosSelIdx.length!==1?'s':'');
+  const fotosSeleccionadas = fotosSelIdx.map(i => _pubMediaItems[i]).filter(Boolean);
+  const fotosTexto = fotosSeleccionadas.length + ' foto' + (fotosSeleccionadas.length!==1?'s':'');
 
-  // Descargar las fotos seleccionadas
-  for(const idx of fotosSelIdx){
-    const item = _pubMediaItems[idx];
-    if(item && item.blob){
-      const url = URL.createObjectURL(item.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = item.nombre || `foto_${idx+1}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  // Preparar archivos File a partir de los blobs
+  const archivos = fotosSeleccionadas.map((it, i) => {
+    const nombre = it.nombre || `foto_${i+1}.jpg`;
+    return new File([it.blob], nombre, { type: it.blob.type || 'image/jpeg' });
+  });
+
+  // Intentar compartir nativo (móvil) — permite enviar directo a Instagram Stories, WhatsApp Status, etc.
+  const puedeCompartir = navigator.canShare && navigator.canShare({ files: archivos });
+  if(puedeCompartir){
+    try{
+      await navigator.share({ text: descripcion, files: archivos });
+      cerrarPublicar();
+      return;
+    }catch(e){
+      if(e.name === 'AbortError'){ return; } // usuario canceló
+      console.warn('Share API falló, usando método alternativo', e);
     }
   }
 
-  // Copiar descripción al portapapeles
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    await navigator.clipboard.writeText(descripcion);
+  // --- Método desktop: copiar imagen al portapapeles + abrir redes ---
+
+  // Copiar la primera foto al portapapeles como imagen (para pegar con Ctrl+V)
+  let imagenCopiada = false;
+  if(archivos.length && navigator.clipboard && navigator.clipboard.write){
+    try{
+      // Convertir a PNG para el portapapeles (requisito del Clipboard API)
+      const img = new Image();
+      const blobUrl = URL.createObjectURL(archivos[0]);
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      URL.revokeObjectURL(blobUrl);
+      const pngBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': pngBlob,
+          'text/plain': new Blob([descripcion], { type: 'text/plain' })
+        })
+      ]);
+      imagenCopiada = true;
+    }catch(e){
+      console.warn('No se pudo copiar imagen al portapapeles:', e);
+      // Fallback: copiar solo la descripción
+      try{ await navigator.clipboard.writeText(descripcion); }catch(ex){}
+    }
+  } else {
+    try{ await navigator.clipboard.writeText(descripcion); }catch(e){}
   }
+
+  // Descargar fotos adicionales (si seleccionó más de 1, la primera ya está en el portapapeles)
+  const descargar = imagenCopiada ? archivos.slice(1) : archivos;
+  descargar.forEach((file, i) => {
+    setTimeout(()=>{
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a'); a.href = url; a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }, i * 350);
+  });
 
   // Abrir las redes sociales en la sección de crear estado/historia
   const urls = {
@@ -3548,9 +3590,16 @@ async function ejecutarPublicacion(){
     if(urls[r]) window.open(urls[r], '_blank');
   });
 
-  const avisos = [];
-  if(redes.includes('whatsapp')) avisos.push('⚠️ WhatsApp Web no permite subir estados desde la PC — usá la app del celular.');
-  alert(`✅ ${fotosTexto} descargada${fotosSelIdx.length!==1?'s':''} y descripción copiada al portapapeles.\n\nSe abrieron: ${redesTexto}\n\nSubí las fotos descargadas y pegá la descripción en cada estado.${avisos.length ? '\n\n'+avisos.join('\n') : ''}`);
+  const pasos = [];
+  if(imagenCopiada){
+    pasos.push('📋 La foto fue copiada al portapapeles — pegala con Ctrl+V en cada historia.');
+    if(descargar.length) pasos.push(`📥 ${descargar.length} foto${descargar.length>1?'s':''} adicional${descargar.length>1?'es':''} descargada${descargar.length>1?'s':''}.`);
+  } else {
+    pasos.push(`📥 ${fotosTexto} descargada${fotosSeleccionadas.length!==1?'s':''}.`);
+  }
+  pasos.push('📝 La descripción también está en el portapapeles — pegala con Ctrl+V.');
+  if(redes.includes('whatsapp')) pasos.push('⚠️ WhatsApp Web no permite subir estados — usá la app del celular.');
+  alert(`✅ ¡Listo para publicar!\n\n${pasos.join('\n')}\n\nRedes abiertas: ${redesTexto}`);
   cerrarPublicar();
 }
 
