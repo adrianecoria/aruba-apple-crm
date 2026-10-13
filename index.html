@@ -3537,18 +3537,20 @@ async function ejecutarPublicacion(){
     await navigator.clipboard.writeText(descripcion);
   }
 
-  // Abrir las redes sociales seleccionadas
+  // Abrir las redes sociales en la sección de crear estado/historia
   const urls = {
-    instagram: 'https://www.instagram.com/',
-    facebook: 'https://www.facebook.com/',
+    instagram: 'https://www.instagram.com/create/story/',
+    facebook: 'https://www.facebook.com/stories/create',
     whatsapp: 'https://web.whatsapp.com/',
-    tiktok: 'https://www.tiktok.com/upload'
+    tiktok: 'https://www.tiktok.com/creator#/upload?scene=creator_center'
   };
   redes.forEach(r => {
     if(urls[r]) window.open(urls[r], '_blank');
   });
 
-  alert(`✅ ${fotosTexto} descargada${fotosSelIdx.length!==1?'s':''} y descripción copiada al portapapeles.\n\nRedes abiertas: ${redesTexto}\n\nPegá la descripción en cada publicación.`);
+  const avisos = [];
+  if(redes.includes('whatsapp')) avisos.push('⚠️ WhatsApp Web no permite subir estados desde la PC — usá la app del celular.');
+  alert(`✅ ${fotosTexto} descargada${fotosSelIdx.length!==1?'s':''} y descripción copiada al portapapeles.\n\nSe abrieron: ${redesTexto}\n\nSubí las fotos descargadas y pegá la descripción en cada estado.${avisos.length ? '\n\n'+avisos.join('\n') : ''}`);
   cerrarPublicar();
 }
 
