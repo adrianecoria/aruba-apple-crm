@@ -2535,25 +2535,107 @@ function imprimirComprobanteCuotas(id){
   const vc = ventasCuotas.find(x=>x.id===id);
   if(!vc) return;
   const valorCuota = vc.cantCuotas>0 ? (Number(vc.precioCuotas)||0)/vc.cantCuotas : 0;
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const totalCuotasARS = (Number(vc.precioCuotas)||0) * dolar;
+  const valorCuotaARS = valorCuota * dolar;
+  const anticipoNum = Number(vc.anticipo)||0;
+  const totalOp = (Number(vc.precioCuotas)||0) + anticipoNum;
   const filas = (vc.cronograma||[]).map(c=>
-    `<tr><td>Cuota ${c.nro}</td><td>${c.vencimiento||'-'}</td><td>${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td>$${fmt(c.monto)}</td></tr>`
+    `<tr>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${c.nro}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;">${c.vencimiento||'-'}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${c.pagada ? '✅ '+(c.fechaPago||'Pagada') : '⏳ Pendiente'}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right;">USD $${fmt(c.monto)}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right;color:#555;">ARS $${fmt((Number(c.monto)||0)*dolar)}</td>
+    </tr>`
   ).join('');
-  document.getElementById('printArea').innerHTML = `
-    <h3>Comprobante de venta en cuotas</h3>
-    <p><b>Aruba Apple</b></p>
-    <p>Fecha de venta: ${vc.fecha}</p>
-    <p>Cliente: ${vc.cliente||'-'}</p>
-    <p>Equipo: ${vc.modelo}${vc.color?' · '+vc.color:''}${vc.imei?' · IMEI '+vc.imei:''}</p>
-    <p>Plan: ${vc.cantCuotas} cuotas de $${fmt(valorCuota)} — frecuencia ${vc.frecuencia||'-'}</p>
-    ${(Number(vc.anticipo)||0) > 0 ? `<p>Anticipo / Seña: USD ${fmt(vc.anticipo)}</p>` : ''}
-    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-      <tr><th style="text-align:left; border-bottom:1px solid #000;">Cuota</th><th style="text-align:left; border-bottom:1px solid #000;">Vencimiento</th><th style="text-align:left; border-bottom:1px solid #000;">Pago</th><th style="text-align:left; border-bottom:1px solid #000;">Monto</th></tr>
-      ${filas}
+  const doc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante Venta en Cuotas</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:750px;margin:0 auto;}
+  h1{font-size:20px;text-align:center;margin-bottom:2px;}
+  h2{font-size:13px;text-align:center;color:#666;margin-bottom:4px;font-weight:400;}
+  .fecha{font-size:10px;text-align:center;color:#999;margin-bottom:16px;}
+  .seccion{border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:12px;}
+  .seccion h3{font-size:12px;margin:0 0 6px;border-bottom:1px solid #eee;padding-bottom:4px;}
+  .seccion table{width:100%;font-size:11px;border-collapse:collapse;}
+  .seccion td{padding:2px 0;}
+  .seccion td:first-child{width:140px;color:#555;}
+  .estado-box{text-align:center;padding:10px;border-radius:8px;margin:12px 0;font-size:13px;font-weight:700;}
+  .estado-finalizado{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+  .estado-curso{background:#fff3cd;color:#856404;border:1px solid #ffeeba;}
+  .totales{background:#f7f7f7;border-radius:10px;padding:14px;margin:14px 0;text-align:center;}
+  .totales .principal{font-size:24px;font-weight:700;}
+  .totales .secundario{font-size:14px;color:#555;margin-top:3px;}
+  .totales .detalle{font-size:12px;color:#777;margin-top:6px;}
+  table.cronograma{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;}
+  table.cronograma th{background:#f0f0f0;padding:6px 10px;border:1px solid #ddd;text-align:left;font-size:10px;}
+  .firmas{margin-top:30px;display:flex;justify-content:space-between;}
+  .firmas div{text-align:center;width:45%;border-top:1px solid #222;padding-top:5px;font-size:11px;}
+  .toolbar-print{text-align:center;margin-bottom:16px;}
+  .toolbar-print button{padding:8px 20px;font-size:13px;border:none;border-radius:6px;cursor:pointer;margin:0 4px;}
+  .toolbar-print .imprimir{background:#007aff;color:#fff;font-weight:700;}
+  .toolbar-print .cerrar{background:#eee;color:#333;}
+  @media print{.toolbar-print{display:none;}}
+</style></head><body>
+  <div class="toolbar-print">
+    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="cerrar" onclick="window.close()">Cerrar</button>
+  </div>
+  <h1>COMPROBANTE DE VENTA EN CUOTAS</h1>
+  <h2>Aruba Apple</h2>
+  <p class="fecha">Fecha de emisión: ${new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+
+  <div class="seccion">
+    <h3>DATOS DEL CLIENTE</h3>
+    <table><tr><td><b>Cliente:</b></td><td>${vc.cliente||'-'}</td></tr></table>
+  </div>
+
+  <div class="seccion">
+    <h3>DATOS DEL EQUIPO</h3>
+    <table>
+      <tr><td><b>Modelo:</b></td><td>${vc.modelo}</td></tr>
+      ${vc.color ? `<tr><td><b>Color:</b></td><td>${vc.color}</td></tr>` : ''}
+      ${vc.imei ? `<tr><td><b>IMEI:</b></td><td>${vc.imei}</td></tr>` : ''}
     </table>
-    <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
-    ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:700;">Total de la operación (anticipo + cuotas): USD ${fmt((Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0))}</p>` : ''}
-    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
-  window.print();
+  </div>
+
+  <div class="seccion">
+    <h3>PLAN DE FINANCIACIÓN</h3>
+    <table>
+      <tr><td><b>Fecha de venta:</b></td><td>${vc.fecha||'-'}</td></tr>
+      <tr><td><b>Cantidad de cuotas:</b></td><td>${vc.cantCuotas}</td></tr>
+      <tr><td><b>Frecuencia:</b></td><td>${vc.frecuencia||'-'}</td></tr>
+      <tr><td><b>Valor por cuota:</b></td><td>USD $${fmt(valorCuota)} / ARS $${fmt(valorCuotaARS)}</td></tr>
+      ${anticipoNum > 0 ? `<tr><td><b>Anticipo / Seña:</b></td><td>USD $${fmt(anticipoNum)} / ARS $${fmt(anticipoNum*dolar)}</td></tr>` : ''}
+    </table>
+  </div>
+
+  <div class="${vc.estado==='finalizado' ? 'estado-box estado-finalizado' : 'estado-box estado-curso'}">
+    ${vc.estado==='finalizado' ? '✅ CRÉDITO FINALIZADO — Todas las cuotas abonadas' : `⏳ En curso — ${vc.cuotasPagadas||0}/${vc.cantCuotas} cuotas pagadas`}
+  </div>
+
+  <h3 style="font-size:12px;margin:14px 0 4px;">CRONOGRAMA DE CUOTAS</h3>
+  <table class="cronograma">
+    <tr><th style="text-align:center;">N°</th><th>Vencimiento</th><th style="text-align:center;">Estado</th><th style="text-align:right;">Monto USD</th><th style="text-align:right;">Monto ARS</th></tr>
+    ${filas}
+  </table>
+
+  <div class="totales">
+    <div class="principal">USD $${fmt(vc.precioCuotas)}</div>
+    <div class="secundario">≈ ARS $${fmt(totalCuotasARS)}</div>
+    <div class="detalle">Total financiado (${vc.cantCuotas} cuotas)</div>
+    ${anticipoNum > 0 ? `<div class="detalle" style="margin-top:6px;font-weight:700;">Total operación (anticipo + cuotas): USD $${fmt(totalOp)} / ARS $${fmt(totalOp*dolar)}</div>` : ''}
+  </div>
+
+  <div class="firmas">
+    <div>Firma del cliente</div>
+    <div>Firma del responsable</div>
+  </div>
+</body></html>`;
+  const w = window.open('','_blank');
+  if(w){ w.document.open(); w.document.write(doc); w.document.close(); }
+  else { alert('El navegador bloqueó la ventana. Permití los popups para este sitio.'); }
 }
 
 // Convierte un número a letras en español (para el monto del contrato)
