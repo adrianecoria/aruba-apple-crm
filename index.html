@@ -4045,12 +4045,12 @@ function pagarVendedor(id){
   overlay.id = 'modalPagoOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);padding:20px;';
   overlay.innerHTML = `
-    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:18px;padding:28px;max-width:400px;width:100%;text-align:center;">
+    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:18px;padding:28px;max-width:420px;width:100%;text-align:center;">
       <h2 style="font-size:18px;margin-bottom:6px;">Pagar a ${u.nombre} ${u.apellido}</h2>
       <p style="font-size:14px;color:var(--txt2);margin-bottom:20px;">Monto: <b style="color:var(--green);">USD $${fmt(neta)}</b></p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn" style="flex:1;min-width:140px;background:var(--green);color:#000;font-weight:700;" onclick="confirmarPagoVendedor('${id}','efectivo')">💵 Pagar Efectivo</button>
-        <button class="btn" style="flex:1;min-width:140px;background:#00b4ff;color:#000;font-weight:700;" onclick="confirmarPagoVendedor('${id}','transferencia')">🏦 Pagar Transferencia</button>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+        <button class="btn" style="width:100%;max-width:280px;background:var(--green);color:#000;font-weight:700;padding:12px;" onclick="confirmarPagoVendedor('${id}','efectivo')">💵 Pagar Efectivo</button>
+        <button class="btn" style="width:100%;max-width:280px;background:#00b4ff;color:#000;font-weight:700;padding:12px;" onclick="confirmarPagoVendedor('${id}','transferencia')">🏦 Pagar Transferencia</button>
       </div>
       <button class="btn ghost" style="margin-top:14px;width:100%;" onclick="document.getElementById('modalPagoOverlay').remove()">Cancelar</button>
     </div>`;
@@ -4069,18 +4069,47 @@ function confirmarPagoVendedor(id, metodo){
       alert(`${u.nombre} no tiene Alias/CBU/CVU cargado. Editá el vendedor para agregar uno.`);
       return;
     }
-    // Copiar alias al portapapeles
     navigator.clipboard.writeText(alias).catch(()=>{});
-    // Abrir Mercado Pago
-    window.open('https://www.mercadopago.com.ar/transfer', '_blank');
-    alert(`Alias copiado al portapapeles: ${alias}\n\nSe abrió Mercado Pago. Pegá el alias para completar la transferencia de USD $${fmt(neta)} a ${u.nombre} ${u.apellido}.`);
+    window.open('https://www.mercadopago.com.ar/transfer/account-finder?preference_id=transfer-mla-desktop&workflow_id=ars_transfer#from=home_mp_desktop&oc.component=banking&oc.page_id=hs_home_mp_desktop', '_blank');
+    alert(`Alias copiado al portapapeles: ${alias}\n\nSe abrió Mercado Pago. Pegá el alias para completar la transferencia a ${u.nombre} ${u.apellido}.`);
   }
 
   if(!confirm(`¿Confirmar pago de $${fmt(neta)} a ${u.nombre} ${u.apellido} por ${metodo}? La ganancia generada vuelve a $0.`)) return;
   pagosVendedor.push({ id: uid(), vendedorId: id, monto: neta, fecha: hoyISO(), metodo });
   syncGuardar('pagos_vendedor', pagosVendedor);
   registrarActividad(`Pago de comisión a ${u.nombre} ${u.apellido} — $${fmt(neta)} (${metodo})`);
+  generarComprobantePago(u, neta, metodo);
   renderUsuarios();
+}
+
+function generarComprobantePago(u, monto, metodo){
+  const ahora = new Date();
+  const fechaHora = ahora.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const montoARS = monto * dolar;
+  // Detalle de ventas del vendedor (no pagadas previamente)
+  const ventasVendedor = ventas.filter(v=>v.vendedorId===u.id);
+  const norm = s => (s||'').trim().toLowerCase();
+  const coincide = r => r.vendedor_id ? (r.vendedor_id===u.id) : (norm(r.agente)===norm(`${u.nombre} ${u.apellido}`) || norm(r.agente)===norm(u.nombre) || (u.usuario && norm(r.agente)===norm(u.usuario)));
+  const ventasMsgVend = ventasMensajesEntregadas().filter(coincide);
+  let detalleHTML = '';
+  if(ventasVendedor.length){
+    detalleHTML += '<h3 style="margin:12px 0 6px;font-size:12px;color:#555;">Ventas CRM</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tr style="background:#f0f0f0;"><th style="padding:4px 6px;text-align:left;border:1px solid #ddd;">Modelo</th><th style="padding:4px 6px;text-align:left;border:1px solid #ddd;">IMEI</th><th style="padding:4px 6px;text-align:right;border:1px solid #ddd;">Precio Venta</th><th style="padding:4px 6px;text-align:right;border:1px solid #ddd;">Comisión</th></tr>';
+    ventasVendedor.forEach(v=>{
+      detalleHTML += `<tr><td style="padding:4px 6px;border:1px solid #ddd;">${v.modelo||'-'}</td><td style="padding:4px 6px;border:1px solid #ddd;">${v.imei||'-'}</td><td style="padding:4px 6px;text-align:right;border:1px solid #ddd;">$${fmt(v.precioVenta)}</td><td style="padding:4px 6px;text-align:right;border:1px solid #ddd;">$${fmt(comisionVenta(v))}</td></tr>`;
+    });
+    detalleHTML += '</table>';
+  }
+  if(ventasMsgVend.length){
+    detalleHTML += `<h3 style="margin:12px 0 6px;font-size:12px;color:#555;">Ventas desde Mensajes (${ventasMsgVend.length} entregas × $${COMISION_MENSAJE_VENTA})</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tr style="background:#f0f0f0;"><th style="padding:4px 6px;text-align:left;border:1px solid #ddd;">Equipo</th><th style="padding:4px 6px;text-align:left;border:1px solid #ddd;">Fecha entrega</th><th style="padding:4px 6px;text-align:right;border:1px solid #ddd;">Comisión</th></tr>`;
+    ventasMsgVend.forEach(r=>{
+      detalleHTML += `<tr><td style="padding:4px 6px;border:1px solid #ddd;">${r.equipo||r.modelo||'-'}</td><td style="padding:4px 6px;border:1px solid #ddd;">${fechaComisionMensaje(r)}</td><td style="padding:4px 6px;text-align:right;border:1px solid #ddd;">$${fmt(COMISION_MENSAJE_VENTA)}</td></tr>`;
+    });
+    detalleHTML += '</table>';
+  }
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante de Pago</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;}h1{font-size:20px;text-align:center;margin-bottom:4px;}h2{font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;}.info{display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;}.monto-box{text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;}.monto-box .usd{font-size:28px;font-weight:700;}.monto-box .ars{font-size:16px;color:#555;margin-top:4px;}.metodo{text-align:center;font-size:13px;color:#555;margin-bottom:10px;}.firma{margin-top:40px;display:flex;justify-content:space-between;}.firma div{text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;}</style></head><body><h1>COMPROBANTE DE PAGO</h1><h2>Aruba Apple</h2><div class="info"><span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span><span><b>Fecha y hora:</b> ${fechaHora}</span></div><div class="metodo">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div><div class="monto-box"><div class="usd">USD $${fmt(monto)}</div><div class="ars">≈ ARS $${fmt(montoARS)}</div></div><h3 style="font-size:13px;margin-top:20px;">Detalle de ventas que generaron esta comisión:</h3>${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}<div class="firma"><div>Firma del vendedor</div><div>Firma del administrador</div></div></body></html>`;
+  const w = window.open('', '_blank');
+  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>{ w.print(); }, 500); }
 }
 
 function agregarUsuario(){
