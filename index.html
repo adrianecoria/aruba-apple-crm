@@ -3444,6 +3444,84 @@ function borrarReparacion(id){
   renderReparaciones();
 }
 
+function generarComprobanteReparacion(id){
+  const r = reparaciones.find(x=>x.id===id);
+  if(!r) return;
+  const c = clientes.find(x=>x.id===r.clienteId);
+  const clienteNombre = c ? `${c.nombre} ${c.apellido}` : 'Sin especificar';
+  const clienteDni = c && c.dni ? c.dni : '-';
+  const clienteTel = c && c.telefono ? c.telefono : '-';
+  const clienteDir = c && c.direccion ? c.direccion : '-';
+  const ahora = new Date();
+  const fechaEmision = ahora.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const fechaIngreso = r.fecha || hoyISO();
+  // Calcular fecha estimada de entrega (5 días hábiles)
+  let entrega = new Date(fechaIngreso+'T00:00:00');
+  let diasHabiles = 0;
+  while(diasHabiles < 5){
+    entrega.setDate(entrega.getDate()+1);
+    const dia = entrega.getDay();
+    if(dia !== 0 && dia !== 6) diasHabiles++;
+  }
+  const fechaEntrega = entrega.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const costoNum = Number(r.costo)||0;
+  const costoARS = costoNum * dolar;
+  const html = `<div style="font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;">
+    <h1 style="font-size:22px;text-align:center;margin-bottom:2px;color:#000;">COMPROBANTE DE REPARACIÓN</h1>
+    <h2 style="font-size:14px;text-align:center;color:#666;margin-bottom:4px;font-weight:400;">Aruba Apple</h2>
+    <p style="font-size:11px;text-align:center;color:#999;margin-bottom:18px;">Fecha de emisión: ${fechaEmision}</p>
+
+    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DATOS DEL CLIENTE</h3>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr><td style="padding:3px 0;width:140px;color:#555;"><b>Nombre completo:</b></td><td style="padding:3px 0;">${clienteNombre}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>DNI:</b></td><td style="padding:3px 0;">${clienteDni}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Teléfono:</b></td><td style="padding:3px 0;">${clienteTel}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Dirección:</b></td><td style="padding:3px 0;">${clienteDir}</td></tr>
+      </table>
+    </div>
+
+    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DATOS DEL EQUIPO</h3>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr><td style="padding:3px 0;width:140px;color:#555;"><b>Modelo:</b></td><td style="padding:3px 0;">${r.modelo}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Color:</b></td><td style="padding:3px 0;">${r.color||'-'}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>IMEI:</b></td><td style="padding:3px 0;">${r.imei||'-'}</td></tr>
+      </table>
+    </div>
+
+    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DETALLE DE REPARACIÓN</h3>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr><td style="padding:3px 0;width:140px;color:#555;vertical-align:top;"><b>Problema reportado:</b></td><td style="padding:3px 0;">${r.descripcion}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Estado actual:</b></td><td style="padding:3px 0;"><b>${r.estado.toUpperCase()}</b></td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Fecha de ingreso:</b></td><td style="padding:3px 0;">${new Date(fechaIngreso+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})}</td></tr>
+        <tr><td style="padding:3px 0;color:#555;"><b>Entrega estimada:</b></td><td style="padding:3px 0;">${fechaEntrega} <span style="color:#888;font-size:11px;">(5 días hábiles)</span></td></tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:14px 0;">
+      <div style="font-size:12px;color:#555;margin-bottom:4px;">Costo estimado de reparación</div>
+      <div style="font-size:26px;font-weight:700;color:#000;">USD $${fmt(costoNum)}</div>
+      <div style="font-size:15px;color:#555;margin-top:3px;">≈ ARS $${fmt(costoARS)}</div>
+    </div>
+
+    <div style="margin-top:18px;padding:12px;background:#fffbe6;border:1px solid #f0e4a0;border-radius:8px;font-size:11px;color:#666;line-height:1.5;">
+      <b style="color:#b8860b;">AVISO IMPORTANTE:</b> El costo de reparación indicado en este comprobante es de carácter estimativo y orientativo, dado que el equipo aún no ha sido sometido a una evaluación técnica especializada. Una vez realizado el diagnóstico por parte del técnico, el presupuesto definitivo podría variar en función de los hallazgos, la disponibilidad de repuestos y la complejidad de la intervención requerida. El cliente será notificado ante cualquier modificación del presupuesto antes de proceder con la reparación.
+    </div>
+
+    <div style="margin-top:36px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del cliente</div>
+      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del responsable</div>
+    </div>
+  </div>`;
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = html;
+  pa.style.display = 'block';
+  setTimeout(()=>{ window.print(); pa.style.display='none'; pa.innerHTML=''; }, 400);
+}
+
 function estadoBadgeReparacion(estado){
   if(estado==='a reparar') return 'vendido';
   if(estado==='en reparación') return 'reservado';
@@ -3468,6 +3546,7 @@ function renderReparaciones(){
       <td data-label="Costo">$${fmt(r.costo)}</td>
       <td data-label="Estado"><span class="badge ${estadoBadgeReparacion(r.estado)}">${r.estado}</span></td>
       <td data-label="Acciones"><div class="actions">
+        <button class="btn ghost small" onclick="generarComprobanteReparacion('${r.id}')">📄 Comprobante</button>
         <button class="btn ghost small" onclick="avanzarEstadoReparacion('${r.id}')">${r.estado==='a reparar'?'Pasar a en reparación':r.estado==='en reparación'?'Marcar reparado':'Reabrir'}</button>
         <button class="btn danger small" onclick="borrarReparacion('${r.id}')">Borrar</button>
       </div></td>`;
