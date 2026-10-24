@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <style>
 :root{
   --bg:#0b0710; --card:rgba(255,255,255,0.075); --card-b:rgba(255,255,255,0.18);
@@ -382,12 +383,26 @@ td input, td select{padding:6px 8px; font-size:13px;}
 body.rol-usuario .solo-admin{display:none !important;}
 @media print{
   body *{display:none !important;}
-  #printArea{display:block !important; position:fixed; top:0; left:0; width:100%; padding:24px; background:#fff; color:#000; font-family:'Inter';}
+  #printArea{display:block !important; position:fixed; top:0; left:0; width:100%; padding:0; margin:0; background:#fff; color:#000; font-family:'Inter';}
   #printArea h3{font-size:18px; margin-bottom:10px;}
   #printArea p{font-size:14px; margin:4px 0;}
   #printArea table{margin-top:12px;}
   #printArea td{color:#000; border-bottom:1px solid #ddd;}
+  #printArea .etiqueta-equipo{display:flex !important; flex-direction:column; align-items:center; justify-content:center;
+    width:80mm; height:50mm; padding:3mm; box-sizing:border-box; text-align:center; font-family:'Inter',sans-serif;}
+  #printArea .etiqueta-equipo .et-brand{font-size:9pt; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:1mm; color:#333;}
+  #printArea .etiqueta-equipo .et-modelo{font-size:11pt; font-weight:800; margin-bottom:0.5mm;}
+  #printArea .etiqueta-equipo .et-color{font-size:8pt; color:#555; margin-bottom:0.5mm;}
+  #printArea .etiqueta-equipo .et-bateria{font-size:8pt; color:#555; margin-bottom:1.5mm;}
+  #printArea .etiqueta-equipo .et-barcode svg{width:60mm !important; height:14mm !important;}
+  #printArea .etiqueta-equipo .et-imei{font-size:7pt; color:#333; margin-top:0.5mm; letter-spacing:0.5px;}
+  @page{size:80mm 50mm; margin:0;}
 }
+.scan-input-wrap{display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:10px 14px; border-radius:12px; background:rgba(78,224,138,0.08); border:1px solid rgba(78,224,138,0.25);}
+.scan-input-wrap input{flex:1; background:transparent; border:1px solid var(--card-b); border-radius:8px; padding:8px 12px; color:var(--txt); font-size:14px;}
+.scan-input-wrap input:focus{border-color:var(--green); outline:none; box-shadow:0 0 0 2px rgba(78,224,138,0.2);}
+.scan-input-wrap .scan-icon{font-size:20px;}
+.scan-input-wrap .scan-label{font-size:12px; color:var(--txt3); white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -593,6 +608,11 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="card card-destacada">
       <h2>Registrar venta o reserva</h2>
+      <div class="scan-input-wrap">
+        <span class="scan-icon">📷</span>
+        <input id="vScanImei" type="text" inputmode="numeric" maxlength="15" placeholder="Escaneá o ingresá el IMEI del equipo..." oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)" onchange="buscarEquipoPorImei(this.value,'venta')">
+        <span class="scan-label">Escáner</span>
+      </div>
       <div class="form-row">
         <div class="field"><label>Tipo</label><select id="vTipo" onchange="toggleTipoVenta()"><option value="equipo">Equipo</option><option value="accesorio">Accesorio</option></select></div>
         <div class="field"><label>Comercio</label><select id="vComercio"><option value="">Sin especificar</option></select></div>
@@ -639,6 +659,11 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="card card-destacada">
       <h2>Registrar Venta en Cuotas</h2>
+      <div class="scan-input-wrap">
+        <span class="scan-icon">📷</span>
+        <input id="vcScanImei" type="text" inputmode="numeric" maxlength="15" placeholder="Escaneá o ingresá el IMEI del equipo..." oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)" onchange="buscarEquipoPorImei(this.value,'cuotas')">
+        <span class="scan-label">Escáner</span>
+      </div>
       <div class="form-row">
         <div class="field"><label>Tipo</label><select id="vcTipo" onchange="toggleTipoVentaCuotas()"><option value="equipo">Equipo</option><option value="accesorio">Accesorio</option></select></div>
         <div class="field"><label>Comercio</label><select id="vcComercio"><option value="">Sin especificar</option></select></div>
@@ -1411,9 +1436,17 @@ function guardarEdicion(id){
 }
 function imprimirEtiqueta(id){
   const e = equipos.find(x=>x.id===id);
-  const precio = e.venta || e.sugerido || 0;
-  document.getElementById('printArea').innerHTML = `<h3>${e.modelo}</h3><p>${e.color} · Batería ${e.bateria||'-'}%</p><p>IMEI: ${e.imei}</p><p style="font-size:22px; font-weight:700; margin-top:8px;">USD ${fmt(precio)}</p>`;
-  window.print();
+  document.getElementById('printArea').innerHTML = `
+    <div class="etiqueta-equipo">
+      <div class="et-brand">Aruba Apple</div>
+      <div class="et-modelo">${e.modelo}</div>
+      <div class="et-color">${e.color || 'Sin color'}</div>
+      <div class="et-bateria">Batería: ${e.bateria || '-'}%</div>
+      <div class="et-barcode"><svg id="barcode-print"></svg></div>
+      <div class="et-imei">IMEI: ${e.imei}</div>
+    </div>`;
+  try{ JsBarcode('#barcode-print', e.imei, {format:'CODE128', width:1.5, height:40, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
+  setTimeout(()=> window.print(), 200);
 }
 function renderEquipos(){
   const q = document.getElementById('buscarEquipo').value.toLowerCase();
@@ -1675,6 +1708,34 @@ function toggleTipoVenta(){
   document.getElementById('vEquipoWrap').style.display = tipo==='equipo' ? 'block':'none';
   document.getElementById('vAccesorioWrap').style.display = tipo==='accesorio' ? 'block':'none';
   document.getElementById('vPrecio').value = '';
+}
+
+function buscarEquipoPorImei(imei, seccion){
+  if(!imei || imei.length !== 15) return;
+  const equipo = equipos.find(e=> e.imei === imei && e.estado !== 'vendido');
+  if(!equipo){
+    alert('No se encontró ningún equipo disponible con ese IMEI.');
+    return;
+  }
+  if(seccion === 'venta'){
+    document.getElementById('vTipo').value = 'equipo';
+    toggleTipoVenta();
+    setTimeout(()=>{
+      const sel = document.getElementById('vEquipo');
+      sel.value = equipo.id;
+      sel.dispatchEvent(new Event('change'));
+      document.getElementById('vScanImei').value = '';
+    }, 100);
+  } else if(seccion === 'cuotas'){
+    document.getElementById('vcTipo').value = 'equipo';
+    toggleTipoVentaCuotas();
+    setTimeout(()=>{
+      const sel = document.getElementById('vcEquipo');
+      sel.value = equipo.id;
+      sel.dispatchEvent(new Event('change'));
+      document.getElementById('vcScanImei').value = '';
+    }, 100);
+  }
 }
 
 function cargarSelectEquiposVenta(){
