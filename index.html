@@ -384,6 +384,7 @@ body.rol-usuario .solo-admin{display:none !important;}
 @media print{
   body *{display:none !important;}
   #printArea{display:block !important; position:fixed; top:0; left:0; width:100%; padding:0; margin:0; background:#fff; color:#000; font-family:'Inter';}
+  #printArea *{display:revert !important; color:#000;}
   #printArea h3{font-size:18px; margin-bottom:10px;}
   #printArea p{font-size:14px; margin:4px 0;}
   #printArea table{margin-top:12px;}
@@ -4116,7 +4117,25 @@ function generarComprobantePago(u, monto, metodo){
     });
     detalleHTML += '</table>';
   }
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante de Pago</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;}h1{font-size:20px;text-align:center;margin-bottom:4px;}h2{font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;}.info{display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;}.monto-box{text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;}.monto-box .usd{font-size:28px;font-weight:700;}.monto-box .ars{font-size:16px;color:#555;margin-top:4px;}.metodo{text-align:center;font-size:13px;color:#555;margin-bottom:10px;}.firma{margin-top:40px;display:flex;justify-content:space-between;}.firma div{text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;}</style></head><body><h1>COMPROBANTE DE PAGO</h1><h2>Aruba Apple</h2><div class="info"><span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span><span><b>Fecha y hora:</b> ${fechaHora}</span></div><div class="metodo">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div><div class="monto-box"><div class="usd">USD $${fmt(monto)}</div><div class="ars">≈ ARS $${fmt(montoARS)}</div></div><h3 style="font-size:13px;margin-top:20px;">Detalle de ventas que generaron esta comisión:</h3>${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}<div class="firma"><div>Firma del vendedor</div><div>Firma del administrador</div></div></body></html>`;
+  const html = `<div style="font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;">
+    <h1 style="font-size:20px;text-align:center;margin-bottom:4px;color:#000;">COMPROBANTE DE PAGO</h1>
+    <h2 style="font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;">Aruba Apple</h2>
+    <div style="display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;">
+      <span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span>
+      <span><b>Fecha y hora:</b> ${fechaHora}</span>
+    </div>
+    <div style="text-align:center;font-size:13px;color:#555;margin-bottom:10px;">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div>
+    <div style="text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;">
+      <div style="font-size:28px;font-weight:700;color:#000;">USD $${fmt(monto)}</div>
+      <div style="font-size:16px;color:#555;margin-top:4px;">≈ ARS $${fmt(montoARS)}</div>
+    </div>
+    <h3 style="font-size:13px;margin-top:20px;color:#000;">Detalle de ventas que generaron esta comisión:</h3>
+    ${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}
+    <div style="margin-top:40px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del vendedor</div>
+      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del administrador</div>
+    </div>
+  </div>`;
   const pa = document.getElementById('printArea');
   pa.innerHTML = html;
   pa.style.display = 'block';
