@@ -3462,59 +3462,87 @@ function generarComprobanteReparacion(id){
   const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
   const costoNum = Number(r.costo)||0;
   const costoARS = costoNum * dolar;
-  const html = `<div style="font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;">
-    <h1 style="font-size:22px;text-align:center;margin-bottom:2px;color:#000;">COMPROBANTE DE REPARACIÓN</h1>
-    <h2 style="font-size:14px;text-align:center;color:#666;margin-bottom:4px;font-weight:400;">Aruba Apple</h2>
-    <p style="font-size:11px;text-align:center;color:#999;margin-bottom:18px;">Fecha de emisión: ${fechaEmision}</p>
+  const doc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante de Reparación</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;}
+  h1{font-size:20px;text-align:center;margin-bottom:2px;}
+  h2{font-size:13px;text-align:center;color:#666;margin-bottom:4px;font-weight:400;}
+  .fecha-emision{font-size:10px;text-align:center;color:#999;margin-bottom:16px;}
+  .seccion{border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:12px;}
+  .seccion h3{font-size:12px;margin:0 0 6px;border-bottom:1px solid #eee;padding-bottom:4px;}
+  .seccion table{width:100%;font-size:11px;border-collapse:collapse;}
+  .seccion td{padding:2px 0;}
+  .seccion td:first-child{width:130px;color:#555;}
+  .monto-box{text-align:center;padding:14px;background:#f7f7f7;border-radius:10px;margin:12px 0;}
+  .monto-box .label{font-size:11px;color:#555;margin-bottom:3px;}
+  .monto-box .usd{font-size:24px;font-weight:700;}
+  .monto-box .ars{font-size:14px;color:#555;margin-top:2px;}
+  .aviso{margin-top:14px;padding:10px;background:#fffbe6;border:1px solid #f0e4a0;border-radius:8px;font-size:10px;color:#666;line-height:1.5;}
+  .aviso b{color:#b8860b;}
+  .firmas{margin-top:30px;display:flex;justify-content:space-between;}
+  .firmas div{text-align:center;width:45%;border-top:1px solid #222;padding-top:5px;font-size:11px;}
+  .toolbar-print{text-align:center;margin-bottom:16px;}
+  .toolbar-print button{padding:8px 20px;font-size:13px;border:none;border-radius:6px;cursor:pointer;margin:0 4px;}
+  .toolbar-print .imprimir{background:#007aff;color:#fff;font-weight:700;}
+  .toolbar-print .cerrar{background:#eee;color:#333;}
+  @media print{.toolbar-print{display:none;}}
+</style></head><body>
+  <div class="toolbar-print">
+    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="cerrar" onclick="window.close()">Cerrar</button>
+  </div>
+  <h1>COMPROBANTE DE REPARACIÓN</h1>
+  <h2>Aruba Apple</h2>
+  <p class="fecha-emision">Fecha de emisión: ${fechaEmision}</p>
 
-    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
-      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DATOS DEL CLIENTE</h3>
-      <table style="width:100%;font-size:12px;border-collapse:collapse;">
-        <tr><td style="padding:3px 0;width:140px;color:#555;"><b>Nombre completo:</b></td><td style="padding:3px 0;">${clienteNombre}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>DNI:</b></td><td style="padding:3px 0;">${clienteDni}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Teléfono:</b></td><td style="padding:3px 0;">${clienteTel}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Dirección:</b></td><td style="padding:3px 0;">${clienteDir}</td></tr>
-      </table>
-    </div>
+  <div class="seccion">
+    <h3>DATOS DEL CLIENTE</h3>
+    <table>
+      <tr><td><b>Nombre completo:</b></td><td>${clienteNombre}</td></tr>
+      <tr><td><b>DNI:</b></td><td>${clienteDni}</td></tr>
+      <tr><td><b>Teléfono:</b></td><td>${clienteTel}</td></tr>
+      <tr><td><b>Dirección:</b></td><td>${clienteDir}</td></tr>
+    </table>
+  </div>
 
-    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
-      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DATOS DEL EQUIPO</h3>
-      <table style="width:100%;font-size:12px;border-collapse:collapse;">
-        <tr><td style="padding:3px 0;width:140px;color:#555;"><b>Modelo:</b></td><td style="padding:3px 0;">${r.modelo}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Color:</b></td><td style="padding:3px 0;">${r.color||'-'}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>IMEI:</b></td><td style="padding:3px 0;">${r.imei||'-'}</td></tr>
-      </table>
-    </div>
+  <div class="seccion">
+    <h3>DATOS DEL EQUIPO</h3>
+    <table>
+      <tr><td><b>Modelo:</b></td><td>${r.modelo}</td></tr>
+      <tr><td><b>Color:</b></td><td>${r.color||'-'}</td></tr>
+      <tr><td><b>IMEI:</b></td><td>${r.imei||'-'}</td></tr>
+    </table>
+  </div>
 
-    <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;">
-      <h3 style="font-size:13px;margin:0 0 8px;color:#000;border-bottom:1px solid #eee;padding-bottom:4px;">DETALLE DE REPARACIÓN</h3>
-      <table style="width:100%;font-size:12px;border-collapse:collapse;">
-        <tr><td style="padding:3px 0;width:140px;color:#555;vertical-align:top;"><b>Problema reportado:</b></td><td style="padding:3px 0;">${r.descripcion}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Estado actual:</b></td><td style="padding:3px 0;"><b>${r.estado.toUpperCase()}</b></td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Fecha de ingreso:</b></td><td style="padding:3px 0;">${new Date(fechaIngreso+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})}</td></tr>
-        <tr><td style="padding:3px 0;color:#555;"><b>Entrega estimada:</b></td><td style="padding:3px 0;">${fechaEntrega} <span style="color:#888;font-size:11px;">(5 días hábiles)</span></td></tr>
-      </table>
-    </div>
+  <div class="seccion">
+    <h3>DETALLE DE REPARACIÓN</h3>
+    <table>
+      <tr><td style="vertical-align:top;"><b>Problema reportado:</b></td><td>${r.descripcion}</td></tr>
+      <tr><td><b>Estado actual:</b></td><td><b>${r.estado.toUpperCase()}</b></td></tr>
+      <tr><td><b>Fecha de ingreso:</b></td><td>${new Date(fechaIngreso+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})}</td></tr>
+      <tr><td><b>Entrega estimada:</b></td><td>${fechaEntrega} <span style="color:#888;font-size:10px;">(5 días hábiles)</span></td></tr>
+    </table>
+  </div>
 
-    <div style="text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:14px 0;">
-      <div style="font-size:12px;color:#555;margin-bottom:4px;">Costo estimado de reparación</div>
-      <div style="font-size:26px;font-weight:700;color:#000;">USD $${fmt(costoNum)}</div>
-      <div style="font-size:15px;color:#555;margin-top:3px;">≈ ARS $${fmt(costoARS)}</div>
-    </div>
+  <div class="monto-box">
+    <div class="label">Costo estimado de reparación</div>
+    <div class="usd">USD $${fmt(costoNum)}</div>
+    <div class="ars">≈ ARS $${fmt(costoARS)}</div>
+  </div>
 
-    <div style="margin-top:18px;padding:12px;background:#fffbe6;border:1px solid #f0e4a0;border-radius:8px;font-size:11px;color:#666;line-height:1.5;">
-      <b style="color:#b8860b;">AVISO IMPORTANTE:</b> El costo de reparación indicado en este comprobante es de carácter estimativo y orientativo, dado que el equipo aún no ha sido sometido a una evaluación técnica especializada. Una vez realizado el diagnóstico por parte del técnico, el presupuesto definitivo podría variar en función de los hallazgos, la disponibilidad de repuestos y la complejidad de la intervención requerida. El cliente será notificado ante cualquier modificación del presupuesto antes de proceder con la reparación.
-    </div>
+  <div class="aviso">
+    <b>AVISO IMPORTANTE:</b> El costo de reparación indicado en este comprobante es de carácter estimativo y orientativo, dado que el equipo aún no ha sido sometido a una evaluación técnica especializada. Una vez realizado el diagnóstico por parte del técnico, el presupuesto definitivo podría variar en función de los hallazgos, la disponibilidad de repuestos y la complejidad de la intervención requerida. El cliente será notificado ante cualquier modificación del presupuesto antes de proceder con la reparación.
+  </div>
 
-    <div style="margin-top:36px;display:flex;justify-content:space-between;">
-      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del cliente</div>
-      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del responsable</div>
-    </div>
-  </div>`;
-  const pa = document.getElementById('printArea');
-  pa.innerHTML = html;
-  pa.style.display = 'block';
-  setTimeout(()=>{ window.print(); pa.style.display='none'; pa.innerHTML=''; }, 400);
+  <div class="firmas">
+    <div>Firma del cliente</div>
+    <div>Firma del responsable</div>
+  </div>
+</body></html>`;
+  const w = window.open('','_blank');
+  if(w){ w.document.open(); w.document.write(doc); w.document.close(); }
+  else { alert('El navegador bloqueó la ventana. Permití los popups para este sitio.'); }
 }
 
 function estadoBadgeReparacion(estado){
@@ -4191,29 +4219,50 @@ function generarComprobantePago(u, monto, metodo){
     });
     detalleHTML += '</table>';
   }
-  const html = `<div style="font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;">
-    <h1 style="font-size:20px;text-align:center;margin-bottom:4px;color:#000;">COMPROBANTE DE PAGO</h1>
-    <h2 style="font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;">Aruba Apple</h2>
-    <div style="display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;">
-      <span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span>
-      <span><b>Fecha y hora:</b> ${fechaHora}</span>
-    </div>
-    <div style="text-align:center;font-size:13px;color:#555;margin-bottom:10px;">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div>
-    <div style="text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;">
-      <div style="font-size:28px;font-weight:700;color:#000;">USD $${fmt(monto)}</div>
-      <div style="font-size:16px;color:#555;margin-top:4px;">≈ ARS $${fmt(montoARS)}</div>
-    </div>
-    <h3 style="font-size:13px;margin-top:20px;color:#000;">Detalle de ventas que generaron esta comisión:</h3>
-    ${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}
-    <div style="margin-top:40px;display:flex;justify-content:space-between;">
-      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del vendedor</div>
-      <div style="text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;">Firma del administrador</div>
-    </div>
-  </div>`;
-  const pa = document.getElementById('printArea');
-  pa.innerHTML = html;
-  pa.style.display = 'block';
-  setTimeout(()=>{ window.print(); pa.style.display='none'; pa.innerHTML=''; }, 400);
+  const doc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante de Pago</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;}
+  h1{font-size:20px;text-align:center;margin-bottom:4px;}
+  h2{font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;}
+  .info{display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;}
+  .metodo{text-align:center;font-size:13px;color:#555;margin-bottom:10px;}
+  .monto-box{text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;}
+  .monto-box .usd{font-size:28px;font-weight:700;}
+  .monto-box .ars{font-size:16px;color:#555;margin-top:4px;}
+  .firmas{margin-top:40px;display:flex;justify-content:space-between;}
+  .firmas div{text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;}
+  .toolbar-print{text-align:center;margin-bottom:16px;}
+  .toolbar-print button{padding:8px 20px;font-size:13px;border:none;border-radius:6px;cursor:pointer;margin:0 4px;}
+  .toolbar-print .imprimir{background:#007aff;color:#fff;font-weight:700;}
+  .toolbar-print .cerrar{background:#eee;color:#333;}
+  @media print{.toolbar-print{display:none;}}
+</style></head><body>
+  <div class="toolbar-print">
+    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="cerrar" onclick="window.close()">Cerrar</button>
+  </div>
+  <h1>COMPROBANTE DE PAGO</h1>
+  <h2>Aruba Apple</h2>
+  <div class="info">
+    <span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span>
+    <span><b>Fecha y hora:</b> ${fechaHora}</span>
+  </div>
+  <div class="metodo">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div>
+  <div class="monto-box">
+    <div class="usd">USD $${fmt(monto)}</div>
+    <div class="ars">≈ ARS $${fmt(montoARS)}</div>
+  </div>
+  <h3 style="font-size:13px;margin-top:20px;">Detalle de ventas que generaron esta comisión:</h3>
+  ${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}
+  <div class="firmas">
+    <div>Firma del vendedor</div>
+    <div>Firma del administrador</div>
+  </div>
+</body></html>`;
+  const w = window.open('','_blank');
+  if(w){ w.document.open(); w.document.write(doc); w.document.close(); }
+  else { alert('El navegador bloqueó la ventana. Permití los popups para este sitio.'); }
 }
 
 function agregarUsuario(){
