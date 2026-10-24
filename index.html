@@ -1375,7 +1375,7 @@ function editarEquipo(id){
     <td data-label="Cliente"><select class="ed-cliente"><option value="">Sin especificar</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===e.clienteVendedorId?'selected':''}>${c.nombre} ${c.apellido}</option>`).join('')}</select></td>
     <td data-label="Color"><input class="ed-color" value="${e.color}"></td>
     <td data-label="Batería"><input class="ed-bateria" type="number" value="${e.bateria}"></td>
-    <td data-label="IMEI"><input class="ed-imei" value="${e.imei}"></td>
+    <td data-label="IMEI"><input class="ed-imei" value="${e.imei}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></td>
     <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${e.compra}"></td>
     <td data-label="Sugerido"><input class="ed-sugerido" type="number" value="${e.sugerido}"></td>
     <td data-label="Venta"><input class="ed-venta" type="number" value="${e.venta}"></td>
@@ -1399,7 +1399,9 @@ function guardarEdicion(id){
   e.clienteVendedorId = row.querySelector('.ed-cliente').value;
   e.color = row.querySelector('.ed-color').value.trim();
   e.bateria = row.querySelector('.ed-bateria').value;
-  e.imei = row.querySelector('.ed-imei').value.trim();
+  const imeiVal = row.querySelector('.ed-imei').value.trim();
+  if(imeiVal.length !== 15 || !/^\d{15}$/.test(imeiVal)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
+  e.imei = imeiVal;
   e.compra = row.querySelector('.ed-compra').value;
   e.sugerido = row.querySelector('.ed-sugerido').value;
   e.venta = row.querySelector('.ed-venta').value;
@@ -3348,10 +3350,12 @@ function agregarReparacion(){
   const modelo = document.getElementById('rModelo').value.trim();
   const descripcion = document.getElementById('rDescripcion').value.trim();
   if(!modelo || !descripcion){ alert('Completá al menos el modelo y la descripción del problema.'); return; }
+  const rImei = document.getElementById('rImei').value.trim();
+  if(rImei && (rImei.length !== 15 || !/^\d{15}$/.test(rImei))){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
   reparaciones.push({
     id: uid(), clienteId: document.getElementById('rCliente').value, modelo,
     color: document.getElementById('rColor').value.trim(),
-    imei: document.getElementById('rImei').value.trim(),
+    imei: rImei,
     descripcion, costo: document.getElementById('rCosto').value,
     fecha: document.getElementById('rFecha').value || hoyISO(),
     estado: 'a reparar'
