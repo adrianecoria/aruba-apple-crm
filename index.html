@@ -3714,9 +3714,22 @@ function cargarClienteSelectConsignacion(){
   document.getElementById('csFecha').value = document.getElementById('csFecha').value || hoyISO();
 }
 
+function notificarProveedorConsignacionVendida(consig){
+  const prov = proveedores.find(x=>x.id===consig.proveedorId);
+  if(!prov || !prov.telefono) return;
+  const tel = prov.telefono.replace(/\D/g,'');
+  if(!tel) return;
+  const mensaje = `Hola ${prov.nombre}, te informamos que el equipo *${consig.modelo}*${consig.imei?' (IMEI: '+consig.imei+')':''} que nos dejaste en consignación fue vendido. En breve te estaremos enviando el pago de *$${fmt(consig.deuda)}*. ¡Gracias!`;
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
 function marcarConsignacionVendida(equipoId){
   const c = consignaciones.find(x=>x.equipoId===equipoId && x.estado==='activa');
-  if(c){ c.estado = 'pendiente'; syncGuardar('consignaciones', consignaciones); }
+  if(c){
+    c.estado = 'pendiente';
+    syncGuardar('consignaciones', consignaciones);
+    notificarProveedorConsignacionVendida(c);
+  }
 }
 
 function marcarConsignacionReabierta(equipoId){
@@ -3762,12 +3775,13 @@ function avanzarEstadoConsignacion(id){
     c.estado = 'pendiente';
     const e = equipos.find(x=>x.id===c.equipoId);
     if(e && e.estado!=='vendido'){ e.estado = 'vendido'; syncGuardar('stock_equipos', equipos); renderEquipos(); }
+    syncGuardar('consignaciones', consignaciones);
+    renderConsignaciones();
+    notificarProveedorConsignacionVendida(c);
   }
-  else if(c.estado==='pendiente') c.estado = 'pagado';
-  else c.estado = 'activa';
-  syncGuardar('consignaciones', consignaciones);
-  renderConsignaciones();
-  if(document.getElementById('movimientosBody')) renderCaja(); // el pago a consignación afecta el balance de caja
+  else if(c.estado==='pendiente'){ c.estado = 'pagado'; syncGuardar('consignaciones', consignaciones); renderConsignaciones(); }
+  else { c.estado = 'activa'; syncGuardar('consignaciones', consignaciones); renderConsignaciones(); }
+  if(document.getElementById('movimientosBody')) renderCaja();
 }
 
 function borrarConsignacion(id){
