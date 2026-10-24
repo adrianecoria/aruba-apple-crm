@@ -2727,6 +2727,8 @@ function renderVentasCuotas(){
           ${esFinalizdo
             ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
             : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
+          <button class="btn ghost small" onclick="reciboCuotas('${vc.id}')">🧾 Recibo</button>
+          <button class="btn ghost small" onclick="facturaCuotasConIVA('${vc.id}')">📄 Factura</button>
           <button class="btn ghost small" onclick="generarContratoCuotas('${vc.id}')">📄 Contrato compraventa</button>
           <button class="btn ghost small" onclick="generarPagareCuotas('${vc.id}')">📑 Pagaré</button>
           <button class="btn danger small solo-admin" onclick="anularVentaCuotas('${vc.id}')">Anular</button>
@@ -2741,6 +2743,204 @@ function renderVentasCuotas(){
   const gananciaTotal = vcConfirmadas.reduce((s,v)=>s+(((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0))-(Number(v.precioCompra)||0)),0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
   document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
+}
+
+function reciboCuotas(id){
+  const vc = ventasCuotas.find(x=>x.id===id);
+  if(!vc) return;
+  const cli = clientes.find(c=>c.id===vc.clienteId);
+  const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (vc.cliente||'Consumidor final');
+  const cliDni = cli && cli.dni ? cli.dni : '-';
+  const cliTel = cli && cli.telefono ? cli.telefono : '-';
+  const cliDom = cli && cli.direccion ? cli.direccion : '-';
+  const vendedor = usuarios.find(u=>u.id===vc.vendedorId);
+  const vendedorTxt = vendedor ? `${vendedor.nombre} ${vendedor.apellido}` : '-';
+  const sucursal = comercios.find(c=>c.id===vc.comercioId);
+  const sucursalTxt = sucursal ? sucursal.nombre : '-';
+  const esEquipo = (vc.tipo||'equipo')==='equipo';
+  let bateria = vc.bateria || '';
+  if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===vc.itemId); if(e) bateria = e.bateria||''; }
+  const anticipoVc = Number(vc.anticipo)||0;
+  const precioCuotas = Number(vc.precioCuotas)||0;
+  const totalOperacion = anticipoVc + precioCuotas;
+  const cantCuotas = Number(vc.cantCuotas)||1;
+  const valorCuota = precioCuotas / cantCuotas;
+  const nro = (vc.id||'').slice(-6).toUpperCase();
+
+  const cuerpo = `
+    <div style="line-height:1.5;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:700;">RECIBO DE COMPRA</div>
+          <div style="font-size:14px; font-weight:600; color:#0070c0;">Financiación en cuotas</div>
+          <div style="font-size:13px;">N° ${nro}</div>
+          <div style="font-size:13px;">Fecha: ${vc.fecha||hoyISO()}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL CLIENTE</div>
+        <div>Nombre y Apellido: ${cliNombre}</div>
+        <div>D.N.I.: ${cliDni} &nbsp;&nbsp; Teléfono: ${cliTel}</div>
+        <div>Domicilio: ${cliDom}</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DETALLE DE LA COMPRA</div>
+        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th>
+            <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
+          </tr>
+          <tr>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?'<br>IMEI: '+vc.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(totalOperacion)}</td>
+          </tr>
+          ${(vc.bonificados && vc.bonificados.length) ? vc.bonificados.map(b => {
+            const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+            return `<tr>
+              <td style="padding:6px; border-bottom:1px solid #ddd;">🎁 Bonificación — ${b.modelo}${b.color?' · '+b.color:''}</td>
+              <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right; white-space:nowrap;">
+                <span style="text-decoration:line-through; color:#999; margin-right:6px;">U$S ${fmt(pLista)}</span>
+                <span style="color:#27ae60; font-weight:700;">GRATIS</span>
+              </td>
+            </tr>`;
+          }).join('') : ''}
+        </table>
+        ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:13px;">
+          <span style="font-weight:700; color:#16a34a;">🎁 Accesorios bonificados sin cargo:</span>
+          ${vc.bonificados.map(b => {
+            const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+            return `<br>&nbsp;&nbsp;• ${b.modelo} — <s>U$S ${fmt(pLista)}</s> → <b>U$S 0</b>`;
+          }).join('')}
+          <br><span style="color:#555; font-size:12px;">Valor total bonificado: U$S ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</span>
+        </div>` : ''}
+      </div>
+
+      <div style="margin-top:14px; padding:10px 14px; border:1px solid #000;">
+        <div style="font-weight:700; margin-bottom:6px;">PLAN DE FINANCIACIÓN</div>
+        <div>Modalidad: ${cantCuotas} cuotas — Frecuencia: ${vc.frecuencia||'-'}${Number(vc.interes)>0?' — Interés: '+vc.interes+'%':''}</div>
+        ${anticipoVc > 0 ? `<div>Anticipo / Seña: <b>U$S ${fmt(anticipoVc)}</b></div>` : ''}
+        <div>Monto financiado en cuotas: <b>U$S ${fmt(precioCuotas)}</b></div>
+        <div>Valor de cada cuota: <b>U$S ${fmt(valorCuota)}</b></div>
+        <div style="font-size:18px; font-weight:800; margin-top:6px;">TOTAL DE LA OPERACIÓN: U$S ${fmt(totalOperacion)}</div>
+        <div style="font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
+      </div>
+
+      <div style="margin-top:12px; font-size:13px;">
+        Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
+        Forma de pago: Financiado en ${cantCuotas} cuotas${anticipoVc>0?' + anticipo':''}.
+      </div>
+
+      ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
+
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA APPLE</p>
+    </div>`;
+  abrirDocumentoEditable('Recibo de compra — cuotas' + (cliNombre?(' — '+cliNombre):''), cuerpo);
+}
+
+function facturaCuotasConIVA(id){
+  const vc = ventasCuotas.find(x=>x.id===id);
+  if(!vc) return;
+  const cli = clientes.find(c=>c.id===vc.clienteId);
+  const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (vc.cliente||'Consumidor Final');
+  const cliDni = cli && cli.dni ? cli.dni : '____________';
+  const cliDom = cli && cli.direccion ? cli.direccion : '____________________________';
+  const esEquipo = (vc.tipo||'equipo')==='equipo';
+  let bateria = vc.bateria || '';
+  if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===vc.itemId); if(e) bateria = e.bateria||''; }
+
+  const anticipoVc = Number(vc.anticipo)||0;
+  const precioCuotas = Number(vc.precioCuotas)||0;
+  const totalOperacion = anticipoVc + precioCuotas;
+  const cantCuotas = Number(vc.cantCuotas)||1;
+  const valorCuota = precioCuotas / cantCuotas;
+  const IVA = 21;
+  const neto = totalOperacion / (1 + IVA/100);
+  const ivaMonto = totalOperacion - neto;
+  const nro = (vc.id||'').slice(-8).toUpperCase();
+
+  const cuerpo = `
+    <div style="line-height:1.45; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div>Razón Social: _______________________________</div>
+          <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
+          <div>Condición frente al IVA: _______________________</div>
+        </div>
+        <div style="width:64px; border-left:1px solid #000; border-right:1px solid #000; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:800;">B</div>
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:18px; font-weight:700;">FACTURA</div>
+          <div style="font-size:14px; font-weight:600; color:#0070c0;">Venta financiada en cuotas</div>
+          <div>N° _______________________</div>
+          <div>Fecha: ${vc.fecha||hoyISO()}</div>
+          <div>CUIT: __________________________</div>
+          <div>Ingresos Brutos: ________________</div>
+          <div>Inicio de actividades: ___ / ___ / ______</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #000; border-top:0; padding:10px 14px;">
+        <div><b>Cliente:</b> ${cliNombre}</div>
+        <div><b>DNI / CUIT:</b> ${cliDni} &nbsp;&nbsp; <b>Domicilio:</b> ${cliDom}</div>
+        <div><b>Condición frente al IVA:</b> Consumidor Final</div>
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:14px; font-size:13px;">
+        <tr>
+          <th style="text-align:left; border:1px solid #000; padding:6px;">Descripción</th>
+          <th style="text-align:center; border:1px solid #000; padding:6px;">Cant.</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">P. Unit. (neto)</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?' · IMEI '+vc.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}<br><span style="font-size:11px; color:#555;">Financiado en ${cantCuotas} cuotas de U$S ${fmt(valorCuota)}${anticipoVc>0?' + anticipo U$S '+fmt(anticipoVc):''}</span></td>
+          <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+        </tr>
+        ${(vc.bonificados && vc.bonificados.length) ? vc.bonificados.map(b => {
+          const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+          return `<tr>
+            <td style="border:1px solid #000; padding:6px;">🎁 Bonificación — ${b.modelo}${b.color?' · '+b.color:''}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+            <td style="border:1px solid #000; padding:6px; text-align:right;"><s style="color:#999;">U$S ${fmt(pLista)}</s></td>
+            <td style="border:1px solid #000; padding:6px; text-align:right; color:#16a34a; font-weight:700;">BONIFICADO</td>
+          </tr>`;
+        }).join('') : ''}
+      </table>
+      ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:8px; font-size:12px; color:#16a34a; font-weight:600;">🎁 Accesorios bonificados sin cargo — Valor total bonificado: U$S ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</div>` : ''}
+
+      <div style="margin-top:10px; padding:8px 14px; border:1px solid #000; font-size:13px;">
+        <b>Detalle de financiación:</b> ${cantCuotas} cuotas de U$S ${fmt(valorCuota)} — Frecuencia: ${vc.frecuencia||'-'}${Number(vc.interes)>0?' — Interés: '+vc.interes+'%':''}${anticipoVc>0?' — Anticipo: U$S '+fmt(anticipoVc):''}
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <table style="border-collapse:collapse; font-size:14px; min-width:280px;">
+          <tr><td style="padding:4px 8px;">Importe Neto Gravado:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(neto)}</td></tr>
+          <tr><td style="padding:4px 8px;">IVA ${IVA}%:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(ivaMonto)}</td></tr>
+          <tr><td style="padding:6px 8px; font-weight:800; border-top:2px solid #000; font-size:17px;">IMPORTE TOTAL:</td><td style="padding:6px 8px; text-align:right; font-weight:800; border-top:2px solid #000; font-size:17px;">U$S ${fmt(totalOperacion)}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
+        <div>CAE N°: _______________________</div>
+        <div>Vto. CAE: ___ / ___ / ______</div>
+      </div>
+
+      <p style="font-size:11px; color:#777; margin-top:20px;">Documento no válido como factura fiscal hasta su emisión por los canales habilitados de AFIP/ARCA. Datos de la empresa a completar.</p>
+    </div>`;
+  abrirDocumentoEditable('Factura cuotas' + (cliNombre?(' — '+cliNombre):''), cuerpo);
 }
 
 function imprimirComprobanteCuotas(id){
