@@ -2684,9 +2684,10 @@ function renderVentasCuotas(){
       const valorCuota = vc.cantCuotas > 0 ? (Number(vc.precioCuotas)||0) / vc.cantCuotas : 0;
       const fraccion = `${vc.cuotasPagadas}/${vc.cantCuotas}`;
       const esFinalizdo = vc.estado === 'finalizado';
+      const bonifTextoCuotas = (vc.bonificados && vc.bonificados.length) ? vc.bonificados.map(b=>`🎁 ${b.modelo}`).join(', ') : '';
       tr.innerHTML = `
         <td data-label="Fecha">${vc.fecha}</td>
-        <td data-label="Modelo">${vc.modelo}</td>
+        <td data-label="Modelo">${vc.modelo}${bonifTextoCuotas?`<br><span style="font-size:11px;color:var(--amber);">${bonifTextoCuotas}</span>`:''}</td>
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Venta"><span class="badge ${esFinalizdo?'vendido':'reservado'}">${fraccion}</span></td>
