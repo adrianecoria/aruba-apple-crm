@@ -1899,6 +1899,7 @@ function confirmarBonificacion(){
         color: acc.color || '',
         imei: '',
         precioCompra: acc.compra,
+        precioLista: acc.venta || acc.sugerido || acc.compra,
         esBonificacion: true,
         categoriaBonif: cat
       });
@@ -2050,7 +2051,25 @@ function imprimirFactura(id){
             <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.color?' · '+v.color:''}${esEquipo&&v.imei?'<br>IMEI: '+v.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
             <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(total)}</td>
           </tr>
+          ${(v.bonificados && v.bonificados.length) ? v.bonificados.map(b => {
+            const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+            return `<tr>
+              <td style="padding:6px; border-bottom:1px solid #ddd;">🎁 Bonificación — ${b.modelo}${b.color?' · '+b.color:''}</td>
+              <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right; white-space:nowrap;">
+                <span style="text-decoration:line-through; color:#999; margin-right:6px;">U$S ${fmt(pLista)}</span>
+                <span style="color:#27ae60; font-weight:700;">GRATIS</span>
+              </td>
+            </tr>`;
+          }).join('') : ''}
         </table>
+        ${(v.bonificados && v.bonificados.length) ? `<div style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:13px;">
+          <span style="font-weight:700; color:#16a34a;">🎁 Accesorios bonificados sin cargo:</span>
+          ${v.bonificados.map(b => {
+            const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+            return `<br>&nbsp;&nbsp;• ${b.modelo} — <s>U$S ${fmt(pLista)}</s> → <b>U$S 0</b>`;
+          }).join('')}
+          <br><span style="color:#555; font-size:12px;">Valor total bonificado: U$S ${fmt(v.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</span>
+        </div>` : ''}
         <div style="text-align:right; font-size:20px; font-weight:800; margin-top:10px;">TOTAL: U$S ${fmt(total)}</div>
         <div style="text-align:right; font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
       </div>
@@ -2128,7 +2147,17 @@ function facturaConIVA(id){
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
         </tr>
+        ${(v.bonificados && v.bonificados.length) ? v.bonificados.map(b => {
+          const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+          return `<tr>
+            <td style="border:1px solid #000; padding:6px;">🎁 Bonificación — ${b.modelo}${b.color?' · '+b.color:''}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+            <td style="border:1px solid #000; padding:6px; text-align:right;"><s style="color:#999;">U$S ${fmt(pLista)}</s></td>
+            <td style="border:1px solid #000; padding:6px; text-align:right; color:#16a34a; font-weight:700;">BONIFICADO</td>
+          </tr>`;
+        }).join('') : ''}
       </table>
+      ${(v.bonificados && v.bonificados.length) ? `<div style="margin-top:8px; font-size:12px; color:#16a34a; font-weight:600;">🎁 Accesorios bonificados sin cargo — Valor total bonificado: U$S ${fmt(v.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</div>` : ''}
 
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <table style="border-collapse:collapse; font-size:14px; min-width:280px;">
@@ -2735,6 +2764,14 @@ function imprimirComprobanteCuotas(id){
     </table>
     <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
     ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:700;">Total de la operación (anticipo + cuotas): USD ${fmt((Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0))}</p>` : ''}
+    ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:14px; padding:8px 12px; border:1px solid #bbb;">
+      <p style="font-weight:700; margin:0 0 4px;">🎁 Accesorios bonificados sin cargo:</p>
+      ${vc.bonificados.map(b => {
+        const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
+        return `<p style="margin:2px 0;">&nbsp;&nbsp;• ${b.modelo} — <s>USD ${fmt(pLista)}</s> → <b>USD 0 (BONIFICADO)</b></p>`;
+      }).join('')}
+      <p style="margin:4px 0 0; font-size:13px;">Valor total bonificado: USD ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</p>
+    </div>` : ''}
     <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
   window.print();
 }
