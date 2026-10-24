@@ -995,6 +995,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Apellido</label><input id="uApellido" placeholder="Apellido"></div>
         <div class="field"><label>Teléfono</label><input id="uTelefono" placeholder="+54 9 ..."></div>
         <div class="field"><label>Red social</label><input id="uRed" placeholder="Ej: Instagram, Tiktok..."></div>
+        <div class="field"><label>Alias / CBU / CVU</label><input id="uAlias" placeholder="Ej: mi.alias.mp"></div>
         <div class="field"><label>Usuario (para iniciar sesión)</label><input id="uUsuario" placeholder="Ej: juan.perez"></div>
         <div class="field"><label>Contraseña</label><input id="uClave" type="text" placeholder="Contraseña"></div>
         <div class="field"><button class="btn" onclick="agregarUsuario()" style="width:100%;">Agregar</button></div>
@@ -1005,7 +1006,7 @@ body.rol-usuario .solo-admin{display:none !important;}
     <div class="card">
       <h2>Vendedores</h2>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Teléfono</th><th>Red social</th><th>Equipos vendidos</th><th>Accesorios vendidos</th><th>Ganancia generada</th><th class="solo-admin">Acciones</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Teléfono</th><th>Red social</th><th>Alias/CBU/CVU</th><th>Equipos vendidos</th><th>Accesorios vendidos</th><th>Ganancia generada</th><th class="solo-admin">Acciones</th></tr></thead>
         <tbody id="usuariosBody"></tbody>
       </table></div>
       <div class="empty" id="usuariosEmpty" style="display:none;">Todavía no cargaste vendedores.</div>
@@ -4039,10 +4040,46 @@ function pagarVendedor(id){
   const u = usuarios.find(x=>x.id===id);
   const neta = gananciaNetaVendedor(id);
   if(neta<=0){ alert(`${u.nombre} no tiene ganancia pendiente para pagar.`); return; }
-  if(!confirm(`¿Pagar $${fmt(neta)} a ${u.nombre} ${u.apellido}? La ganancia generada vuelve a $0.`)) return;
-  pagosVendedor.push({ id: uid(), vendedorId: id, monto: neta, fecha: hoyISO() });
+  // Crear modal de selección de método de pago
+  const overlay = document.createElement('div');
+  overlay.id = 'modalPagoOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:18px;padding:28px;max-width:400px;width:100%;text-align:center;">
+      <h2 style="font-size:18px;margin-bottom:6px;">Pagar a ${u.nombre} ${u.apellido}</h2>
+      <p style="font-size:14px;color:var(--txt2);margin-bottom:20px;">Monto: <b style="color:var(--green);">USD $${fmt(neta)}</b></p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn" style="flex:1;min-width:140px;background:var(--green);color:#000;font-weight:700;" onclick="confirmarPagoVendedor('${id}','efectivo')">💵 Pagar Efectivo</button>
+        <button class="btn" style="flex:1;min-width:140px;background:#00b4ff;color:#000;font-weight:700;" onclick="confirmarPagoVendedor('${id}','transferencia')">🏦 Pagar Transferencia</button>
+      </div>
+      <button class="btn ghost" style="margin-top:14px;width:100%;" onclick="document.getElementById('modalPagoOverlay').remove()">Cancelar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function confirmarPagoVendedor(id, metodo){
+  const u = usuarios.find(x=>x.id===id);
+  const neta = gananciaNetaVendedor(id);
+  const overlay = document.getElementById('modalPagoOverlay');
+  if(overlay) overlay.remove();
+
+  if(metodo === 'transferencia'){
+    const alias = u.alias || '';
+    if(!alias){
+      alert(`${u.nombre} no tiene Alias/CBU/CVU cargado. Editá el vendedor para agregar uno.`);
+      return;
+    }
+    // Copiar alias al portapapeles
+    navigator.clipboard.writeText(alias).catch(()=>{});
+    // Abrir Mercado Pago
+    window.open('https://www.mercadopago.com.ar/transfer', '_blank');
+    alert(`Alias copiado al portapapeles: ${alias}\n\nSe abrió Mercado Pago. Pegá el alias para completar la transferencia de USD $${fmt(neta)} a ${u.nombre} ${u.apellido}.`);
+  }
+
+  if(!confirm(`¿Confirmar pago de $${fmt(neta)} a ${u.nombre} ${u.apellido} por ${metodo}? La ganancia generada vuelve a $0.`)) return;
+  pagosVendedor.push({ id: uid(), vendedorId: id, monto: neta, fecha: hoyISO(), metodo });
   syncGuardar('pagos_vendedor', pagosVendedor);
-  registrarActividad(`Pago de comisión a ${u.nombre} ${u.apellido} — $${fmt(neta)}`);
+  registrarActividad(`Pago de comisión a ${u.nombre} ${u.apellido} — $${fmt(neta)} (${metodo})`);
   renderUsuarios();
 }
 
@@ -4057,9 +4094,9 @@ function agregarUsuario(){
     if(!clave){ alert('Si cargás un usuario para iniciar sesión, también tenés que cargarle una contraseña.'); return; }
     if(usuario===adminCred.usuario || usuarios.some(u=>u.usuario===usuario)){ alert('Ese nombre de usuario ya está en uso.'); return; }
   }
-  usuarios.push({ id: uid(), nombre, apellido, telefono: document.getElementById('uTelefono').value.trim(), red: document.getElementById('uRed').value.trim(), usuario: usuario||'', clave: clave||'' });
+  usuarios.push({ id: uid(), nombre, apellido, telefono: document.getElementById('uTelefono').value.trim(), red: document.getElementById('uRed').value.trim(), alias: document.getElementById('uAlias').value.trim(), usuario: usuario||'', clave: clave||'' });
   syncGuardar('usuarios', usuarios);
-  ['uNombre','uApellido','uTelefono','uRed','uUsuario','uClave'].forEach(id=>document.getElementById(id).value='');
+  ['uNombre','uApellido','uTelefono','uRed','uAlias','uUsuario','uClave'].forEach(id=>document.getElementById(id).value='');
   renderUsuarios();
 }
 
@@ -4081,6 +4118,7 @@ function editarUsuario(id){
     <td data-label="Usuario"><input class="ed-usuario" value="${u.usuario||''}" placeholder="usuario"></td>
     <td data-label="Teléfono"><input class="ed-telefono" value="${u.telefono||''}"></td>
     <td data-label="Red social"><input class="ed-red" value="${u.red||''}"></td>
+    <td data-label="Alias/CBU/CVU"><input class="ed-alias" value="${u.alias||''}" placeholder="Alias MP"></td>
     <td data-label="Equipos">—</td><td data-label="Accesorios">—</td><td data-label="Ganancia">—</td>
     <td data-label="Acciones"><div class="actions">
       <input class="ed-clave" type="text" placeholder="Nueva contraseña (opcional)" style="margin-bottom:6px;">
@@ -4100,6 +4138,7 @@ function guardarEdicionUsuario(id){
   u.apellido = row.querySelector('.ed-apellido').value.trim();
   u.telefono = row.querySelector('.ed-telefono').value.trim();
   u.red = row.querySelector('.ed-red').value.trim();
+  u.alias = row.querySelector('.ed-alias').value.trim();
   u.usuario = nuevoUsuario;
   const nuevaClave = row.querySelector('.ed-clave').value;
   if(nuevaClave) u.clave = nuevaClave;
@@ -4125,6 +4164,7 @@ function renderUsuarios(){
       <td data-label="Usuario">${u.usuario||'-'}</td>
       <td data-label="Teléfono">${u.telefono||'-'}</td>
       <td data-label="Red social">${u.red||'-'}</td>
+      <td data-label="Alias/CBU/CVU">${u.alias||'-'}</td>
       <td data-label="Equipos vendidos">${cantEquipos}</td>
       <td data-label="Accesorios vendidos">${cantAcc}</td>
       <td data-label="Ganancia generada" class="ganancia">$${fmt(ganancia)} <span style="color:var(--txt3); font-weight:500;">(≈ $${fmt(ganancia*(parseFloat(ls_get('dolar_blue',1555))||1555))} ARS)</span></td>
