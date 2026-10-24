@@ -521,7 +521,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
-          <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos"></div>
+          <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
           <div class="field" style="min-width:150px;">
             <div style="display:flex; flex-direction:column; gap:8px;">
               <div><label>Precio compra (USD)</label><input id="eCompra" type="number" placeholder="0"></div>
@@ -819,7 +819,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cliente (a quién se lo consigné)</label><select id="csCliente"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Color</label><input id="csColor" placeholder="Ej: Blanco"></div>
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
-        <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos"></div>
+        <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="csFecha" type="date"></div>
         <div class="field"><button class="btn" onclick="agregarConsignacion()" style="width:100%;">Agregar</button></div>
@@ -855,7 +855,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cliente</label><select id="rCliente"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Modelo</label><input id="rModelo" placeholder="Ej: iPhone 13"></div>
         <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
-        <div class="field"><label>IMEI</label><input id="rImei" placeholder="15 dígitos"></div>
+        <div class="field"><label>IMEI</label><input id="rImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1325,6 +1325,7 @@ function agregarEquipo(){
   if(!esAdmin()) return;
   const imei = document.getElementById('eImei').value.trim();
   if(!imei){ alert('El IMEI es obligatorio.'); return; }
+  if(imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
   if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
   equipos.push({
     id: uid(), modelo: document.getElementById('eModelo').value,
@@ -3246,6 +3247,7 @@ function marcarConsignacionReabierta(equipoId){
 function agregarConsignacion(){
   const imei = document.getElementById('csImei').value.trim();
   if(!imei){ alert('El IMEI es obligatorio.'); return; }
+  if(imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
   if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI en Stock.'); return; }
   const modelo = document.getElementById('csModelo').value;
   const proveedorId = document.getElementById('csProveedor').value;
