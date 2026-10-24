@@ -1815,6 +1815,112 @@ function reservarItemVenta(){
   renderVentas();
 }
 
+/* ===== MODAL BONIFICACIÓN DE ACCESORIOS ===== */
+const CATEGORIAS_BONIFICACION = ['Adaptador','USB','Funda','Protector de cámara'];
+
+function buscarAccesoriosBonificables(){
+  // Busca accesorios disponibles cuyo nombre coincida (parcialmente) con las categorías
+  const resultado = {};
+  CATEGORIAS_BONIFICACION.forEach(cat => {
+    const disponibles = accesorios.filter(a =>
+      a.estado !== 'vendido' && a.estado !== 'reservado' &&
+      a.nombre.toLowerCase().includes(cat.toLowerCase())
+    );
+    resultado[cat] = disponibles;
+  });
+  return resultado;
+}
+
+function mostrarModalBonificacion(callbackConfirmar){
+  const bonificables = buscarAccesoriosBonificables();
+
+  let itemsHTML = '';
+  CATEGORIAS_BONIFICACION.forEach(cat => {
+    const lista = bonificables[cat];
+    const hayStock = lista.length > 0;
+    const icono = cat==='Adaptador'?'🔌':cat==='USB'?'🔗':cat==='Funda'?'📱':cat==='Protector de cámara'?'📷':'🎁';
+    itemsHTML += `
+      <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid var(--card-b);background:rgba(255,255,255,0.04);cursor:${hayStock?'pointer':'not-allowed'};opacity:${hayStock?'1':'0.4';};transition:all 0.2s;"
+        ${hayStock?`onmouseenter="this.style.borderColor='var(--grad1)';this.style.background='rgba(255,47,176,0.08)'" onmouseleave="this.style.borderColor='var(--card-b)';this.style.background='rgba(255,255,255,0.04)'"`:''}>
+        <input type="checkbox" class="bonif-check" data-cat="${cat}" ${hayStock?'':'disabled'} style="width:20px;height:20px;accent-color:var(--grad1);cursor:${hayStock?'pointer':'not-allowed'};">
+        <span style="font-size:22px;">${icono}</span>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;">${cat}</div>
+          <div style="font-size:12px;color:var(--txt3);">${hayStock?`${lista.length} disponible${lista.length>1?'s':''}`:' Sin stock'}</div>
+        </div>
+      </label>`;
+  });
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modalBonificacionOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);padding:20px;animation:fadeInBonif 0.2s ease;';
+  overlay.innerHTML = `
+    <style>
+      @keyframes fadeInBonif { from { opacity:0; } to { opacity:1; } }
+      @keyframes slideUpBonif { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+    </style>
+    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:20px;padding:28px;max-width:440px;width:100%;animation:slideUpBonif 0.25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:32px;margin-bottom:8px;">🎁</div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">Bonificación de Accesorios</h2>
+        <p style="font-size:13px;color:var(--txt2);">Seleccioná los accesorios a bonificar con esta venta.<br><span style="color:var(--txt3);font-size:11.5px;">Solo se descontarán del stock (costo de compra). No afecta el precio de venta.</span></p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px;">
+        ${itemsHTML}
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" style="flex:1;background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;font-weight:700;padding:13px;border-radius:12px;font-size:14px;" onclick="confirmarBonificacion()">✅ Confirmar venta</button>
+        <button class="btn ghost" style="flex:1;padding:13px;border-radius:12px;font-size:14px;" onclick="confirmarBonificacion()">Omitir</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Guardar callback para cuando confirme
+  window._bonifCallback = callbackConfirmar;
+}
+
+function confirmarBonificacion(){
+  const checks = document.querySelectorAll('#modalBonificacionOverlay .bonif-check:checked');
+  const bonificados = [];
+  const bonificables = buscarAccesoriosBonificables();
+
+  checks.forEach(chk => {
+    const cat = chk.dataset.cat;
+    const lista = bonificables[cat];
+    if(lista.length > 0){
+      // Tomar el primer accesorio disponible de esa categoría
+      const acc = lista[0];
+      acc.estado = 'vendido';
+      bonificados.push({
+        id: uid(),
+        tipo: 'accesorio',
+        itemId: acc.id,
+        modelo: acc.nombre,
+        color: acc.color || '',
+        imei: '',
+        precioCompra: acc.compra,
+        esBonificacion: true,
+        categoriaBonif: cat
+      });
+    }
+  });
+
+  if(bonificados.length > 0){
+    syncGuardar('stock_accesorios', accesorios);
+    renderAccesorios();
+  }
+
+  const overlay = document.getElementById('modalBonificacionOverlay');
+  if(overlay) overlay.remove();
+
+  if(window._bonifCallback){
+    window._bonifCallback(bonificados);
+    window._bonifCallback = null;
+  }
+}
+
+/* ===== FIN MODAL BONIFICACIÓN ===== */
+
 function venderItemVenta(){
   const tipo = document.getElementById('vTipo').value;
   const comercioId = document.getElementById('vComercio').value;
@@ -1829,24 +1935,58 @@ function venderItemVenta(){
   if(tipo==='equipo'){
     const id = document.getElementById('vEquipo').value;
     if(!id){ alert('Elegí un equipo.'); return; }
+  } else {
+    const id = document.getElementById('vAccesorio').value;
+    if(!id){ alert('Elegí un accesorio.'); return; }
+  }
+
+  // Mostrar modal de bonificación antes de confirmar
+  mostrarModalBonificacion(function(bonificados){
+    _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados);
+  });
+}
+
+function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados){
+  if(tipo==='equipo'){
+    const id = document.getElementById('vEquipo').value;
     const e = equipos.find(x=>x.id===id);
     e.estado = 'vendido';
     e.venta = precio;
     syncGuardar('stock_equipos', equipos);
     renderEquipos();
     marcarConsignacionVendida(e.id);
-    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha });
-    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}`);
+    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, bonificados: bonificados.length ? bonificados : undefined });
+    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   } else {
     const id = document.getElementById('vAccesorio').value;
-    if(!id){ alert('Elegí un accesorio.'); return; }
     const a = accesorios.find(x=>x.id===id);
     a.estado = 'vendido';
     syncGuardar('stock_accesorios', accesorios);
     renderAccesorios();
-    ventas.push({ id: uid(), tipo:'accesorio', itemId: a.id, modelo: a.nombre, color: a.color, imei: '', cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: a.compra, fecha });
-    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}`);
+    ventas.push({ id: uid(), tipo:'accesorio', itemId: a.id, modelo: a.nombre, color: a.color, imei: '', cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: a.compra, fecha, bonificados: bonificados.length ? bonificados : undefined });
+    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   }
+
+  // Registrar cada bonificación como venta a precio $0 (solo descuenta costo de compra)
+  bonificados.forEach(b => {
+    ventas.push({
+      id: b.id,
+      tipo: 'accesorio',
+      itemId: b.itemId,
+      modelo: b.modelo,
+      color: b.color,
+      imei: '',
+      cliente,
+      clienteId,
+      comercioId,
+      vendedorId,
+      precioVenta: '0',
+      precioCompra: b.precioCompra,
+      fecha,
+      esBonificacion: true
+    });
+  });
+
   syncGuardar('ventas', ventas);
   document.getElementById('vPrecio').value='';
   cargarSelectEquiposVenta();
@@ -2105,12 +2245,18 @@ function renderVentas(){
   const body = document.getElementById('ventasBody');
   body.innerHTML = '';
 
-  // Ventas propias del CRM (ya concretadas)
-  const manuales = ventas.map(v=>({
-    kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, imei:v.imei||'-',
-    cliente:v.cliente||'-', precio:v.precioVenta,
-    ganancia:(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0)
-  }));
+  // Ventas propias del CRM (ya concretadas) — excluir bonificaciones de la lista principal
+  const manuales = ventas.filter(v=>!v.esBonificacion).map(v=>{
+    // Buscar bonificaciones asociadas
+    const bonifs = ventas.filter(b=>b.esBonificacion && v.bonificados && v.bonificados.some(bo=>bo.id===b.id));
+    const bonifTexto = (v.bonificados && v.bonificados.length) ? v.bonificados.map(b=>`🎁 ${b.modelo}`).join(', ') : '';
+    return {
+      kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, imei:v.imei||'-',
+      cliente:v.cliente||'-', precio:v.precioVenta,
+      ganancia:(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0),
+      bonifTexto
+    };
+  });
 
   // Ventas cerradas desde la app de Mensajes (entran como "reservado")
   const reservas = (ventasMensajes||[]).map(r=>({
@@ -2154,7 +2300,7 @@ function renderVentas(){
       tr.innerHTML = `
         <td data-label="Fecha">${v.fecha}</td>
         <td data-label="Nro. de Venta">${v.nro}</td>
-        <td data-label="Modelo">${v.modelo}</td>
+        <td data-label="Modelo">${v.modelo}${v.bonifTexto?`<br><span style="font-size:11px;color:var(--amber);">${v.bonifTexto}</span>`:''}</td>
         <td data-label="IMEI">${v.imei}</td>
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">$${fmt(v.precio)}</td>
@@ -2342,11 +2488,25 @@ function venderEnCuotas(){
 
   if(!precioCuotas){ alert('Cargá el precio en cuotas.'); return; }
 
+  if(tipo==='equipo'){
+    const id = document.getElementById('vcEquipo').value;
+    if(!id){ alert('Elegí un equipo.'); return; }
+  } else {
+    const id = document.getElementById('vcAccesorio').value;
+    if(!id){ alert('Elegí un accesorio.'); return; }
+  }
+
+  // Mostrar modal de bonificación antes de confirmar
+  mostrarModalBonificacion(function(bonificados){
+    _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados);
+  });
+}
+
+function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados){
   let modelo = '', imei = '', color = '', itemId = '', precioCompra = 0, bateria = '';
 
   if(tipo==='equipo'){
     const id = document.getElementById('vcEquipo').value;
-    if(!id){ alert('Elegí un equipo.'); return; }
     const e = equipos.find(x=>x.id===id);
     e.estado = 'vendido';
     e.venta = anticipo + precioCuotas;
@@ -2356,7 +2516,6 @@ function venderEnCuotas(){
     modelo = e.modelo; imei = e.imei; color = e.color; itemId = e.id; precioCompra = Number(e.compra)||0; bateria = e.bateria||'';
   } else {
     const id = document.getElementById('vcAccesorio').value;
-    if(!id){ alert('Elegí un accesorio.'); return; }
     const a = accesorios.find(x=>x.id===id);
     a.estado = 'vendido';
     syncGuardar('stock_accesorios', accesorios);
@@ -2401,12 +2560,35 @@ function venderEnCuotas(){
     fechaInicio,
     cronograma,
     estado: 'activo',
-    fecha: hoyISO()
+    fecha: hoyISO(),
+    bonificados: bonificados.length ? bonificados : undefined
   };
 
   ventasCuotas.push(registro);
   syncGuardar('ventas_cuotas', ventasCuotas);
-  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}`);
+
+  // Registrar bonificaciones como ventas a $0
+  bonificados.forEach(b => {
+    ventas.push({
+      id: b.id,
+      tipo: 'accesorio',
+      itemId: b.itemId,
+      modelo: b.modelo,
+      color: b.color,
+      imei: '',
+      cliente,
+      clienteId,
+      comercioId,
+      vendedorId,
+      precioVenta: '0',
+      precioCompra: b.precioCompra,
+      fecha: hoyISO(),
+      esBonificacion: true
+    });
+  });
+  if(bonificados.length) syncGuardar('ventas', ventas);
+
+  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
 
   // Limpiar formulario
   document.getElementById('vcPrecioCuotas').value = '';
@@ -2535,107 +2717,25 @@ function imprimirComprobanteCuotas(id){
   const vc = ventasCuotas.find(x=>x.id===id);
   if(!vc) return;
   const valorCuota = vc.cantCuotas>0 ? (Number(vc.precioCuotas)||0)/vc.cantCuotas : 0;
-  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
-  const totalCuotasARS = (Number(vc.precioCuotas)||0) * dolar;
-  const valorCuotaARS = valorCuota * dolar;
-  const anticipoNum = Number(vc.anticipo)||0;
-  const totalOp = (Number(vc.precioCuotas)||0) + anticipoNum;
   const filas = (vc.cronograma||[]).map(c=>
-    `<tr>
-      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${c.nro}</td>
-      <td style="padding:6px 10px;border:1px solid #ddd;">${c.vencimiento||'-'}</td>
-      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${c.pagada ? '✅ '+(c.fechaPago||'Pagada') : '⏳ Pendiente'}</td>
-      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right;">USD $${fmt(c.monto)}</td>
-      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right;color:#555;">ARS $${fmt((Number(c.monto)||0)*dolar)}</td>
-    </tr>`
+    `<tr><td>Cuota ${c.nro}</td><td>${c.vencimiento||'-'}</td><td>${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td>$${fmt(c.monto)}</td></tr>`
   ).join('');
-  const doc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante Venta en Cuotas</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:750px;margin:0 auto;}
-  h1{font-size:20px;text-align:center;margin-bottom:2px;}
-  h2{font-size:13px;text-align:center;color:#666;margin-bottom:4px;font-weight:400;}
-  .fecha{font-size:10px;text-align:center;color:#999;margin-bottom:16px;}
-  .seccion{border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:12px;}
-  .seccion h3{font-size:12px;margin:0 0 6px;border-bottom:1px solid #eee;padding-bottom:4px;}
-  .seccion table{width:100%;font-size:11px;border-collapse:collapse;}
-  .seccion td{padding:2px 0;}
-  .seccion td:first-child{width:140px;color:#555;}
-  .estado-box{text-align:center;padding:10px;border-radius:8px;margin:12px 0;font-size:13px;font-weight:700;}
-  .estado-finalizado{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
-  .estado-curso{background:#fff3cd;color:#856404;border:1px solid #ffeeba;}
-  .totales{background:#f7f7f7;border-radius:10px;padding:14px;margin:14px 0;text-align:center;}
-  .totales .principal{font-size:24px;font-weight:700;}
-  .totales .secundario{font-size:14px;color:#555;margin-top:3px;}
-  .totales .detalle{font-size:12px;color:#777;margin-top:6px;}
-  table.cronograma{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;}
-  table.cronograma th{background:#f0f0f0;padding:6px 10px;border:1px solid #ddd;text-align:left;font-size:10px;}
-  .firmas{margin-top:30px;display:flex;justify-content:space-between;}
-  .firmas div{text-align:center;width:45%;border-top:1px solid #222;padding-top:5px;font-size:11px;}
-  .toolbar-print{text-align:center;margin-bottom:16px;}
-  .toolbar-print button{padding:8px 20px;font-size:13px;border:none;border-radius:6px;cursor:pointer;margin:0 4px;}
-  .toolbar-print .imprimir{background:#007aff;color:#fff;font-weight:700;}
-  .toolbar-print .cerrar{background:#eee;color:#333;}
-  @media print{.toolbar-print{display:none;}}
-</style></head><body>
-  <div class="toolbar-print">
-    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-    <button class="cerrar" onclick="window.close()">Cerrar</button>
-  </div>
-  <h1>COMPROBANTE DE VENTA EN CUOTAS</h1>
-  <h2>Aruba Apple</h2>
-  <p class="fecha">Fecha de emisión: ${new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
-
-  <div class="seccion">
-    <h3>DATOS DEL CLIENTE</h3>
-    <table><tr><td><b>Cliente:</b></td><td>${vc.cliente||'-'}</td></tr></table>
-  </div>
-
-  <div class="seccion">
-    <h3>DATOS DEL EQUIPO</h3>
-    <table>
-      <tr><td><b>Modelo:</b></td><td>${vc.modelo}</td></tr>
-      ${vc.color ? `<tr><td><b>Color:</b></td><td>${vc.color}</td></tr>` : ''}
-      ${vc.imei ? `<tr><td><b>IMEI:</b></td><td>${vc.imei}</td></tr>` : ''}
+  document.getElementById('printArea').innerHTML = `
+    <h3>Comprobante de venta en cuotas</h3>
+    <p><b>Aruba Apple</b></p>
+    <p>Fecha de venta: ${vc.fecha}</p>
+    <p>Cliente: ${vc.cliente||'-'}</p>
+    <p>Equipo: ${vc.modelo}${vc.color?' · '+vc.color:''}${vc.imei?' · IMEI '+vc.imei:''}</p>
+    <p>Plan: ${vc.cantCuotas} cuotas de $${fmt(valorCuota)} — frecuencia ${vc.frecuencia||'-'}</p>
+    ${(Number(vc.anticipo)||0) > 0 ? `<p>Anticipo / Seña: USD ${fmt(vc.anticipo)}</p>` : ''}
+    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+      <tr><th style="text-align:left; border-bottom:1px solid #000;">Cuota</th><th style="text-align:left; border-bottom:1px solid #000;">Vencimiento</th><th style="text-align:left; border-bottom:1px solid #000;">Pago</th><th style="text-align:left; border-bottom:1px solid #000;">Monto</th></tr>
+      ${filas}
     </table>
-  </div>
-
-  <div class="seccion">
-    <h3>PLAN DE FINANCIACIÓN</h3>
-    <table>
-      <tr><td><b>Fecha de venta:</b></td><td>${vc.fecha||'-'}</td></tr>
-      <tr><td><b>Cantidad de cuotas:</b></td><td>${vc.cantCuotas}</td></tr>
-      <tr><td><b>Frecuencia:</b></td><td>${vc.frecuencia||'-'}</td></tr>
-      <tr><td><b>Valor por cuota:</b></td><td>USD $${fmt(valorCuota)} / ARS $${fmt(valorCuotaARS)}</td></tr>
-      ${anticipoNum > 0 ? `<tr><td><b>Anticipo / Seña:</b></td><td>USD $${fmt(anticipoNum)} / ARS $${fmt(anticipoNum*dolar)}</td></tr>` : ''}
-    </table>
-  </div>
-
-  <div class="${vc.estado==='finalizado' ? 'estado-box estado-finalizado' : 'estado-box estado-curso'}">
-    ${vc.estado==='finalizado' ? '✅ CRÉDITO FINALIZADO — Todas las cuotas abonadas' : `⏳ En curso — ${vc.cuotasPagadas||0}/${vc.cantCuotas} cuotas pagadas`}
-  </div>
-
-  <h3 style="font-size:12px;margin:14px 0 4px;">CRONOGRAMA DE CUOTAS</h3>
-  <table class="cronograma">
-    <tr><th style="text-align:center;">N°</th><th>Vencimiento</th><th style="text-align:center;">Estado</th><th style="text-align:right;">Monto USD</th><th style="text-align:right;">Monto ARS</th></tr>
-    ${filas}
-  </table>
-
-  <div class="totales">
-    <div class="principal">USD $${fmt(vc.precioCuotas)}</div>
-    <div class="secundario">≈ ARS $${fmt(totalCuotasARS)}</div>
-    <div class="detalle">Total financiado (${vc.cantCuotas} cuotas)</div>
-    ${anticipoNum > 0 ? `<div class="detalle" style="margin-top:6px;font-weight:700;">Total operación (anticipo + cuotas): USD $${fmt(totalOp)} / ARS $${fmt(totalOp*dolar)}</div>` : ''}
-  </div>
-
-  <div class="firmas">
-    <div>Firma del cliente</div>
-    <div>Firma del responsable</div>
-  </div>
-</body></html>`;
-  const w = window.open('','_blank');
-  if(w){ w.document.open(); w.document.write(doc); w.document.close(); }
-  else { alert('El navegador bloqueó la ventana. Permití los popups para este sitio.'); }
+    <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
+    ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:700;">Total de la operación (anticipo + cuotas): USD ${fmt((Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0))}</p>` : ''}
+    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
+  window.print();
 }
 
 // Convierte un número a letras en español (para el monto del contrato)
