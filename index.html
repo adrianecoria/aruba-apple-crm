@@ -4047,7 +4047,7 @@ function pagarVendedor(id){
   overlay.innerHTML = `
     <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:18px;padding:28px;max-width:420px;width:100%;text-align:center;">
       <h2 style="font-size:18px;margin-bottom:6px;">Pagar a ${u.nombre} ${u.apellido}</h2>
-      <p style="font-size:14px;color:var(--txt2);margin-bottom:20px;">Monto: <b style="color:var(--green);">USD $${fmt(neta)}</b></p>
+      <p style="font-size:14px;color:var(--txt2);margin-bottom:20px;">Monto: <b style="color:var(--green);">USD $${fmt(neta)}</b> / <b style="color:var(--amber);">ARS $${fmt(neta*(parseFloat(ls_get('dolar_blue',1555))||1555))}</b></p>
       <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
         <button class="btn" style="width:100%;max-width:280px;background:var(--green);color:#000;font-weight:700;padding:12px;" onclick="confirmarPagoVendedor('${id}','efectivo')">💵 Pagar Efectivo</button>
         <button class="btn" style="width:100%;max-width:280px;background:#00b4ff;color:#000;font-weight:700;padding:12px;" onclick="confirmarPagoVendedor('${id}','transferencia')">🏦 Pagar Transferencia</button>
@@ -4060,6 +4060,7 @@ function pagarVendedor(id){
 function confirmarPagoVendedor(id, metodo){
   const u = usuarios.find(x=>x.id===id);
   const neta = gananciaNetaVendedor(id);
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
   const overlay = document.getElementById('modalPagoOverlay');
   if(overlay) overlay.remove();
 
@@ -4070,16 +4071,24 @@ function confirmarPagoVendedor(id, metodo){
       return;
     }
     navigator.clipboard.writeText(alias).catch(()=>{});
-    window.open('https://www.mercadopago.com.ar/transfer/account-finder?preference_id=transfer-mla-desktop&workflow_id=ars_transfer#from=home_mp_desktop&oc.component=banking&oc.page_id=hs_home_mp_desktop', '_blank');
-    alert(`Alias copiado al portapapeles: ${alias}\n\nSe abrió Mercado Pago. Pegá el alias para completar la transferencia a ${u.nombre} ${u.apellido}.`);
   }
 
-  if(!confirm(`¿Confirmar pago de $${fmt(neta)} a ${u.nombre} ${u.apellido} por ${metodo}? La ganancia generada vuelve a $0.`)) return;
+  // 1) Registrar pago PRIMERO
   pagosVendedor.push({ id: uid(), vendedorId: id, monto: neta, fecha: hoyISO(), metodo });
   syncGuardar('pagos_vendedor', pagosVendedor);
-  registrarActividad(`Pago de comisión a ${u.nombre} ${u.apellido} — $${fmt(neta)} (${metodo})`);
-  generarComprobantePago(u, neta, metodo);
+  registrarActividad(`Pago de comisión a ${u.nombre} ${u.apellido} — USD $${fmt(neta)} / ARS $${fmt(neta*dolar)} (${metodo})`);
   renderUsuarios();
+
+  // 2) Generar comprobante PDF (usando printArea, sin popup)
+  generarComprobantePago(u, neta, metodo);
+
+  // 3) Si es transferencia, abrir Mercado Pago DESPUÉS
+  if(metodo === 'transferencia'){
+    alert(`✅ Pago registrado.\n\nAlias copiado: ${u.alias}\n\nSe abrirá Mercado Pago para completar la transferencia.`);
+    window.open('https://www.mercadopago.com.ar/transfer/account-finder?preference_id=transfer-mla-desktop&workflow_id=ars_transfer#from=home_mp_desktop&oc.component=banking&oc.page_id=hs_home_mp_desktop', '_blank');
+  } else {
+    alert(`✅ Pago en efectivo registrado: USD $${fmt(neta)} / ARS $${fmt(neta*dolar)} a ${u.nombre} ${u.apellido}.`);
+  }
 }
 
 function generarComprobantePago(u, monto, metodo){
@@ -4108,8 +4117,10 @@ function generarComprobantePago(u, monto, metodo){
     detalleHTML += '</table>';
   }
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante de Pago</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#222;max-width:700px;margin:0 auto;}h1{font-size:20px;text-align:center;margin-bottom:4px;}h2{font-size:14px;text-align:center;color:#666;margin-bottom:20px;font-weight:400;}.info{display:flex;justify-content:space-between;border-top:2px solid #222;border-bottom:1px solid #ddd;padding:10px 0;margin-bottom:10px;font-size:13px;}.monto-box{text-align:center;padding:16px;background:#f7f7f7;border-radius:10px;margin:16px 0;}.monto-box .usd{font-size:28px;font-weight:700;}.monto-box .ars{font-size:16px;color:#555;margin-top:4px;}.metodo{text-align:center;font-size:13px;color:#555;margin-bottom:10px;}.firma{margin-top:40px;display:flex;justify-content:space-between;}.firma div{text-align:center;width:45%;border-top:1px solid #222;padding-top:6px;font-size:12px;}</style></head><body><h1>COMPROBANTE DE PAGO</h1><h2>Aruba Apple</h2><div class="info"><span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span><span><b>Fecha y hora:</b> ${fechaHora}</span></div><div class="metodo">Método de pago: <b>${metodo==='transferencia'?'Transferencia bancaria':'Efectivo'}</b>${metodo==='transferencia'&&u.alias?' · Alias: <b>'+u.alias+'</b>':''}</div><div class="monto-box"><div class="usd">USD $${fmt(monto)}</div><div class="ars">≈ ARS $${fmt(montoARS)}</div></div><h3 style="font-size:13px;margin-top:20px;">Detalle de ventas que generaron esta comisión:</h3>${detalleHTML||'<p style="font-size:12px;color:#888;">Sin detalle disponible.</p>'}<div class="firma"><div>Firma del vendedor</div><div>Firma del administrador</div></div></body></html>`;
-  const w = window.open('', '_blank');
-  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>{ w.print(); }, 500); }
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = html;
+  pa.style.display = 'block';
+  setTimeout(()=>{ window.print(); pa.style.display='none'; pa.innerHTML=''; }, 400);
 }
 
 function agregarUsuario(){
