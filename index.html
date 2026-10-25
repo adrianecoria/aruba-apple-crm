@@ -541,6 +541,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           </div>
           <div class="field"><label>Precio venta (USD)</label><input id="eVenta" type="number" placeholder="0"></div>
           <div class="field"><label>Estado</label><select id="eEstado"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></div>
+          <div class="field"><label>Cantidad</label><input id="eCantidad" type="number" min="1" value="1" placeholder="1" style="width:70px;"></div>
           <div class="field"><button class="btn" onclick="agregarEquipo()" style="width:100%;">Agregar</button></div>
         </div>
       </div>
@@ -1345,24 +1346,35 @@ function ganancia(compra, venta, sugerido){
 
 function agregarEquipo(){
   if(!esAdmin()) return;
+  const cantidad = parseInt(document.getElementById('eCantidad').value) || 1;
   const imei = document.getElementById('eImei').value.trim();
-  if(!imei){ alert('El IMEI es obligatorio.'); return; }
-  if(imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
-  if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
-  equipos.push({
-    id: uid(), modelo: document.getElementById('eModelo').value,
+  if(cantidad === 1){
+    if(!imei){ alert('El IMEI es obligatorio para carga individual.'); return; }
+    if(imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
+    if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
+  } else {
+    if(imei && (imei.length !== 15 || !/^\d{15}$/.test(imei))){ alert('Si ingresás IMEI debe tener 15 dígitos numéricos.'); return; }
+    if(imei && equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
+  }
+  const base = {
+    modelo: document.getElementById('eModelo').value,
     proveedorId: document.getElementById('eProveedor').value,
     clienteVendedorId: document.getElementById('eCliente').value,
     color: document.getElementById('eColor').value.trim(),
-    bateria: document.getElementById('eBateria').value, imei,
+    bateria: document.getElementById('eBateria').value,
     compra: document.getElementById('eCompra').value,
     sugerido: document.getElementById('eSugerido').value,
     venta: document.getElementById('eVenta').value,
     estado: document.getElementById('eEstado').value
-  });
+  };
+  for(let i = 0; i < cantidad; i++){
+    equipos.push(Object.assign({}, base, { id: uid(), imei: (cantidad === 1 ? imei : '') }));
+  }
   syncGuardar('stock_equipos', equipos);
   ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('eCliente').value = '';
+  document.getElementById('eCantidad').value = '1';
+  if(cantidad > 1) alert(`✅ Se cargaron ${cantidad} equipos. Recordá completar el IMEI de cada uno.`);
   renderEquipos();
 }
 
