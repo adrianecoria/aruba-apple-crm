@@ -224,6 +224,22 @@ select option{background:#1a1220;}
 .nuevo-turno-form .field-sm select option{ background:#1a1220; color:var(--txt); }
 .nuevo-turno-btn{ background:linear-gradient(135deg,var(--grad1),var(--grad2)); border:none; color:#fff; padding:8px 16px; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; transition:0.2s; }
 .nuevo-turno-btn:hover{ opacity:0.85; }
+.slots-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(105px,1fr)); gap:6px; }
+.slot-cell{ padding:8px 6px; border-radius:10px; text-align:center; font-size:12px; font-weight:600; cursor:pointer; transition:0.2s; border:1.5px solid transparent; }
+.slot-cell .slot-time{ font-size:13px; }
+.slot-cell .slot-status{ font-size:10px; margin-top:2px; opacity:0.8; }
+.slot-disponible{ background:rgba(78,224,138,0.13); color:var(--green); border-color:rgba(78,224,138,0.25); }
+.slot-disponible:hover{ background:rgba(78,224,138,0.22); border-color:var(--green); }
+.slot-parcial{ background:rgba(255,207,92,0.13); color:var(--amber); border-color:rgba(255,207,92,0.25); }
+.slot-parcial:hover{ background:rgba(255,207,92,0.22); border-color:var(--amber); }
+.slot-lleno{ background:rgba(255,84,112,0.10); color:var(--red); border-color:rgba(255,84,112,0.18); cursor:not-allowed; opacity:0.7; }
+.slot-selected{ border-color:var(--grad2)!important; box-shadow:0 0 12px rgba(178,59,240,0.3); }
+.slot-break{ background:rgba(255,255,255,0.03); color:var(--txt3); cursor:default; font-style:italic; border:1px dashed rgba(255,255,255,0.08); }
+.slots-legend{ display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--txt2); flex-wrap:wrap; }
+.slots-legend span::before{ content:''; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+.slots-legend .leg-disp::before{ background:var(--green); }
+.slots-legend .leg-parc::before{ background:var(--amber); }
+.slots-legend .leg-full::before{ background:var(--red); }
 
 /* Glow color variants for turnos panels */
 @keyframes pulseRedGlow{
@@ -602,30 +618,28 @@ body.rol-usuario .solo-admin{display:none !important;}
         <h2>➕ Agendar nuevo turno</h2>
         <div class="nuevo-turno-form">
           <div class="form-row-inline">
-            <div class="field-sm"><label>Fecha</label><input type="date" id="nuevoTurnoFecha"></div>
-            <div class="field-sm"><label>Hora inicio</label>
-              <select id="nuevoTurnoInicio"></select>
-            </div>
-            <div class="field-sm"><label>Hora fin</label>
-              <select id="nuevoTurnoFin"></select>
-            </div>
+            <div class="field-sm"><label>Fecha</label><input type="date" id="nuevoTurnoFecha" onchange="renderSlotsDisponibles()"></div>
           </div>
-          <div class="form-row-inline" style="margin-top:8px;">
-            <div class="field-sm"><label>Nombre cliente</label><input type="text" id="nuevoTurnoNombre" placeholder="Nombre del cliente"></div>
-            <div class="field-sm"><label>Canal</label>
-              <select id="nuevoTurnoCanal">
-                <option value="whatsapp">WhatsApp</option>
-                <option value="instagram">Instagram</option>
-                <option value="messenger">Messenger</option>
-                <option value="presencial">Presencial</option>
-              </select>
+          <div id="slotsGrid" class="slots-grid" style="margin-top:12px;"></div>
+          <div id="nuevoTurnoDetalle" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:13px; color:var(--green); font-weight:600; margin-bottom:8px;" id="slotSeleccionadoLabel"></div>
+            <div class="form-row-inline">
+              <div class="field-sm"><label>Nombre cliente</label><input type="text" id="nuevoTurnoNombre" placeholder="Nombre del cliente"></div>
+              <div class="field-sm"><label>Canal</label>
+                <select id="nuevoTurnoCanal">
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="messenger">Messenger</option>
+                  <option value="presencial">Presencial</option>
+                </select>
+              </div>
+              <div class="field-sm"><label>ID cliente</label><input type="text" id="nuevoTurnoClienteId" placeholder="Tel / usuario"></div>
             </div>
-            <div class="field-sm"><label>ID cliente</label><input type="text" id="nuevoTurnoClienteId" placeholder="Tel / usuario"></div>
-          </div>
-          <div style="display:flex; gap:8px; margin-top:12px; align-items:center; flex-wrap:wrap;">
-            <button class="nuevo-turno-btn" onclick="crearTurnoCRM()">Agendar turno</button>
-            <button class="turno-btn" title="Copiar mensaje de confirmación" onclick="copiarMensajeTurnoCRM()" style="width:auto; padding:0 12px; font-size:12px; gap:4px;">📋 Copiar mensaje</button>
-            <span id="nuevoTurnoCopiadoMsg" style="font-size:12px; color:var(--green); display:none;">✓ Copiado</span>
+            <div style="display:flex; gap:8px; margin-top:12px; align-items:center; flex-wrap:wrap;">
+              <button class="nuevo-turno-btn" onclick="crearTurnoCRM()">Agendar turno</button>
+              <button class="turno-btn" title="Copiar mensaje de confirmación" onclick="copiarMensajeTurnoCRM()" style="width:auto; padding:0 12px; font-size:12px; gap:4px;">📋 Copiar mensaje</button>
+              <span id="nuevoTurnoCopiadoMsg" style="font-size:12px; color:var(--green); display:none;">✓ Copiado</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1457,29 +1471,102 @@ const CRM_HORARIOS = {
 };
 const DIAS_SEMANA_KEY = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
 
-function generarOpcionesTurnos(){
-  const selInicio = document.getElementById('nuevoTurnoInicio');
-  const selFin = document.getElementById('nuevoTurnoFin');
-  if(!selInicio || !selFin){ console.warn('Select turnos no encontrados'); return; }
-  selInicio.length = 0; selFin.length = 0;
-  const horas = [];
-  for(let h=10; h<=18; h++){
-    for(let m=0; m<60; m+=30){
-      if(h===18 && m>0) break;
-      horas.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+let crmSlotSeleccionado = null; // {inicio, fin}
+
+function generarSlotsDia(diaSemana){
+  const franjas = CRM_HORARIOS[diaSemana] || [];
+  const slots = [];
+  franjas.forEach(f => {
+    let [h,m] = f.desde.split(':').map(Number);
+    const [hFin,mFin] = f.hasta.split(':').map(Number);
+    while(h*60+m < hFin*60+mFin){
+      const inicio = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+      m += 30;
+      if(m >= 60){ h++; m = 0; }
+      const fin = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+      slots.push({inicio, fin});
     }
-  }
-  horas.forEach(t=>{
-    selInicio.add(new Option(t, t));
-    selFin.add(new Option(t, t));
   });
-  selInicio.value = '10:00';
-  selFin.value = '10:30';
-  // Set default date to today
+  return slots;
+}
+
+async function renderSlotsDisponibles(){
+  const grid = document.getElementById('slotsGrid');
+  const detalle = document.getElementById('nuevoTurnoDetalle');
+  if(!grid) return;
+  crmSlotSeleccionado = null;
+  if(detalle) detalle.style.display = 'none';
+
+  const fechaInput = document.getElementById('nuevoTurnoFecha');
+  const fecha = fechaInput ? fechaInput.value : '';
+  if(!fecha){ grid.innerHTML = '<div style="color:var(--txt3);font-size:13px;padding:8px;">Seleccioná una fecha para ver los turnos disponibles</div>'; return; }
+
+  const d = new Date(fecha + 'T12:00:00');
+  const diaSemana = DIAS_SEMANA_KEY[d.getDay()];
+  if(diaSemana === 'domingo'){
+    grid.innerHTML = '<div style="color:var(--red);font-size:13px;padding:8px;">🚫 Domingos cerrado</div>';
+    return;
+  }
+
+  const slots = generarSlotsDia(diaSemana);
+  if(!slots.length){ grid.innerHTML = ''; return; }
+
+  // Count existing turnos per slot for this date
+  await cargarTurnosCRM();
+  const turnosDia = turnosParaFecha(fecha);
+  const conteo = {};
+  turnosDia.forEach(t => {
+    const key = t.hora_inicio;
+    conteo[key] = (conteo[key] || 0) + 1;
+  });
+
+  // Check if there's a lunch break (Mon-Fri)
+  const tieneAlmuerzo = diaSemana !== 'sabado';
+  const totalSlots = slots.length;
+  const totalDisp = slots.reduce((s,sl) => s + (2 - (conteo[sl.inicio]||0)), 0);
+
+  let html = '<div class="slots-legend"><span class="leg-disp">Disponible</span><span class="leg-parc">1 turno</span><span class="leg-full">Completo</span></div>';
+
+  slots.forEach((sl, i) => {
+    const ocupados = conteo[sl.inicio] || 0;
+    let cls = 'slot-disponible';
+    let statusTxt = '0/2 — Libre';
+    if(ocupados === 1){ cls = 'slot-parcial'; statusTxt = '1/2 — Queda 1'; }
+    if(ocupados >= 2){ cls = 'slot-lleno'; statusTxt = '2/2 — Completo'; }
+
+    // Insert lunch break separator for Mon-Fri between 13:00 and 14:00
+    if(tieneAlmuerzo && sl.inicio === '14:00'){
+      html += '<div class="slot-cell slot-break"><div class="slot-time">🍽</div><div class="slot-status">13:00-14:00 Almuerzo</div></div>';
+    }
+
+    const clickable = ocupados < 2;
+    html += `<div class="slot-cell ${cls}" ${clickable ? `onclick="seleccionarSlotCRM('${sl.inicio}','${sl.fin}', this)"` : ''}>
+      <div class="slot-time">${sl.inicio} - ${sl.fin}</div>
+      <div class="slot-status">${statusTxt}</div>
+    </div>`;
+  });
+
+  html += `<div style="margin-top:8px;font-size:12px;color:var(--txt3);">Total: ${totalSlots} slots — ${totalDisp} turnos disponibles de ${totalSlots*2}</div>`;
+  grid.innerHTML = html;
+}
+
+function seleccionarSlotCRM(inicio, fin, el){
+  crmSlotSeleccionado = {inicio, fin};
+  document.querySelectorAll('.slot-cell').forEach(c => c.classList.remove('slot-selected'));
+  el.classList.add('slot-selected');
+  const detalle = document.getElementById('nuevoTurnoDetalle');
+  const label = document.getElementById('slotSeleccionadoLabel');
+  if(detalle) detalle.style.display = 'block';
+  if(label) label.textContent = '🕐 Turno seleccionado: ' + inicio + ' - ' + fin;
+}
+
+function generarOpcionesTurnos(){
+  // Set default date to today and render slots
   const hoy = new Date();
   const hoyStr = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
   const fechaInput = document.getElementById('nuevoTurnoFecha');
   if(fechaInput) fechaInput.value = hoyStr;
+  renderSlotsDisponibles();
 }
 
 function showToast(msg){
@@ -1631,9 +1718,9 @@ async function copiarTextoTurno(btn, texto){
 
 function copiarMensajeTurnoCRM(){
   const fecha = document.getElementById('nuevoTurnoFecha').value;
-  const inicio = document.getElementById('nuevoTurnoInicio').value;
-  const fin = document.getElementById('nuevoTurnoFin').value;
-  if(!fecha){ alert('Seleccioná una fecha primero'); return; }
+  if(!fecha || !crmSlotSeleccionado){ alert('Seleccioná una fecha y un horario primero'); return; }
+  const inicio = crmSlotSeleccionado.inicio;
+  const fin = crmSlotSeleccionado.fin;
   const fechaObj = new Date(fecha + 'T12:00:00');
   const dia = fechaObj.getDate();
   const mes = fechaObj.toLocaleDateString('es-AR',{month:'long'});
@@ -1647,13 +1734,19 @@ function copiarMensajeTurnoCRM(){
 
 async function crearTurnoCRM(){
   const fecha = document.getElementById('nuevoTurnoFecha').value;
-  const inicio = document.getElementById('nuevoTurnoInicio').value;
-  const fin = document.getElementById('nuevoTurnoFin').value;
+  if(!fecha){ alert('Seleccioná una fecha'); return; }
+  if(!crmSlotSeleccionado){ alert('Seleccioná un horario disponible'); return; }
+  const inicio = crmSlotSeleccionado.inicio;
+  const fin = crmSlotSeleccionado.fin;
   const nombre = document.getElementById('nuevoTurnoNombre').value.trim();
   const canal = document.getElementById('nuevoTurnoCanal').value;
   const clienteId = document.getElementById('nuevoTurnoClienteId').value.trim();
-  if(!fecha){ alert('Seleccioná una fecha'); return; }
-  if(inicio >= fin){ alert('La hora de fin debe ser posterior a la de inicio'); return; }
+
+  // Double-check availability before inserting
+  const {data:existing, error:chkErr} = await sbClient.from('turnos').select('id').eq('fecha', fecha).eq('hora_inicio', inicio).neq('estado','cancelado');
+  if(chkErr){ console.error(chkErr); alert('Error verificando disponibilidad'); return; }
+  if(existing && existing.length >= 2){ alert('Este horario ya tiene 2 turnos asignados. Elegí otro.'); await renderSlotsDisponibles(); return; }
+
   try{
     const {error} = await sbClient.from('turnos').insert({
       fecha, hora_inicio: inicio, hora_fin: fin,
@@ -1667,9 +1760,11 @@ async function crearTurnoCRM(){
     if(error) throw error;
     await cargarTurnosCRM();
     renderAllTurnos();
-    // Reset form
+    await renderSlotsDisponibles();
     document.getElementById('nuevoTurnoNombre').value = '';
     document.getElementById('nuevoTurnoClienteId').value = '';
+    crmSlotSeleccionado = null;
+    document.getElementById('nuevoTurnoDetalle').style.display = 'none';
     showToast('Turno agendado ✓');
   }catch(e){
     console.error('Error creando turno:', e);
