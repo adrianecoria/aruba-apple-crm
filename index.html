@@ -220,7 +220,8 @@ select option{background:#1a1220;}
 .nuevo-turno-form .field-sm{ flex:1; min-width:100px; }
 .nuevo-turno-form .field-sm label{ display:block; font-size:11px; color:var(--txt3); margin-bottom:4px; }
 .nuevo-turno-form .field-sm input,
-.nuevo-turno-form .field-sm select{ width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--txt); padding:7px 10px; border-radius:10px; font-size:13px; }
+.nuevo-turno-form .field-sm select{ width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--txt); padding:7px 10px; border-radius:10px; font-size:13px; -webkit-appearance:auto; appearance:auto; }
+.nuevo-turno-form .field-sm select option{ background:#1a1220; color:var(--txt); }
 .nuevo-turno-btn{ background:linear-gradient(135deg,var(--grad1),var(--grad2)); border:none; color:#fff; padding:8px 16px; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; transition:0.2s; }
 .nuevo-turno-btn:hover{ opacity:0.85; }
 
@@ -1456,21 +1457,26 @@ const DIAS_SEMANA_KEY = ['domingo','lunes','martes','miercoles','jueves','vierne
 function generarOpcionesTurnos(){
   const selInicio = document.getElementById('nuevoTurnoInicio');
   const selFin = document.getElementById('nuevoTurnoFin');
-  if(!selInicio || !selFin) return;
-  selInicio.innerHTML = ''; selFin.innerHTML = '';
+  if(!selInicio || !selFin){ console.warn('Select turnos no encontrados'); return; }
+  selInicio.length = 0; selFin.length = 0;
+  const horas = [];
   for(let h=10; h<=18; h++){
     for(let m=0; m<60; m+=30){
       if(h===18 && m>0) break;
-      const t = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-      selInicio.innerHTML += `<option value="${t}">${t}</option>`;
-      selFin.innerHTML += `<option value="${t}">${t}</option>`;
+      horas.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
     }
   }
+  horas.forEach(t=>{
+    selInicio.add(new Option(t, t));
+    selFin.add(new Option(t, t));
+  });
+  selInicio.value = '10:00';
   selFin.value = '10:30';
   // Set default date to today
   const hoy = new Date();
   const hoyStr = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
-  document.getElementById('nuevoTurnoFecha').value = hoyStr;
+  const fechaInput = document.getElementById('nuevoTurnoFecha');
+  if(fechaInput) fechaInput.value = hoyStr;
 }
 
 function showToast(msg){
