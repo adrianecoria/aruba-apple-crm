@@ -1342,6 +1342,7 @@ function calcular(){
 
 function renderStockResumen(){
   const cont = document.getElementById('stockResumen');
+  if(!cont) return;
   cont.innerHTML = '';
   let total = 0;
   MODELOS.forEach(m=>{
@@ -1352,7 +1353,8 @@ function renderStockResumen(){
     row.innerHTML = `<span class="name">${m}</span><span class="count">${count}</span>`;
     cont.appendChild(row);
   });
-  document.getElementById('stockTotalResumen').textContent = total;
+  const totalEl = document.getElementById('stockTotalResumen');
+  if(totalEl) totalEl.textContent = total;
 }
 
 /* --- FACTURACIÓN / RENTABILIDAD (incluye ventas de Mensajes entregadas) ---
@@ -1387,6 +1389,7 @@ function totalesVentas(periodo){
   return { venta, gananciaBruta, comisiones, ganancia: gananciaBruta - comisiones };
 }
 function renderInicioVentaGanancia(){
+  if(!document.getElementById('ventaDiaVal')) return;
   const hoy = totalesVentas('hoy'); const mes = totalesVentas('mes');
   document.getElementById('ventaDiaVal').textContent = '$ ' + fmt(hoy.venta);
   document.getElementById('ventaMesVal').textContent = '$ ' + fmt(mes.venta);
