@@ -2958,32 +2958,45 @@ function imprimirComprobanteCuotas(id){
   if(!vc) return;
   const valorCuota = vc.cantCuotas>0 ? (Number(vc.precioCuotas)||0)/vc.cantCuotas : 0;
   const filas = (vc.cronograma||[]).map(c=>
-    `<tr><td>Cuota ${c.nro}</td><td>${c.vencimiento||'-'}</td><td>${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td>$${fmt(c.monto)}</td></tr>`
+    `<tr><td style="padding:6px; border-bottom:1px solid #ddd;">${c.nro}</td><td style="padding:6px; border-bottom:1px solid #ddd;">${c.vencimiento||'-'}</td><td style="padding:6px; border-bottom:1px solid #ddd;">${c.pagada ? (c.fechaPago||'Sí') : 'Pendiente'}</td><td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">USD ${fmt(c.monto)}</td></tr>`
   ).join('');
-  document.getElementById('printArea').innerHTML = `
-    <h3>Comprobante de venta en cuotas</h3>
-    <p><b>Aruba Apple</b></p>
-    <p>Fecha de venta: ${vc.fecha}</p>
-    <p>Cliente: ${vc.cliente||'-'}</p>
-    <p>Equipo: ${vc.modelo}${vc.color?' · '+vc.color:''}${vc.imei?' · IMEI '+vc.imei:''}</p>
-    <p>Plan: ${vc.cantCuotas} cuotas de $${fmt(valorCuota)} — frecuencia ${vc.frecuencia||'-'}</p>
-    ${(Number(vc.anticipo)||0) > 0 ? `<p>Anticipo / Seña: USD ${fmt(vc.anticipo)}</p>` : ''}
-    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-      <tr><th style="text-align:left; border-bottom:1px solid #000;">Cuota</th><th style="text-align:left; border-bottom:1px solid #000;">Vencimiento</th><th style="text-align:left; border-bottom:1px solid #000;">Pago</th><th style="text-align:left; border-bottom:1px solid #000;">Monto</th></tr>
+  const totalOp = (Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0);
+  const cuerpo = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:2px solid #222; padding-bottom:14px;">
+      <div><div style="font-size:22px; font-weight:800;">ARUBA APPLE</div><div style="font-size:13px; color:#444;">Comprobante de venta en cuotas</div></div>
+      <div style="text-align:right; font-size:13px; color:#555;">Fecha: ${vc.fecha}</div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:18px; font-size:14px;">
+      <tr><td style="padding:5px 0; color:#555; width:140px;">Cliente:</td><td style="padding:5px 0; font-weight:600;">${vc.cliente||'-'}</td></tr>
+      <tr><td style="padding:5px 0; color:#555;">Equipo:</td><td style="padding:5px 0; font-weight:600;">${vc.modelo}${vc.color?' · '+vc.color:''}${vc.imei?' · IMEI '+vc.imei:''}</td></tr>
+      <tr><td style="padding:5px 0; color:#555;">Plan:</td><td style="padding:5px 0; font-weight:600;">${vc.cantCuotas} cuotas de USD ${fmt(valorCuota)} — frecuencia ${vc.frecuencia||'-'}</td></tr>
+      ${(Number(vc.anticipo)||0) > 0 ? `<tr><td style="padding:5px 0; color:#555;">Anticipo / Seña:</td><td style="padding:5px 0; font-weight:600;">USD ${fmt(vc.anticipo)}</td></tr>` : ''}
+    </table>
+    <h4 style="margin:18px 0 8px; font-size:14px;">Cronograma de cuotas</h4>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 6px; border-bottom:2px solid #222;">N°</th><th style="text-align:left; padding:8px 6px; border-bottom:2px solid #222;">Vencimiento</th><th style="text-align:left; padding:8px 6px; border-bottom:2px solid #222;">Estado de pago</th><th style="text-align:right; padding:8px 6px; border-bottom:2px solid #222;">Monto</th></tr>
       ${filas}
     </table>
-    <p style="font-size:20px; font-weight:700; margin-top:14px;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
-    ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:700;">Total de la operación (anticipo + cuotas): USD ${fmt((Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0))}</p>` : ''}
-    ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:14px; padding:8px 12px; border:1px solid #bbb;">
-      <p style="font-weight:700; margin:0 0 4px;">🎁 Accesorios bonificados sin cargo:</p>
+    <div style="margin-top:18px; padding:12px; background:#f9f9f9; border:1px solid #ddd; border-radius:6px;">
+      <p style="font-size:18px; font-weight:700; margin:0;">Total financiado (cuotas): USD ${fmt(vc.precioCuotas)}</p>
+      ${(Number(vc.anticipo)||0) > 0 ? `<p style="font-weight:600; margin:6px 0 0; font-size:15px;">Total de la operación (anticipo + cuotas): USD ${fmt(totalOp)}</p>` : ''}
+    </div>
+    ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:14px; padding:10px 14px; border:1px solid #bbb; border-radius:6px;">
+      <p style="font-weight:700; margin:0 0 6px;">🎁 Accesorios bonificados sin cargo:</p>
       ${vc.bonificados.map(b => {
         const pLista = Number(b.precioLista)||Number(b.precioCompra)||0;
-        return `<p style="margin:2px 0;">&nbsp;&nbsp;• ${b.modelo} — <s>USD ${fmt(pLista)}</s> → <b>USD 0 (BONIFICADO)</b></p>`;
+        return `<p style="margin:3px 0;">&nbsp;&nbsp;• ${b.modelo} — <s>USD ${fmt(pLista)}</s> → <b>USD 0 (BONIFICADO)</b></p>`;
       }).join('')}
-      <p style="margin:4px 0 0; font-size:13px;">Valor total bonificado: USD ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</p>
+      <p style="margin:6px 0 0; font-size:13px; color:#555;">Valor total bonificado: USD ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</p>
     </div>` : ''}
-    <p style="margin-top:6px;">Estado: ${vc.estado==='finalizado' ? 'CRÉDITO FINALIZADO ✓ — Todas las cuotas abonadas.' : `En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>`;
-  window.print();
+    <p style="margin-top:14px; font-size:14px; font-weight:600;">Estado: ${vc.estado==='finalizado' ? '✅ CRÉDITO FINALIZADO — Todas las cuotas abonadas.' : `⏳ En curso — ${vc.cuotasPagadas}/${vc.cantCuotas} cuotas pagadas.`}</p>
+    <div style="display:flex; justify-content:space-between; margin-top:50px;">
+      <div style="text-align:center; width:45%; border-top:1px solid #222; padding-top:6px; font-size:12px;">Firma del cliente</div>
+      <div style="text-align:center; width:45%; border-top:1px solid #222; padding-top:6px; font-size:12px;">Firma del vendedor</div>
+    </div>
+    <p style="font-size:11px; color:#777; margin-top:24px;">Documento no válido como factura fiscal. Comprobante interno de Aruba Apple.</p>`;
+  const cliNombre = vc.cliente || '';
+  abrirDocumentoEditable('Comprobante cuotas' + (cliNombre ? (' — '+cliNombre) : ''), cuerpo);
 }
 
 // Convierte un número a letras en español (para el monto del contrato)
