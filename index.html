@@ -1095,7 +1095,6 @@ body.rol-usuario .solo-admin{display:none !important;}
 <div id="printArea"></div>
 
 <script>
-const LOGO_ICON_B64 = 'data:image/png;base64,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';
 const MODELOS = [
   "iPhone 11","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max",
   "iPhone 13","iPhone 13 mini","iPhone 13 Pro","iPhone 13 Pro Max",
@@ -1446,7 +1445,7 @@ function imprimirEtiqueta(id){
   const e = equipos.find(x=>x.id===id);
   document.getElementById('printArea').innerHTML = `
     <div class="etiqueta-equipo">
-      <div class="et-brand">Aruba <img src="apple-icon.png" style="height:12px; vertical-align:middle; margin:0 1px;"> Apple</div>
+      <div class="et-brand">Aruba Apple</div>
       <div class="et-modelo">${e.modelo}</div>
       <div class="et-color">${e.color || 'Sin color'}</div>
       <div class="et-bateria">Batería: ${e.bateria || '-'}%</div>
@@ -1508,7 +1507,7 @@ function generarComprobanteCompraUsado(id){
   const cuerpo = `
     <div style="line-height:1.5; font-size:14px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <div><div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div><div style="font-size:13px; color:#444;">Comprobante de compra de bienes usados a consumidor final</div></div>
+        <div><div style="font-size:22px; font-weight:800;">Aruba Apple</div><div style="font-size:13px; color:#444;">Comprobante de compra de bienes usados a consumidor final</div></div>
         <div style="text-align:right;"><div>N° ${nro}</div><div>Fecha: ${hoyISO()}</div></div>
       </div>
 
@@ -1558,7 +1557,7 @@ function generarReciboPago(id){
   const cuerpo = `
     <div style="line-height:1.5; font-size:14px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <div><div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div><div style="font-size:13px; color:#444;">Recibo de pago</div></div>
+        <div><div style="font-size:22px; font-weight:800;">Aruba Apple</div><div style="font-size:13px; color:#444;">Recibo de pago</div></div>
         <div style="text-align:right;"><div>Fecha: ${hoyISO()}</div></div>
       </div>
 
@@ -2034,7 +2033,7 @@ function imprimirFactura(id){
     <div style="line-height:1.5;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div>
+          <div style="font-size:22px; font-weight:800;">Aruba Apple</div>
           <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
         </div>
         <div style="text-align:right;">
@@ -2096,7 +2095,7 @@ function imprimirFactura(id){
         <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
         <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
       </div>
-      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA <img src="${LOGO_ICON_B64}" style="height:14px; vertical-align:middle; margin:0 1px;"> APPLE</p>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — Aruba Apple</p>
     </div>`;
   abrirDocumentoEditable('Recibo de compra' + (cliNombre?(' — '+cliNombre):''), cuerpo);
 }
@@ -2123,7 +2122,7 @@ function facturaConIVA(id){
     <div style="line-height:1.45; font-size:14px;">
       <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
         <div style="flex:1; padding:12px 14px;">
-          <div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div>
+          <div style="font-size:22px; font-weight:800;">Aruba Apple</div>
           <div>Razón Social: _______________________________</div>
           <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
           <div>Condición frente al IVA: _______________________</div>
@@ -2782,7 +2781,7 @@ function reciboCuotas(id){
     <div style="line-height:1.5;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div>
+          <div style="font-size:22px; font-weight:800;">Aruba Apple</div>
           <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
         </div>
         <div style="text-align:right;">
@@ -2853,7 +2852,7 @@ function reciboCuotas(id){
         <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
         <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
       </div>
-      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA <img src="${LOGO_ICON_B64}" style="height:14px; vertical-align:middle; margin:0 1px;"> APPLE</p>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — Aruba Apple</p>
     </div>`;
   abrirDocumentoEditable('Recibo de compra — cuotas' + (cliNombre?(' — '+cliNombre):''), cuerpo);
 }
@@ -2883,7 +2882,7 @@ function facturaCuotasConIVA(id){
     <div style="line-height:1.45; font-size:14px;">
       <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
         <div style="flex:1; padding:12px 14px;">
-          <div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div>
+          <div style="font-size:22px; font-weight:800;">Aruba Apple</div>
           <div>Razón Social: _______________________________</div>
           <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
           <div>Condición frente al IVA: _______________________</div>
@@ -2964,7 +2963,7 @@ function imprimirComprobanteCuotas(id){
   const totalOp = (Number(vc.precioCuotas)||0)+(Number(vc.anticipo)||0);
   const cuerpo = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:2px solid #222; padding-bottom:14px;">
-      <div><div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div><div style="font-size:13px; color:#444;">Comprobante de venta en cuotas</div></div>
+      <div><div style="font-size:22px; font-weight:800;">Aruba Apple</div><div style="font-size:13px; color:#444;">Comprobante de venta en cuotas</div></div>
       <div style="text-align:right; font-size:13px; color:#555;">Fecha: ${vc.fecha}</div>
     </div>
     <table style="width:100%; border-collapse:collapse; margin-bottom:18px; font-size:14px;">
@@ -3547,7 +3546,7 @@ function reporteCaja(periodo){
   const cuerpo = `
     <div style="line-height:1.45; font-size:14px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <div><div style="font-size:22px; font-weight:800;">ARUBA <img src="${LOGO_ICON_B64}" style="height:24px; vertical-align:middle; margin:0 2px;"> APPLE</div><div style="font-size:13px; color:#444;">Reporte de caja</div></div>
+        <div><div style="font-size:22px; font-weight:800;">Aruba Apple</div><div style="font-size:13px; color:#444;">Reporte de caja</div></div>
         <div style="text-align:right;">
           <div style="font-size:18px; font-weight:700;">${label}</div>
           <div style="font-size:13px;">Período: ${desde} a ${hasta}</div>
@@ -3951,7 +3950,7 @@ function generarComprobanteReparacion(id){
     <button class="cerrar" onclick="window.close()">Cerrar</button>
   </div>
   <h1>COMPROBANTE DE REPARACIÓN</h1>
-  <h2><span style="letter-spacing:1px;">Aruba</span> <img src="${LOGO_ICON_B64}" style="height:18px; vertical-align:middle; margin:0 1px;"> <span style="letter-spacing:1px;">Apple</span></h2>
+  <h2>Aruba Apple</h2>
   <p class="fecha-emision">Fecha de emisión: ${fechaEmision}</p>
 
   <div class="seccion">
@@ -4701,7 +4700,7 @@ function generarComprobantePago(u, monto, metodo){
     <button class="cerrar" onclick="window.close()">Cerrar</button>
   </div>
   <h1>COMPROBANTE DE PAGO</h1>
-  <h2><span style="letter-spacing:1px;">Aruba</span> <img src="${LOGO_ICON_B64}" style="height:18px; vertical-align:middle; margin:0 1px;"> <span style="letter-spacing:1px;">Apple</span></h2>
+  <h2>Aruba Apple</h2>
   <div class="info">
     <span><b>Vendedor:</b> ${u.nombre} ${u.apellido}</span>
     <span><b>Fecha y hora:</b> ${fechaHora}</span>
