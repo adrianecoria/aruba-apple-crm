@@ -1466,7 +1466,7 @@ const CRM_HORARIOS = {
   miercoles:[{desde:'10:00', hasta:'13:00'},{desde:'14:00', hasta:'18:00'}],
   jueves:   [{desde:'10:00', hasta:'13:00'},{desde:'14:00', hasta:'18:00'}],
   viernes:  [{desde:'10:00', hasta:'13:00'},{desde:'14:00', hasta:'18:00'}],
-  sabado:   [{desde:'10:00', hasta:'18:00'}],
+  sabado:   [{desde:'10:00', hasta:'13:00'},{desde:'14:00', hasta:'18:00'}],
   domingo:  []
 };
 const DIAS_SEMANA_KEY = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
@@ -1521,7 +1521,7 @@ async function renderSlotsDisponibles(){
   });
 
   // Check if there's a lunch break (Mon-Fri)
-  const tieneAlmuerzo = diaSemana !== 'sabado';
+  const tieneAlmuerzo = diaSemana !== 'domingo';
   const totalSlots = slots.length;
   const totalDisp = slots.reduce((s,sl) => s + (2 - (conteo[sl.inicio]||0)), 0);
 
