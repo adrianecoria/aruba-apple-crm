@@ -1794,6 +1794,16 @@ async function initCRMTurnos(){
   generarOpcionesTurnos();
   await cargarTurnosCRM();
   renderAllTurnos();
+  // Suscripción Realtime para sincronizar turnos en tiempo real
+  if(sbClient){
+    sbClient.channel('turnos-realtime')
+      .on('postgres_changes', {event:'*', schema:'public', table:'turnos'}, async ()=>{
+        await cargarTurnosCRM();
+        renderAllTurnos();
+        await renderSlotsDisponibles();
+      })
+      .subscribe();
+  }
 }
 
 /* ---------- STOCK ---------- */
