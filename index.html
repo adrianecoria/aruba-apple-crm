@@ -801,13 +801,13 @@ body.rol-usuario .solo-admin{display:none !important;}
           </div>
           <div class="field"><label>Precio (USD)</label><input id="simPrecio" type="number" placeholder="0" oninput="calcularSimulador()"></div>
           <div class="field"><label>Anticipo / Seña (USD)</label><input id="simAnticipo" type="number" placeholder="0" oninput="calcularSimulador()"></div>
-          <div class="field"><label>Precio en cuotas (USD)</label><input id="simPrecioCuotas" type="number" placeholder="0" oninput="calcularSimuladorDesdePrecio()"></div>
+          <div class="field"><label>Precio en cuotas (USD)</label><input id="simPrecioCuotas" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
           <div class="field"><label>Cantidad de cuotas</label>
             <select id="simCantCuotas" onchange="calcularSimulador()">
               <option value="3">3 cuotas</option><option value="6">6 cuotas</option><option value="9">9 cuotas</option><option value="12">12 cuotas</option>
             </select>
           </div>
-          <div class="field"><label>Interés a cobrar (%)</label><input id="simInteres" type="number" step="0.1" placeholder="0" oninput="calcularSimuladorDesdeInteres()"></div>
+          <div class="field"><label>Interés a cobrar (%)</label><input id="simInteres" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
           <div class="field"><label>Cuota deseada (USD)</label><input id="simCuotaValor" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
           <div class="field"><label>Fecha actual</label><input id="simFecha" type="date" readonly style="opacity:0.7;"></div>
           <div class="field"><label>Frecuencia de pago</label>
@@ -860,7 +860,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           </div>
         </div>
         <div class="field"><label>Cantidad de cuotas</label><select id="vcCantCuotas" onchange="calcularSimulacionCuotas()"><option value="3">3 cuotas</option><option value="6">6 cuotas</option><option value="9">9 cuotas</option><option value="12">12 cuotas</option></select></div>
-        <div class="field"><label>Interés a cobrar (%)</label><input id="vcInteres" type="number" step="0.1" placeholder="0" oninput="onCambioInteresVC()"></div>
+        <div class="field"><label>Interés a cobrar (%)</label><input id="vcInteres" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
         <div class="field"><label>Cuota deseada (USD)</label><input id="vcCuotaValor" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
         <div class="field"><label>Fecha de pago</label><input id="vcFechaPago" type="date"></div>
         <div class="field"><label>Frecuencia de pago</label><select id="vcFrecuencia" onchange="renderSimulacionCuotas()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
@@ -2998,35 +2998,32 @@ function simBaseFinanciar(){
   return Math.max(0, precio - anticipo);
 }
 
-// Al cambiar precio / anticipo / cantidad de cuotas: mantiene % interés y recalcula precio en cuotas
+// Tasas fijas automáticas por cantidad de cuotas
+const SIM_TASAS = {3:32, 6:52, 9:63, 12:63};
+
+function simObtenerInteres(){
+  const cuotas = Number(document.getElementById('simCantCuotas').value) || 3;
+  return SIM_TASAS[cuotas] || 32;
+}
+
+// Al cambiar precio / anticipo / cantidad de cuotas: auto-calcula interés y precio en cuotas
 function calcularSimulador(){
   const base = simBaseFinanciar();
-  const interes = Number(document.getElementById('simInteres').value) || 0;
+  const interes = simObtenerInteres();
+  document.getElementById('simInteres').value = interes + '%';
   const precioCuotas = base * (1 + interes / 100);
   document.getElementById('simPrecioCuotas').value = (base > 0 && precioCuotas > 0) ? (Math.round(precioCuotas * 100) / 100) : '';
   actualizarCuotaSimulador();
 }
 
-// Al editar "Precio en cuotas": calcula el interés implícito
+// Al editar "Precio en cuotas": recalcula pero no cambia el interés (es fijo)
 function calcularSimuladorDesdePrecio(){
-  const base = simBaseFinanciar();
-  const precioCuotas = Number(document.getElementById('simPrecioCuotas').value) || 0;
-  if(precioCuotas > 0 && base > 0){
-    const interes = ((precioCuotas - base) / base) * 100;
-    document.getElementById('simInteres').value = Math.round(interes * 10) / 10;
-  } else {
-    document.getElementById('simInteres').value = '';
-  }
   actualizarCuotaSimulador();
 }
 
-// Al editar "Interés": calcula precio en cuotas
+// Interés es automático, esta función ya no aplica
 function calcularSimuladorDesdeInteres(){
-  const base = simBaseFinanciar();
-  const interes = Number(document.getElementById('simInteres').value) || 0;
-  const precioCuotas = base * (1 + interes / 100);
-  document.getElementById('simPrecioCuotas').value = (base > 0 && precioCuotas > 0) ? (Math.round(precioCuotas * 100) / 100) : '';
-  actualizarCuotaSimulador();
+  calcularSimulador();
 }
 
 function actualizarCuotaSimulador(){
@@ -3069,7 +3066,7 @@ function generarPDFSimulacion(){
   const anticipo = Number(document.getElementById('simAnticipo').value) || 0;
   const precioCuotas = Number(document.getElementById('simPrecioCuotas').value) || 0;
   const cantCuotas = Number(document.getElementById('simCantCuotas').value) || 3;
-  const interes = Number(document.getElementById('simInteres').value) || 0;
+  const interes = simObtenerInteres();
   const frecuencia = document.getElementById('simFrecuencia').value;
   const fechaHoy = hoyISO();
   const valorCuota = precioCuotas / cantCuotas;
@@ -3156,31 +3153,29 @@ function baseFinanciarVC(){
   return Math.max(0, sugerido - anticipo);
 }
 
-// Al editar "Precio en cuotas" (o recálculo general): el precio define el interés
-function calcularSimulacionCuotas(){
-  const base = baseFinanciarVC();
-  const precioCuotas = Number(document.getElementById('vcPrecioCuotas').value) || 0;
-  if(precioCuotas > 0 && base > 0){
-    const interes = ((precioCuotas - base) / base) * 100;
-    document.getElementById('vcInteres').value = Math.round(interes * 10) / 10;
-  } else if(precioCuotas <= 0){
-    document.getElementById('vcInteres').value = '';
-  }
-  renderSimulacionCuotas();
+// Tasas fijas automáticas para Venta en Cuotas (mismo que simulador)
+function vcObtenerInteres(){
+  const cuotas = Number(document.getElementById('vcCantCuotas').value) || 3;
+  return SIM_TASAS[cuotas] || 32;
 }
 
-// Al editar "Interés a cobrar (%)": el interés define el precio en cuotas (sobre el monto restante)
-function onCambioInteresVC(){
+// Al cambiar cuotas / anticipo / precio: recalcula todo con interés fijo automático
+function calcularSimulacionCuotas(){
   const base = baseFinanciarVC();
-  const interes = Number(document.getElementById('vcInteres').value) || 0;
+  const interes = vcObtenerInteres();
+  document.getElementById('vcInteres').value = interes + '%';
   const precioCuotas = base * (1 + interes / 100);
   document.getElementById('vcPrecioCuotas').value = (base > 0 && precioCuotas > 0) ? (Math.round(precioCuotas * 100) / 100) : '';
   renderSimulacionCuotas();
 }
 
-// Al editar "Anticipo / Seña": se mantiene el % de interés y se recalcula el precio en cuotas
+// Interés es automático, estas funciones redirigen a recálculo general
+function onCambioInteresVC(){
+  calcularSimulacionCuotas();
+}
+
 function onCambioAnticipoVC(){
-  onCambioInteresVC();
+  calcularSimulacionCuotas();
 }
 
 function renderSimulacionCuotas(){
@@ -3231,7 +3226,7 @@ function venderEnCuotas(){
   const cliente = clienteSel ? `${clienteSel.nombre} ${clienteSel.apellido}` : 'Consumidor final';
   const precioSugerido = Number(document.getElementById('vcSugerido').value) || 0;
   const anticipo = Number(document.getElementById('vcAnticipo').value) || 0;
-  const interes = Number(document.getElementById('vcInteres').value) || 0;
+  const interes = vcObtenerInteres();
   const precioCuotas = Number(document.getElementById('vcPrecioCuotas').value);
   const cantCuotas = Number(document.getElementById('vcCantCuotas').value);
   const frecuencia = document.getElementById('vcFrecuencia').value;
