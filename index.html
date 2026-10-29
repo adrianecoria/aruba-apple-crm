@@ -781,8 +781,13 @@ body.rol-usuario .solo-admin{display:none !important;}
     <header class="top"><h1>Venta en Cuotas</h1></header>
 
     <div class="solo-admin" style="display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:18px;">
-      <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:120px;">
-        <label>Ventas Totales (Cuotas)</label><div class="val" id="vcVentasTotales">$ 0</div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100px; box-shadow:0 0 18px 4px rgba(245,158,11,0.45), 0 0 40px 8px rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+          <label>Ventas Totales (Cuotas)</label><div class="val" id="vcVentasTotales">$ 0</div>
+        </div>
+        <div class="mini-card profit" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100px; box-shadow:0 0 18px 4px rgba(34,197,94,0.45), 0 0 40px 8px rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.35);">
+          <label>Ganancia Totales (Cuotas)</label><div class="val" id="vcGananciaTotales">$ 0</div>
+        </div>
       </div>
 
       <!-- SIMULADOR DE CUOTAS -->
@@ -3460,8 +3465,7 @@ function renderVentasCuotas(){
   const ventaTotal = vcConfirmadas.reduce((s,v)=>s+((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0)),0);
   const gananciaTotal = vcConfirmadas.reduce((s,v)=>s+(((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0))-(Number(v.precioCompra)||0)),0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
-  const elGanVC = document.getElementById('vcGananciaTotales');
-  if(elGanVC) elGanVC.textContent = '$ ' + fmt(gananciaTotal);
+  document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
 }
 
 function reciboCuotas(id){
