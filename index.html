@@ -797,31 +797,25 @@ body.rol-usuario .solo-admin{display:none !important;}
           <p style="margin:6px 0; font-size:13.5px; font-weight:700; color:#22c55e; text-shadow:0 0 8px rgba(34,197,94,0.5);">En 12 cuotas al 63%: Cliente Excelente</p>
           <!-- Semicírculo de niveles -->
           <div style="margin-top:18px; display:flex; justify-content:center;">
-            <svg viewBox="0 0 360 210" width="100%" style="max-width:380px;">
-              <defs>
-                <filter id="glowBajo"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#dc2626" flood-opacity="0.6"/></filter>
-                <filter id="glowReg"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#f97316" flood-opacity="0.6"/></filter>
-                <filter id="glowBue"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#eab308" flood-opacity="0.6"/></filter>
-                <filter id="glowMuy"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#84cc16" flood-opacity="0.6"/></filter>
-                <filter id="glowExc"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#22c55e" flood-opacity="0.6"/></filter>
-              </defs>
-              <!-- Arcos: centro 180,180 radio 130 -->
-              <!-- Bajo (rojo) 180°→144° -->
-              <path d="M 50 180 A 130 130 0 0 1 87.7 89.1" stroke="#dc2626" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#glowBajo)"/>
-              <!-- Regular (naranja) 144°→108° -->
-              <path d="M 93.5 80.7 A 130 130 0 0 1 139.8 39.8" stroke="#f97316" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#glowReg)"/>
-              <!-- Bueno (amarillo) 108°→72° -->
-              <path d="M 147.6 35 A 130 130 0 0 1 212.4 35" stroke="#eab308" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#glowBue)"/>
-              <!-- Muy bueno (verde claro) 72°→36° -->
-              <path d="M 220.2 39.8 A 130 130 0 0 1 266.5 80.7" stroke="#84cc16" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#glowMuy)"/>
-              <!-- Excelente (verde oscuro) 36°→0° -->
-              <path d="M 272.3 89.1 A 130 130 0 0 1 310 180" stroke="#166534" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#glowExc)"/>
+            <svg viewBox="0 0 400 225" width="100%" style="max-width:400px;">
+              <!-- Centro:200,200 R:140 Stroke:36 Gaps:3° -->
+              <!-- Bajo (rojo) 180°→146.4° -->
+              <path d="M 60.0,200.0 A 140,140 0 0,1 83.4,122.5" stroke="#dc2626" stroke-width="36" fill="none" stroke-linecap="butt"/>
+              <!-- Regular (naranja) 143.4°→109.8° -->
+              <path d="M 87.6,116.5 A 140,140 0 0,1 152.6,68.3" stroke="#f97316" stroke-width="36" fill="none" stroke-linecap="butt"/>
+              <!-- Bueno (amarillo) 106.8°→73.2° -->
+              <path d="M 159.5,66.0 A 140,140 0 0,1 240.5,66.0" stroke="#eab308" stroke-width="36" fill="none" stroke-linecap="butt"/>
+              <!-- Muy bueno (verde claro) 70.2°→36.6° -->
+              <path d="M 247.4,68.3 A 140,140 0 0,1 312.4,116.5" stroke="#84cc16" stroke-width="36" fill="none" stroke-linecap="butt"/>
+              <!-- Excelente (verde oscuro) 33.6°→0° -->
+              <path d="M 316.6,122.5 A 140,140 0 0,1 340.0,200.0" stroke="#166534" stroke-width="36" fill="none" stroke-linecap="butt"/>
               <!-- Etiquetas fuera del arco -->
-              <text x="20" y="200" fill="#dc2626" font-size="13" font-weight="700" font-family="Manrope" text-anchor="start">Bajo</text>
-              <text x="38" y="60" fill="#f97316" font-size="13" font-weight="700" font-family="Manrope" text-anchor="start">Regular</text>
-              <text x="180" y="16" fill="#eab308" font-size="13" font-weight="700" font-family="Manrope" text-anchor="middle">Bueno</text>
-              <text x="300" y="60" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">Muy bueno</text>
-              <text x="340" y="200" fill="#166534" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">Excelente</text>
+              <text x="22" y="218" fill="#dc2626" font-size="14" font-weight="700" font-family="Manrope" text-anchor="start">Bajo</text>
+              <text x="52" y="82" fill="#f97316" font-size="14" font-weight="700" font-family="Manrope" text-anchor="start">Regular</text>
+              <text x="200" y="22" fill="#eab308" font-size="14" font-weight="700" font-family="Manrope" text-anchor="middle">Bueno</text>
+              <text x="338" y="74" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">Muy</text>
+              <text x="342" y="89" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">bueno</text>
+              <text x="378" y="218" fill="#166534" font-size="14" font-weight="700" font-family="Manrope" text-anchor="end">Excelente</text>
             </svg>
           </div>
         </div>
