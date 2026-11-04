@@ -811,10 +811,10 @@ body.rol-usuario .solo-admin{display:none !important;}
               <path d="M 316.6,122.5 A 140,140 0 0,1 340.0,200.0" stroke="#166534" stroke-width="36" fill="none" stroke-linecap="butt"/>
               <!-- Etiquetas fuera del arco -->
               <text x="22" y="218" fill="#dc2626" font-size="14" font-weight="700" font-family="Manrope" text-anchor="start">Bajo</text>
-              <text x="52" y="82" fill="#f97316" font-size="14" font-weight="700" font-family="Manrope" text-anchor="start">Regular</text>
+              <text x="36" y="76" fill="#f97316" font-size="14" font-weight="700" font-family="Manrope" text-anchor="start">Regular</text>
               <text x="200" y="22" fill="#eab308" font-size="14" font-weight="700" font-family="Manrope" text-anchor="middle">Bueno</text>
-              <text x="338" y="74" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">Muy</text>
-              <text x="342" y="89" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">bueno</text>
+              <text x="352" y="68" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">Muy</text>
+              <text x="356" y="83" fill="#84cc16" font-size="13" font-weight="700" font-family="Manrope" text-anchor="end">bueno</text>
               <text x="378" y="218" fill="#166534" font-size="14" font-weight="700" font-family="Manrope" text-anchor="end">Excelente</text>
             </svg>
           </div>
@@ -960,63 +960,6 @@ body.rol-usuario .solo-admin{display:none !important;}
         <tbody id="clientesBody"></tbody>
       </table></div>
       <div class="empty" id="clientesEmpty" style="display:none;">Todavía no cargaste clientes.</div>
-    </div>
-  </div>
-
-  <!-- MODAL ESCANER DNI -->
-  <div id="modalDNI" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:var(--bg2,#1a1a2e); border-radius:16px; padding:24px; max-width:640px; width:95%; max-height:90vh; overflow-y:auto; position:relative;">
-      <button onclick="cerrarEscanerDNI()" style="position:absolute; top:12px; right:16px; background:none; border:none; color:var(--txt2,#aaa); font-size:22px; cursor:pointer;">✕</button>
-      <h3 style="margin-top:0; color:var(--txt1,#fff); font-size:18px;" id="dniModalTitulo">📸 Escanear DNI</h3>
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button id="btnDniFrente" class="btn" onclick="seleccionarLadoDNI('frente')" style="flex:1;">Frente</button>
-        <button id="btnDniReverso" class="btn ghost" onclick="seleccionarLadoDNI('reverso')" style="flex:1;">Reverso</button>
-      </div>
-      <!-- Selector de cámara -->
-      <div style="margin-bottom:10px;">
-        <label style="color:var(--txt2,#aaa); font-size:13px;">Cámara:</label>
-        <select id="dniCamaraSelect" onchange="cambiarCamaraDNI()" style="width:100%; padding:8px; border-radius:8px; background:var(--bg3,#252540); color:var(--txt1,#fff); border:1px solid var(--borde,#333); margin-top:4px; font-size:14px;"></select>
-      </div>
-      <!-- Visor en vivo -->
-      <div style="position:relative; border-radius:12px; overflow:hidden; background:#000; margin-bottom:12px;">
-        <video id="dniVideo" autoplay playsinline style="width:100%; display:block; border-radius:12px;"></video>
-        <canvas id="dniCanvas" style="display:none;"></canvas>
-        <!-- Guía visual -->
-        <div id="dniGuia" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-          <div style="width:85%; height:60%; border:2px dashed rgba(255,255,255,0.4); border-radius:12px;"></div>
-        </div>
-      </div>
-      <!-- Preview de captura -->
-      <div id="dniPreview" style="display:none; margin-bottom:12px;">
-        <img id="dniPreviewImg" style="width:100%; border-radius:12px; border:2px solid var(--green,#22c55e);">
-        <p style="text-align:center; color:var(--green,#22c55e); font-size:13px; margin:6px 0 0;">✓ Foto capturada</p>
-      </div>
-      <!-- Botones de acción -->
-      <div style="display:flex; gap:8px;">
-        <button id="btnDniCapturar" class="btn" onclick="capturarFotoDNI()" style="flex:1; font-size:15px;">📸 Capturar</button>
-        <button id="btnDniReCapturar" class="btn ghost" onclick="reCapturarDNI()" style="flex:1; display:none;">🔄 Volver a tomar</button>
-        <button id="btnDniGuardar" class="btn" onclick="guardarFotoDNI()" style="flex:1; display:none; background:var(--green,#22c55e);">💾 Guardar</button>
-      </div>
-      <!-- Estado -->
-      <p id="dniEstado" style="text-align:center; font-size:13px; color:var(--txt3,#888); margin:10px 0 0;"></p>
-      <!-- Fotos ya cargadas -->
-      <div id="dniFotosExistentes" style="margin-top:16px; display:none;">
-        <h4 style="color:var(--txt1,#fff); font-size:15px; margin-bottom:8px;">Fotos cargadas</h4>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div style="text-align:center;">
-            <p style="color:var(--txt2,#aaa); font-size:12px; margin:0 0 4px;">FRENTE</p>
-            <div id="dniFrenteContainer" style="background:#000; border-radius:8px; min-height:80px; display:flex; align-items:center; justify-content:center;">
-              <span style="color:var(--txt3,#666); font-size:13px;">Sin foto</span>
-            </div>
-          </div>
-          <div style="text-align:center;">
-            <p style="color:var(--txt2,#aaa); font-size:12px; margin:0 0 4px;">REVERSO</p>
-            <div id="dniReversoContainer" style="background:#000; border-radius:8px; min-height:80px; display:flex; align-items:center; justify-content:center;">
-              <span style="color:var(--txt3,#666); font-size:13px;">Sin foto</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -4148,7 +4091,6 @@ function renderClientes(){
       <td data-label="Dirección">${c.direccion||'-'}</td>
       <td data-label="Compras">${cantCompras}</td>
       <td data-label="Acciones"><div class="actions">
-        <button class="btn ghost small" onclick="abrirEscanerDNI('${c.id}')" title="Escanear/ver DNI">${c.dniFrenteUrl||c.dniReversoUrl?'🪪':'📸'} DNI</button>
         <button class="btn ghost small" onclick="verComprasCliente('${c.id}')">Compras</button>
         <button class="btn ghost small" onclick="editarCliente('${c.id}')">Editar</button>
         <button class="btn danger small" onclick="borrarCliente('${c.id}')">Borrar</button>
@@ -4170,216 +4112,6 @@ function cargarClientesSelectVenta(){
     sel.appendChild(o);
   });
   sel.value = actual;
-}
-
-/* ---------- ESCANER DNI ---------- */
-let dniStream = null;
-let dniClienteActual = null;
-let dniLadoActual = 'frente';
-let dniBlobCapturado = null;
-
-async function abrirEscanerDNI(clienteId){
-  const c = clientes.find(x=>x.id===clienteId);
-  if(!c) return;
-  dniClienteActual = clienteId;
-  dniLadoActual = 'frente';
-  dniBlobCapturado = null;
-  document.getElementById('dniModalTitulo').textContent = '📸 DNI de ' + c.nombre + ' ' + c.apellido;
-  document.getElementById('modalDNI').style.display = 'flex';
-  document.getElementById('dniPreview').style.display = 'none';
-  document.getElementById('btnDniCapturar').style.display = '';
-  document.getElementById('btnDniReCapturar').style.display = 'none';
-  document.getElementById('btnDniGuardar').style.display = 'none';
-  document.getElementById('dniEstado').textContent = '';
-  seleccionarLadoDNI('frente');
-  mostrarFotosDNIExistentes(clienteId);
-  await iniciarCamaraDNI();
-}
-
-async function iniciarCamaraDNI(){
-  try{
-    const dispositivos = await navigator.mediaDevices.enumerateDevices();
-    const camaras = dispositivos.filter(d=>d.kind==='videoinput');
-    const sel = document.getElementById('dniCamaraSelect');
-    sel.innerHTML = '';
-    camaras.forEach((cam,i)=>{
-      const opt = document.createElement('option');
-      opt.value = cam.deviceId;
-      opt.textContent = cam.label || ('Cámara '+(i+1));
-      sel.appendChild(opt);
-    });
-    // Si hay DroidCam, seleccionarla por defecto
-    const droidIdx = camaras.findIndex(c=>(c.label||'').toLowerCase().includes('droidcam'));
-    if(droidIdx>=0) sel.selectedIndex = droidIdx;
-    await activarCamara(sel.value);
-  }catch(e){
-    document.getElementById('dniEstado').textContent = '❌ No se pudo acceder a la cámara: ' + e.message;
-    document.getElementById('dniEstado').style.color = 'var(--danger,#ff4444)';
-  }
-}
-
-async function activarCamara(deviceId){
-  if(dniStream){ dniStream.getTracks().forEach(t=>t.stop()); }
-  const constraints = { video: deviceId ? { deviceId: { exact: deviceId }, width:{ideal:1280}, height:{ideal:720} } : { width:{ideal:1280}, height:{ideal:720} } };
-  dniStream = await navigator.mediaDevices.getUserMedia(constraints);
-  const video = document.getElementById('dniVideo');
-  video.srcObject = dniStream;
-  video.style.display = 'block';
-  document.getElementById('dniGuia').style.display = 'flex';
-  // Re-enumerar para obtener labels
-  const dispositivos = await navigator.mediaDevices.enumerateDevices();
-  const camaras = dispositivos.filter(d=>d.kind==='videoinput');
-  const sel = document.getElementById('dniCamaraSelect');
-  const selVal = sel.value;
-  sel.innerHTML = '';
-  camaras.forEach((cam,i)=>{
-    const opt = document.createElement('option');
-    opt.value = cam.deviceId;
-    opt.textContent = cam.label || ('Cámara '+(i+1));
-    sel.appendChild(opt);
-  });
-  sel.value = selVal;
-}
-
-async function cambiarCamaraDNI(){
-  const sel = document.getElementById('dniCamaraSelect');
-  document.getElementById('dniPreview').style.display = 'none';
-  document.getElementById('btnDniCapturar').style.display = '';
-  document.getElementById('btnDniReCapturar').style.display = 'none';
-  document.getElementById('btnDniGuardar').style.display = 'none';
-  dniBlobCapturado = null;
-  await activarCamara(sel.value);
-}
-
-function seleccionarLadoDNI(lado){
-  dniLadoActual = lado;
-  document.getElementById('btnDniFrente').className = lado==='frente' ? 'btn' : 'btn ghost';
-  document.getElementById('btnDniReverso').className = lado==='reverso' ? 'btn' : 'btn ghost';
-  // Resetear captura al cambiar de lado
-  document.getElementById('dniPreview').style.display = 'none';
-  document.getElementById('dniVideo').style.display = 'block';
-  document.getElementById('dniGuia').style.display = 'flex';
-  document.getElementById('btnDniCapturar').style.display = '';
-  document.getElementById('btnDniReCapturar').style.display = 'none';
-  document.getElementById('btnDniGuardar').style.display = 'none';
-  dniBlobCapturado = null;
-  document.getElementById('dniEstado').textContent = 'Apuntá la cámara al ' + (lado==='frente'?'FRENTE':'REVERSO') + ' del DNI';
-  document.getElementById('dniEstado').style.color = 'var(--txt3,#888)';
-}
-
-function capturarFotoDNI(){
-  const video = document.getElementById('dniVideo');
-  const canvas = document.getElementById('dniCanvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  canvas.toBlob(blob=>{
-    dniBlobCapturado = blob;
-    const url = URL.createObjectURL(blob);
-    document.getElementById('dniPreviewImg').src = url;
-    document.getElementById('dniPreview').style.display = 'block';
-    document.getElementById('dniVideo').style.display = 'none';
-    document.getElementById('dniGuia').style.display = 'none';
-    document.getElementById('btnDniCapturar').style.display = 'none';
-    document.getElementById('btnDniReCapturar').style.display = '';
-    document.getElementById('btnDniGuardar').style.display = '';
-    document.getElementById('dniEstado').textContent = '¿Se ve bien? Guardá o volvé a tomar.';
-    document.getElementById('dniEstado').style.color = 'var(--txt3,#888)';
-  }, 'image/jpeg', 0.9);
-}
-
-function reCapturarDNI(){
-  dniBlobCapturado = null;
-  document.getElementById('dniPreview').style.display = 'none';
-  document.getElementById('dniVideo').style.display = 'block';
-  document.getElementById('dniGuia').style.display = 'flex';
-  document.getElementById('btnDniCapturar').style.display = '';
-  document.getElementById('btnDniReCapturar').style.display = 'none';
-  document.getElementById('btnDniGuardar').style.display = 'none';
-  document.getElementById('dniEstado').textContent = '';
-}
-
-async function guardarFotoDNI(){
-  if(!dniBlobCapturado || !dniClienteActual) return;
-  const estado = document.getElementById('dniEstado');
-  estado.textContent = '⏳ Subiendo foto...';
-  estado.style.color = 'var(--amber,#ff8c42)';
-  document.getElementById('btnDniGuardar').disabled = true;
-  try{
-    if(!sbClient) throw new Error('Sin conexión a Supabase');
-    const path = `dni/${dniClienteActual}/${dniLadoActual}.jpg`;
-    const file = new File([dniBlobCapturado], dniLadoActual+'.jpg', { type:'image/jpeg' });
-    const { error:upErr } = await sbClient.storage.from('marketing-fotos').upload(path, file, { contentType:'image/jpeg', upsert:true });
-    if(upErr) throw upErr;
-    const { data:urlData } = sbClient.storage.from('marketing-fotos').getPublicUrl(path);
-    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-    // Guardar URL en el cliente
-    const c = clientes.find(x=>x.id===dniClienteActual);
-    if(c){
-      if(dniLadoActual==='frente') c.dniFrenteUrl = publicUrl;
-      else c.dniReversoUrl = publicUrl;
-      syncGuardar('clientes', clientes);
-    }
-    estado.textContent = '✅ Foto de ' + (dniLadoActual==='frente'?'FRENTE':'REVERSO') + ' guardada correctamente';
-    estado.style.color = 'var(--green,#22c55e)';
-    mostrarFotosDNIExistentes(dniClienteActual);
-    renderClientes();
-    // Auto-cambiar al otro lado si falta
-    if(dniLadoActual==='frente' && !c.dniReversoUrl){
-      setTimeout(()=> seleccionarLadoDNI('reverso'), 1200);
-    }
-  }catch(e){
-    estado.textContent = '❌ Error al subir: ' + (e.message||e);
-    estado.style.color = 'var(--danger,#ff4444)';
-  }
-  document.getElementById('btnDniGuardar').disabled = false;
-}
-
-function mostrarFotosDNIExistentes(clienteId){
-  const c = clientes.find(x=>x.id===clienteId);
-  const cont = document.getElementById('dniFotosExistentes');
-  const frenteCont = document.getElementById('dniFrenteContainer');
-  const reversoCont = document.getElementById('dniReversoContainer');
-  if(!c || (!c.dniFrenteUrl && !c.dniReversoUrl)){
-    cont.style.display = 'none'; return;
-  }
-  cont.style.display = 'block';
-  if(c.dniFrenteUrl){
-    frenteCont.innerHTML = `<img src="${c.dniFrenteUrl}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="window.open(this.src,'_blank')"><button class="btn danger small" style="margin-top:4px; font-size:11px;" onclick="borrarFotoDNI('${clienteId}','frente')">Borrar</button>`;
-  } else {
-    frenteCont.innerHTML = '<span style="color:var(--txt3,#666); font-size:13px;">Sin foto</span>';
-  }
-  if(c.dniReversoUrl){
-    reversoCont.innerHTML = `<img src="${c.dniReversoUrl}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="window.open(this.src,'_blank')"><button class="btn danger small" style="margin-top:4px; font-size:11px;" onclick="borrarFotoDNI('${clienteId}','reverso')">Borrar</button>`;
-  } else {
-    reversoCont.innerHTML = '<span style="color:var(--txt3,#666); font-size:13px;">Sin foto</span>';
-  }
-}
-
-async function borrarFotoDNI(clienteId, lado){
-  if(!confirm('¿Borrar la foto del '+(lado==='frente'?'FRENTE':'REVERSO')+'?')) return;
-  try{
-    if(sbClient){
-      const path = `dni/${clienteId}/${lado}.jpg`;
-      await sbClient.storage.from('marketing-fotos').remove([path]);
-    }
-  }catch(e){ console.warn('No se pudo borrar de storage:', e); }
-  const c = clientes.find(x=>x.id===clienteId);
-  if(c){
-    if(lado==='frente') delete c.dniFrenteUrl;
-    else delete c.dniReversoUrl;
-    syncGuardar('clientes', clientes);
-  }
-  mostrarFotosDNIExistentes(clienteId);
-  renderClientes();
-}
-
-function cerrarEscanerDNI(){
-  if(dniStream){ dniStream.getTracks().forEach(t=>t.stop()); dniStream = null; }
-  document.getElementById('modalDNI').style.display = 'none';
-  document.getElementById('dniVideo').srcObject = null;
-  dniBlobCapturado = null;
-  dniClienteActual = null;
 }
 
 /* ---------- CAJA ---------- */
