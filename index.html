@@ -3502,6 +3502,7 @@ function renderVentasCuotas(){
           ${esFinalizdo
             ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
             : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
+          ${!vc.clienteId ? `<button class="btn ghost small" onclick="asignarClienteCuotas('${vc.id}')" style="color:var(--amber);">👤 Asignar cliente</button>` : ''}
           <button class="btn ghost small" onclick="reciboCuotas('${vc.id}')">🧾 Recibo</button>
           <button class="btn ghost small" onclick="facturaCuotasConIVA('${vc.id}')">📄 Factura</button>
           <button class="btn ghost small" onclick="generarContratoCuotas('${vc.id}')">📄 Contrato compraventa</button>
@@ -4138,6 +4139,47 @@ function cargarClientesSelectVenta(){
     sel.appendChild(o);
   });
   sel.value = actual;
+}
+
+/* ---------- ASIGNAR CLIENTE A VENTA EN CUOTAS ---------- */
+function asignarClienteCuotas(ventaId){
+  const vc = ventasCuotas.find(v=>v.id===ventaId);
+  if(!vc) return;
+  if(!clientes.length){ alert('No hay clientes cargados. Agregá un cliente primero en la sección Clientes.'); return; }
+
+  const opciones = clientes.map(c=>`<option value="${c.id}">${c.nombre} ${c.apellido} — DNI: ${c.dni||'-'}</option>`).join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'modalAsignarClienteOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2,#1a1a2e);border-radius:16px;padding:24px;max-width:440px;width:100%;color:var(--txt1,#fff);box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+      <h3 style="margin:0 0 14px;">👤 Asignar cliente a venta en cuotas</h3>
+      <p style="margin:0 0 10px;">Venta: <b>${vc.modelo}</b> — ${vc.fecha}</p>
+      <p style="margin:0 0 10px;">Cliente actual: <b>${vc.cliente||'Consumidor final'}</b></p>
+      <label style="font-weight:600; font-size:14px;">Seleccionar cliente:</label>
+      <select id="selAsignarCliente" class="input" style="width:100%; margin-top:6px;">
+        <option value="">— Elegir cliente —</option>
+        ${opciones}
+      </select>
+      <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+        <button class="btn ghost" onclick="document.getElementById('modalAsignarClienteOverlay').remove()">Cancelar</button>
+        <button class="btn" id="btnConfAsignarCliente">Asignar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('btnConfAsignarCliente').onclick = ()=>{
+    const cid = document.getElementById('selAsignarCliente').value;
+    if(!cid){ alert('Seleccioná un cliente'); return; }
+    const cli = clientes.find(c=>c.id===cid);
+    if(!cli) return;
+    vc.clienteId = cid;
+    vc.cliente = `${cli.nombre} ${cli.apellido}`;
+    syncGuardar('ventas_cuotas', ventasCuotas);
+    document.getElementById('modalAsignarClienteOverlay').remove();
+    renderVentasCuotas();
+    verificarAlertasCuotas();
+    alert(`✅ Cliente "${cli.nombre} ${cli.apellido}" asignado a la venta de ${vc.modelo}`);
+  };
 }
 
 /* ---------- ALERTAS DE CUOTAS ---------- */
