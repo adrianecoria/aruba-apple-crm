@@ -17,6 +17,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{
   --bg:#0b0710; --card:rgba(255,255,255,0.075); --card-b:rgba(255,255,255,0.18);
@@ -780,6 +782,30 @@ body.rol-usuario .solo-admin{display:none !important;}
   <div id="moduloVentaCuotas" style="display:none;">
     <header class="top"><h1>Venta en Cuotas</h1></header>
 
+    <!-- ALERTAS DE CUOTAS PRÓXIMAS A VENCER -->
+    <div id="alertasCuotas" class="card solo-admin" style="display:none; border:1px solid rgba(255,140,66,0.4); background:linear-gradient(135deg,rgba(255,140,66,0.08),rgba(255,60,60,0.06));">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <h2 style="margin:0; font-size:16px;">🔔 Cuotas próximas a vencer</h2>
+        <div style="display:flex; gap:6px;">
+          <button class="btn ghost small" onclick="enviarNotificacionesCuotas()" style="font-size:12px;" title="Enviar recordatorios por WhatsApp">📲 Notificar por WhatsApp</button>
+          <button class="btn ghost small" onclick="document.getElementById('alertasCuotas').style.display='none';" style="font-size:12px;">Ocultar</button>
+        </div>
+      </div>
+      <div id="alertasCuotasBody" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <!-- MAPA DE CLIENTES CON CUOTAS -->
+    <div class="card solo-admin">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <h2 style="margin:0; font-size:16px;">🗺️ Mapa de clientes con cuotas</h2>
+        <button class="btn ghost small" id="btnToggleMapa" onclick="toggleMapaCuotas()" style="font-size:12px;">Mostrar mapa</button>
+      </div>
+      <div id="mapaContainer" style="display:none;">
+        <div id="mapaCuotas" style="height:380px; border-radius:12px; z-index:1;"></div>
+        <p style="font-size:12px; color:var(--txt3); margin:6px 0 0;">Los marcadores se generan a partir de las direcciones de los clientes. Si una dirección no se encuentra, no aparecerá en el mapa.</p>
+      </div>
+    </div>
+
     <div class="solo-admin" style="display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:18px;">
       <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100px; box-shadow:0 0 18px 4px rgba(245,158,11,0.45), 0 0 40px 8px rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
@@ -1408,7 +1434,7 @@ function switchModule(m){
   document.getElementById('navVentaCuotas').classList.toggle('active', m==='ventaCuotas');
   if(m==='inicio'){ renderStockResumen(); renderInicioVentaGanancia(); }
   if(m==='venta'){ cargarSelectEquiposVenta(); renderVentas(); }
-  if(m==='ventaCuotas'){ cargarSelectVentaCuotas(); renderVentasCuotas(); }
+  if(m==='ventaCuotas'){ cargarSelectVentaCuotas(); renderVentasCuotas(); verificarAlertasCuotas(); }
   if(m==='clientes'){ renderClientes(); }
   if(m==='caja'){ renderCaja(); }
   if(m==='proveedores'){ renderProveedores(); }
@@ -4112,6 +4138,177 @@ function cargarClientesSelectVenta(){
     sel.appendChild(o);
   });
   sel.value = actual;
+}
+
+/* ---------- ALERTAS DE CUOTAS ---------- */
+function verificarAlertasCuotas(){
+  const hoy = hoyISO();
+  const manana = new Date();
+  manana.setDate(manana.getDate()+1);
+  const mananaISO = manana.toISOString().slice(0,10);
+  const alertas = [];
+  ventasCuotas.forEach(vc=>{
+    if(vc.estado==='finalizado' || vc.tipo==='posible_financiacion') return;
+    if(!vc.cronograma) return;
+    vc.cronograma.forEach(cuota=>{
+      if(cuota.pagada) return;
+      const esHoy = cuota.vencimiento === hoy;
+      const esManana = cuota.vencimiento === mananaISO;
+      const esVencida = cuota.vencimiento < hoy;
+      if(esHoy || esManana || esVencida){
+        const cli = clientes.find(c=>c.id===vc.clienteId);
+        const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (vc.cliente||'Consumidor final');
+        const cliTel = cli && cli.telefono ? cli.telefono : '';
+        const valorCuota = vc.cantCuotas > 0 ? (Number(vc.precioCuotas)||0) / vc.cantCuotas : 0;
+        alertas.push({
+          ventaId: vc.id, cliente: cliNombre, telefono: cliTel, modelo: vc.modelo,
+          cuotaNro: cuota.nro, totalCuotas: vc.cantCuotas, monto: valorCuota,
+          vencimiento: cuota.vencimiento, esHoy, esManana, esVencida
+        });
+      }
+    });
+  });
+  // Ordenar: vencidas primero, hoy después, mañana al final
+  alertas.sort((a,b)=>{
+    if(a.esVencida && !b.esVencida) return -1;
+    if(!a.esVencida && b.esVencida) return 1;
+    if(a.esHoy && b.esManana) return -1;
+    if(a.esManana && b.esHoy) return 1;
+    return a.vencimiento.localeCompare(b.vencimiento);
+  });
+  const cont = document.getElementById('alertasCuotas');
+  const body = document.getElementById('alertasCuotasBody');
+  if(!alertas.length){ cont.style.display='none'; return; }
+  cont.style.display='block';
+  body.innerHTML = alertas.map(a=>{
+    let badge = '', color = '';
+    if(a.esVencida){ badge='⚠️ VENCIDA'; color='#ff4444'; }
+    else if(a.esHoy){ badge='🔴 VENCE HOY'; color='#ff8c42'; }
+    else { badge='🟡 VENCE MAÑANA'; color='#ffe600'; }
+    return `<div style="background:rgba(0,0,0,0.25); border-radius:10px; padding:10px 14px; border-left:4px solid ${color};">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+        <div>
+          <span style="font-weight:700; color:var(--txt1);">${a.cliente}</span>
+          <span style="color:var(--txt3); font-size:12px; margin-left:8px;">${a.modelo}</span>
+          ${a.telefono?`<span style="color:var(--txt3); font-size:12px; margin-left:8px;">📱 ${a.telefono}</span>`:''}
+        </div>
+        <span style="font-size:12px; font-weight:700; color:${color};">${badge}</span>
+      </div>
+      <div style="font-size:13px; color:var(--txt2); margin-top:4px;">
+        Cuota ${a.cuotaNro}/${a.totalCuotas} — <b>$${fmt(a.monto)}</b> — Vence: ${a.vencimiento}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- MAPA DE CLIENTES CON CUOTAS ---------- */
+let mapaCuotasInst = null;
+let mapaVisible = false;
+const geocodeCache = {};
+
+function toggleMapaCuotas(){
+  mapaVisible = !mapaVisible;
+  document.getElementById('mapaContainer').style.display = mapaVisible ? 'block' : 'none';
+  document.getElementById('btnToggleMapa').textContent = mapaVisible ? 'Ocultar mapa' : 'Mostrar mapa';
+  if(mapaVisible) cargarMapaCuotas();
+}
+
+async function cargarMapaCuotas(){
+  if(!mapaCuotasInst){
+    mapaCuotasInst = L.map('mapaCuotas').setView([-34.67,-58.56], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution:'© OpenStreetMap', maxZoom:18
+    }).addTo(mapaCuotasInst);
+  }
+  // Limpiar marcadores existentes
+  mapaCuotasInst.eachLayer(l=>{ if(l instanceof L.Marker) mapaCuotasInst.removeLayer(l); });
+
+  // Recopilar clientes con cuotas activas y sus direcciones
+  const clientesConCuotas = {};
+  ventasCuotas.forEach(vc=>{
+    if(vc.tipo==='posible_financiacion') return;
+    if(!vc.clienteId) return;
+    if(!clientesConCuotas[vc.clienteId]) clientesConCuotas[vc.clienteId] = [];
+    clientesConCuotas[vc.clienteId].push(vc);
+  });
+
+  const bounds = [];
+  for(const cid of Object.keys(clientesConCuotas)){
+    const cli = clientes.find(c=>c.id===cid);
+    if(!cli || !cli.direccion) continue;
+    const dir = cli.direccion.trim();
+    if(!dir) continue;
+    try{
+      const coords = await geocodificarDireccion(dir);
+      if(!coords) continue;
+      const vcs = clientesConCuotas[cid];
+      const esActivo = vcs.some(v=>v.estado==='activo');
+      const iconColor = esActivo ? '#ff8c42' : '#22c55e';
+      const cuotasInfo = vcs.map(v=>{
+        const pagadas = v.cuotasPagadas||0;
+        const total = v.cantCuotas||0;
+        const estado = v.estado==='finalizado' ? '✅ Finalizado' : `${pagadas}/${total} pagadas`;
+        return `<b>${v.modelo}</b>: ${estado}`;
+      }).join('<br>');
+      const marker = L.marker([coords.lat,coords.lon], {
+        icon: L.divIcon({
+          className:'',
+          html:`<div style="background:${iconColor}; width:28px; height:28px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; font-size:14px;">📱</div>`,
+          iconSize:[28,28], iconAnchor:[14,14]
+        })
+      }).addTo(mapaCuotasInst);
+      marker.bindPopup(`<div style="font-family:Inter,sans-serif; min-width:180px;">
+        <b style="font-size:14px;">${cli.nombre} ${cli.apellido}</b><br>
+        <span style="font-size:12px; color:#666;">📍 ${dir}</span><br>
+        ${cli.telefono?`<span style="font-size:12px; color:#666;">📱 ${cli.telefono}</span><br>`:''}
+        <hr style="margin:6px 0; border:none; border-top:1px solid #ddd;">
+        <span style="font-size:12px;">${cuotasInfo}</span>
+      </div>`);
+      bounds.push([coords.lat,coords.lon]);
+    }catch(e){ console.warn('Geocoding error para '+dir, e); }
+  }
+  if(bounds.length) mapaCuotasInst.fitBounds(bounds, {padding:[30,30]});
+  else mapaCuotasInst.setView([-34.67,-58.56], 11);
+  setTimeout(()=> mapaCuotasInst.invalidateSize(), 200);
+}
+
+async function geocodificarDireccion(direccion){
+  // Agregar contexto geográfico si no tiene
+  let q = direccion;
+  if(!q.toLowerCase().includes('buenos aires') && !q.toLowerCase().includes('argentina')){
+    q += ', Buenos Aires, Argentina';
+  }
+  if(geocodeCache[q]) return geocodeCache[q];
+  try{
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q);
+    const resp = await fetch(url, {headers:{'Accept-Language':'es'}});
+    const data = await resp.json();
+    if(data && data.length){
+      const result = {lat:parseFloat(data[0].lat), lon:parseFloat(data[0].lon)};
+      geocodeCache[q] = result;
+      return result;
+    }
+  }catch(e){ console.warn('Nominatim error:', e); }
+  return null;
+}
+
+async function enviarNotificacionesCuotas(){
+  if(!confirm('¿Enviar recordatorios de cuotas por WhatsApp a los clientes con cuotas que vencen hoy y mañana?')) return;
+  try{
+    const resp = await fetch(SUPABASE_URL+'/functions/v1/notificar-cuotas', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON,'apikey':SUPABASE_ANON},
+      body:'{}'
+    });
+    const data = await resp.json();
+    if(data.ok){
+      alert(`✅ Se enviaron ${data.totalNotificaciones} notificacion(es) por WhatsApp.`);
+    } else {
+      alert('❌ Error: '+(data.error||'Error desconocido'));
+    }
+  }catch(e){
+    alert('❌ Error de conexión: '+e.message);
+  }
 }
 
 /* ---------- CAJA ---------- */
