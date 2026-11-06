@@ -3863,7 +3863,10 @@ function imprimirComprobanteCuotas(id){
     ${vc.estado==='finalizado' ? '✓ CRÉDITO FINALIZADO — Todas las cuotas abonadas' : `EN CURSO — ${vc.cuotasPagadas||0}/${vc.cantCuotas} cuotas pagadas`}
   </div>
 
-  <div class="aviso"><b>AVISO:</b> Este comprobante certifica la operación de venta en cuotas del equipo detallado. El comprador se compromete a abonar las cuotas según el cronograma establecido. En caso de incumplimiento, el vendedor podrá ejercer las acciones correspondientes.</div>
+  ${vc.estado==='finalizado'
+    ? `<div class="aviso" style="background:#e8f5e9;border-color:#27ae60;"><b>OPERACIÓN FINALIZADA:</b> Se deja constancia de que el comprador ha abonado la totalidad de las cuotas correspondientes a la presente operación. El equipo detallado queda libre de toda obligación de pago. El presente comprobante sirve como constancia de cancelación total del crédito.</div>`
+    : `<div class="aviso"><b>AVISO:</b> Este comprobante certifica la operación de venta en cuotas del equipo detallado. El comprador se compromete a abonar las cuotas según el cronograma establecido. En caso de incumplimiento, el vendedor podrá ejercer las acciones correspondientes.</div>`
+  }
 
   <div class="firmas"><div>Firma del comprador</div><div>Firma del vendedor</div></div>
   <div class="footer">Aruba Apple — Comprobante de venta en cuotas generado el ${new Date().toLocaleDateString('es-AR')}</div>
