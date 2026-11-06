@@ -793,6 +793,7 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div><label>Precio venta (USD)</label><input id="vPrecio" type="number" placeholder="0"></div>
           </div>
         </div>
+        <div class="field"><label>Medio de pago</label><select id="vMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
         <div class="field"><button class="btn amber" onclick="reservarItemVenta()" style="width:100%;">Reservar</button></div>
         <div class="field"><button class="btn" onclick="venderItemVenta()" style="width:100%;">Vender</button></div>
@@ -808,7 +809,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="filTodasBtn" onclick="filtrarVentas('todas')">Todas</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Nro. de Venta</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Nro. de Venta</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Medio de pago</th><th class="solo-admin">Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="ventasBody"></tbody>
       </table></div>
       <div class="empty" id="ventasEmpty" style="display:none;">No hay ventas registradas en este período.</div>
@@ -969,6 +970,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cantidad de cuotas</label><select id="vcCantCuotas" onchange="calcularSimulacionCuotas()"><option value="3">3 cuotas</option><option value="6">6 cuotas</option><option value="9">9 cuotas</option><option value="12">12 cuotas</option></select></div>
         <div class="field"><label>Interés a cobrar (%)</label><input id="vcInteres" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
         <div class="field"><label>Cuota deseada (USD)</label><input id="vcCuotaValor" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
+        <div class="field"><label>Medio de pago (anticipo)</label><select id="vcMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
         <div class="field"><label>Fecha de pago</label><input id="vcFechaPago" type="date"></div>
         <div class="field"><label>Frecuencia de pago</label><select id="vcFrecuencia" onchange="renderSimulacionCuotas()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
         <div class="field"><label>Fecha inicio financiación</label><input id="vcFechaInicio" type="date" onchange="renderSimulacionCuotas()"></div>
@@ -1005,7 +1007,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="vcFilTodasBtn" onclick="filtrarVentasCuotas('todas')">Total</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Cuota</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Cuota</th><th>Medio de pago</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
         <tbody id="vcHistBody"></tbody>
       </table></div>
       <div class="empty" id="vcHistEmpty" style="display:none;">No hay ventas en cuotas registradas en este período.</div>
@@ -1134,6 +1136,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
         <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
+        <div class="field"><label>Medio de pago</label><select id="csMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
         <div class="field"><label>Fecha</label><input id="csFecha" type="date"></div>
         <div class="field"><button class="btn" onclick="agregarConsignacion()" style="width:100%;">Agregar</button></div>
       </div>
@@ -1143,7 +1146,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos consignados</h2>
       <div class="search"><input id="buscarConsignacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderConsignaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>IMEI</th><th>Deuda</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>IMEI</th><th>Deuda</th><th>Medio de pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="consignacionesBody"></tbody>
       </table></div>
       <div class="empty" id="consignacionesEmpty" style="display:none;">Todavía no cargaste consignaciones.</div>
@@ -1203,6 +1206,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <!-- Fila 4: Descripción (2 cols) + Costo -->
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
+        <div class="field"><label>Medio de pago</label><select id="rMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
         <!-- Fila 5: Fecha + Agregar (alineados a la derecha) -->
         <div style="grid-column:1/-1;display:flex;justify-content:flex-end;align-items:flex-end;gap:12px;margin-top:4px;">
           <div class="field" style="margin:0;min-width:160px;"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1215,7 +1219,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos en reparación</h2>
       <div class="search"><input id="buscarReparacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderReparaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Código</th><th>iCloud</th><th>Problema</th><th>Costo</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Código</th><th>iCloud</th><th>Problema</th><th>Costo</th><th>Medio de pago</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="reparacionesBody"></tbody>
       </table></div>
       <div class="empty" id="reparacionesEmpty" style="display:none;">Todavía no cargaste reparaciones.</div>
@@ -1438,6 +1442,8 @@ function ls_set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e)
 function fmt(n){ return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0}); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function hoyISO(){ return new Date().toISOString().slice(0,10); }
+const MEDIOS_PAGO_LABELS = { efectivo:'💵 Efectivo', transferencia:'🏦 Transferencia', cripto:'₿ Cripto', debito:'💳 Débito', credito:'💳 Crédito' };
+function badgeMedioPago(mp){ if(!mp) return '<span style="color:var(--txt3);font-size:11px;">—</span>'; return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp]||mp}</span>`; }
 
 /* ---------- SESIÓN / LOGIN ---------- */
 let adminCred = ls_get('admin_cred', null);
@@ -2759,6 +2765,7 @@ function venderItemVenta(){
   const cliente = clienteSel ? `${clienteSel.nombre} ${clienteSel.apellido}` : 'Consumidor final';
   const precio = document.getElementById('vPrecio').value;
   const fecha = document.getElementById('vFecha').value || hoyISO();
+  const medioPago = document.getElementById('vMedioPago').value;
   if(!precio){ alert('Cargá el precio de venta.'); return; }
 
   if(tipo==='equipo'){
@@ -2771,11 +2778,11 @@ function venderItemVenta(){
 
   // Mostrar modal de bonificación antes de confirmar
   mostrarModalBonificacion(function(bonificados, gpsVendidos){
-    _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos);
+    _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos, medioPago);
   });
 }
 
-function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos){
+function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos, medioPago){
   gpsVendidos = gpsVendidos || [];
   if(tipo==='equipo'){
     const id = document.getElementById('vEquipo').value;
@@ -2785,16 +2792,16 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
     syncGuardar('stock_equipos', equipos);
     renderEquipos();
     marcarConsignacionVendida(e.id);
-    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, bonificados: bonificados.length ? bonificados : undefined });
-    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
+    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined });
+    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${medioPago?' ('+MEDIOS_PAGO_LABELS[medioPago]+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   } else {
     const id = document.getElementById('vAccesorio').value;
     const a = accesorios.find(x=>x.id===id);
     a.estado = 'vendido';
     syncGuardar('stock_accesorios', accesorios);
     renderAccesorios();
-    ventas.push({ id: uid(), tipo:'accesorio', itemId: a.id, modelo: a.nombre, color: a.color, imei: '', cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: a.compra, fecha, bonificados: bonificados.length ? bonificados : undefined });
-    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
+    ventas.push({ id: uid(), tipo:'accesorio', itemId: a.id, modelo: a.nombre, color: a.color, imei: '', cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: a.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined });
+    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${medioPago?' ('+MEDIOS_PAGO_LABELS[medioPago]+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   }
 
   // Registrar cada bonificación como venta a precio $0 (solo descuenta costo de compra)
@@ -2828,6 +2835,7 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
 
   syncGuardar('ventas', ventas);
   document.getElementById('vPrecio').value='';
+  document.getElementById('vMedioPago').value='';
   cargarSelectEquiposVenta();
   renderVentas();
 }
@@ -3121,6 +3129,7 @@ function renderVentas(){
       kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, imei:v.imei||'-',
       cliente:v.cliente||'-', precio:v.precioVenta,
       ganancia:(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0),
+      medioPago:v.medioPago||'',
       bonifTexto
     };
   });
@@ -3157,6 +3166,7 @@ function renderVentas(){
         <td data-label="IMEI">${v.imei}</td>
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">${v.precio!=null ? '$'+fmt(v.precio) : '—'}</td>
+        <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
         <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia) : '—'}</td>
         <td data-label="Estado">${badge}</td>
         <td data-label="Acciones"><div class="actions">
@@ -3171,6 +3181,7 @@ function renderVentas(){
         <td data-label="IMEI">${v.imei}</td>
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">$${fmt(v.precio)}</td>
+        <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
         <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)}</td>
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
@@ -3520,6 +3531,7 @@ function venderEnCuotas(){
   const frecuencia = document.getElementById('vcFrecuencia').value;
   const fechaPago = document.getElementById('vcFechaPago').value || hoyISO();
   const fechaInicio = document.getElementById('vcFechaInicio').value || hoyISO();
+  const medioPago = document.getElementById('vcMedioPago').value;
 
   if(!precioCuotas){ alert('Cargá el precio en cuotas.'); return; }
 
@@ -3533,11 +3545,11 @@ function venderEnCuotas(){
 
   // Mostrar modal de bonificación antes de confirmar
   mostrarModalBonificacion(function(bonificados, gpsVendidos){
-    _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos);
+    _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos, medioPago);
   });
 }
 
-function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos){
+function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos, medioPago){
   gpsVendidos = gpsVendidos || [];
   // Sumar GPS al precio de cuotas para que se incluya en el cronograma y totales
   const totalGpsVenta = gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0);
@@ -3600,6 +3612,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
     cronograma,
     estado: 'activo',
     fecha: hoyISO(),
+    medioPago: medioPago||undefined,
     bonificados: bonificados.length ? bonificados : undefined
   };
 
@@ -3649,6 +3662,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
   document.getElementById('vcAnticipo').value = '';
   document.getElementById('vcInteres').value = '';
   document.getElementById('vcCuotaValor').value = '';
+  document.getElementById('vcMedioPago').value = '';
   document.getElementById('vcSimulacion').style.display = 'none';
   cargarSelectVentaCuotas();
   cargarSelectEquiposVenta();
@@ -3961,6 +3975,7 @@ function renderVentasCuotas(){
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Venta"><span class="badge" style="background:rgba(0,180,255,0.15);color:#00b4ff;">📋 Propuesta ${cuotasFin}c</span></td>
         <td data-label="Cuota">$${fmt(valorCuotaFin)}</td>
+        <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">-</td>
         <td data-label="Ganancia en cuotas" class="ganancia solo-admin">-</td>
         <td data-label="Acciones"><div class="actions">
@@ -3984,6 +3999,7 @@ function renderVentasCuotas(){
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Venta"><span class="badge ${esFinalizdo?'vendido':'reservado'}">${fraccion}</span></td>
         <td data-label="Cuota">$${fmt(valorCuota)}</td>
+        <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">$${fmt(gMensual)}</td>
         <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)}</td>
         <td data-label="Acciones"><div class="actions">
@@ -5380,11 +5396,13 @@ function agregarConsignacion(){
     id: uid(), equipoId: equipoNuevo.id, modelo, proveedorId,
     clienteId: document.getElementById('csCliente').value,
     color, bateria, imei, deuda,
+    medioPago: document.getElementById('csMedioPago').value || undefined,
     fecha: document.getElementById('csFecha').value || hoyISO(),
     estado: 'activa'
   });
   syncGuardar('consignaciones', consignaciones);
   ['csColor','csBateria','csImei','csDeuda'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('csMedioPago').value='';
   renderConsignaciones();
 }
 
@@ -5431,6 +5449,7 @@ function renderConsignaciones(){
       <td data-label="Color">${c.color||'-'}</td>
       <td data-label="IMEI">${c.imei}</td>
       <td data-label="Deuda">$${fmt(c.deuda)}</td>
+      <td data-label="Medio de pago">${badgeMedioPago(c.medioPago)}</td>
       <td data-label="Estado"><span class="badge ${c.estado==='activa'?'reservado':c.estado==='pendiente'?'pendiente':'disponible'}">${c.estado}</span></td>
       <td data-label="Acciones"><div class="actions">
         <button class="btn ghost small" onclick="avanzarEstadoConsignacion('${c.id}')">${c.estado==='activa'?'Marcar vendido (pendiente)':c.estado==='pendiente'?'Marcar pagado':'Reabrir'}</button>
@@ -5492,12 +5511,14 @@ function agregarReparacion(){
     icloud: document.getElementById('rIcloud').value.trim(),
     icloudPass: document.getElementById('rIcloudPass').value.trim(),
     descripcion, costo: document.getElementById('rCosto').value,
+    medioPago: document.getElementById('rMedioPago').value || undefined,
     fecha: document.getElementById('rFecha').value || hoyISO(),
     estado: 'a reparar'
   });
   syncGuardar('reparaciones', reparaciones);
   const repAgregada = reparaciones[reparaciones.length - 1];
   ['rModelo','rColor','rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rMedioPago').value='';
   document.getElementById('rImeiMsg').style.display='none';
   renderReparaciones();
   mostrarModalComprobante(repAgregada);
@@ -5823,6 +5844,7 @@ function renderReparaciones(){
       <td data-label="iCloud"><span style="font-size:11px;">${r.icloud ? r.icloud + (r.icloudPass ? '<br><span style="color:#888;">Pass: '+r.icloudPass+'</span>' : '') : '-'}</span></td>
       <td data-label="Problema">${r.descripcion}</td>
       <td data-label="Costo">$${fmt(r.costo)}</td>
+      <td data-label="Medio de pago">${badgeMedioPago(r.medioPago)}</td>
       <td data-label="Pago">${pagoBadge}</td>
       <td data-label="Estado"><span class="badge ${estadoBadgeReparacion(r.estado)}">${r.estado}</span></td>
       <td data-label="Acciones"><div class="actions">
