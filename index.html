@@ -3691,6 +3691,7 @@ function renderDashCuotasActivas(){
       <td style="padding:10px 8px;">${vc.cliente||'-'}</td>
       <td style="padding:10px 8px;text-align:center;"><span class="badge ${vc.cuotasPagadas>=vc.cantCuotas*0.7?'vendido':'reservado'}">${vc.cuotasPagadas}/${vc.cantCuotas}</span></td>
       <td style="padding:10px 8px;text-align:center;font-weight:700;">${cuotasFaltan}</td>
+      <td style="padding:10px 8px;text-align:right;font-weight:600;">${siguiente ? 'USD $'+fmt(Number(siguiente.monto)||0) : '-'}</td>
       <td style="padding:10px 8px;text-align:right;font-weight:600;">USD $${fmt(montoRestante)}</td>
       <td style="padding:10px 8px;text-align:center;">${siguiente ? siguiente.vencimiento : '-'}</td>
       <td style="padding:10px 8px;text-align:center;"><span style="color:${color};font-weight:700;font-size:12px;">${icono} ${estadoTxt}</span></td>
@@ -3723,6 +3724,7 @@ function renderDashCuotasActivas(){
           <th style="padding:8px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--txt3);">Cliente</th>
           <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Pagadas</th>
           <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Faltan</th>
+          <th style="padding:8px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--txt3);">Cuota</th>
           <th style="padding:8px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--txt3);">Monto restante</th>
           <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Próx. vencimiento</th>
           <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Estado</th>
