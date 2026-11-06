@@ -1110,9 +1110,17 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="mini-card amber"><label>En reparación</label><div class="val" id="rCantEnReparacion">0</div></div>
       <div class="mini-card profit"><label>Reparados</label><div class="val" id="rCantReparado">0</div></div>
       <div class="mini-card"><label>Total en costos de servicio</label><div class="val" id="rCostoTotal">$ 0</div></div>
-      <div class="mini-card" style="border-left:3px solid #e74c3c;"><label>Pendientes de pago</label><div class="val" id="rCantSinPagar">0</div></div>
-      <div class="mini-card profit"><label>Cobrado</label><div class="val" id="rTotalCobrado">$ 0</div></div>
     </div>
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:8px;">
+      <div class="mini-card reparacion-glow-red" style="border-left:3px solid #e74c3c;min-width:180px;text-align:center;"><label>Pendientes de pago</label><div class="val" id="rCantSinPagar">0</div></div>
+      <div class="mini-card reparacion-glow-green" style="border-left:3px solid #2ecc71;min-width:180px;text-align:center;"><label>Cobrado</label><div class="val" id="rTotalCobrado">$ 0</div></div>
+    </div>
+    <style>
+    @keyframes glowPulseRed { 0%,100%{box-shadow:0 0 8px #e74c3c55;} 50%{box-shadow:0 0 22px #e74c3c,0 0 40px #e74c3c66;} }
+    @keyframes glowPulseGreen { 0%,100%{box-shadow:0 0 8px #2ecc7155;} 50%{box-shadow:0 0 22px #2ecc71,0 0 40px #2ecc7166;} }
+    .reparacion-glow-red { animation: glowPulseRed 2s ease-in-out infinite; }
+    .reparacion-glow-green { animation: glowPulseGreen 2s ease-in-out infinite; }
+    </style>
 
     <div class="card">
       <h2>Ingresar equipo a reparar</h2>
@@ -1135,7 +1143,10 @@ body.rol-usuario .solo-admin{display:none !important;}
 <optgroup label="── iPad Mini ──"><option>iPad Mini 7ma gen (A17 Pro, 2024)</option><option>iPad Mini 6ta gen (A15, 2021)</option></optgroup>
 </select></div>
         <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
-        <div class="field"><label>IMEI</label><div style="display:flex;gap:6px;"><input id="rImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)" style="flex:1;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:8px 12px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div></div>
+        <div class="field"><label>IMEI</label><div style="display:flex;gap:6px;"><input id="rImei" placeholder="15 dígitos" maxlength="15" oninput="validarImeiInput(this)" style="flex:1;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:8px 12px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div><div id="rImeiMsg" style="font-size:12px;margin-top:4px;color:#e74c3c;display:none;"></div></div>
+        <div class="field"><label>🔒 Código de desbloqueo / Patrón</label><input id="rCodigo" placeholder="Ej: 1234, patrón en L..."></div>
+        <div class="field"><label>☁️ iCloud (Apple ID)</label><input id="rIcloud" placeholder="ejemplo@icloud.com" type="email"></div>
+        <div class="field"><label>🔑 Contraseña iCloud</label><div style="display:flex;gap:6px;"><input id="rIcloudPass" placeholder="Contraseña" type="password" style="flex:1;"><button class="btn ghost small" onclick="togglePassVisibility('rIcloudPass',this)" type="button" style="padding:6px 10px;">👁️</button></div></div>
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1147,7 +1158,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos en reparación</h2>
       <div class="search"><input id="buscarReparacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderReparaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Problema</th><th>Costo</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Código</th><th>iCloud</th><th>Problema</th><th>Costo</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="reparacionesBody"></tbody>
       </table></div>
       <div class="empty" id="reparacionesEmpty" style="display:none;">Todavía no cargaste reparaciones.</div>
@@ -4801,9 +4812,24 @@ function cargarClienteSelectReparacion(){
   document.getElementById('rFecha').value = document.getElementById('rFecha').value || hoyISO();
 }
 
+function validarImeiInput(el){
+  el.value = el.value.replace(/\D/g,'').slice(0,15);
+  const msg = document.getElementById('rImeiMsg');
+  const len = el.value.length;
+  if(len === 0){ msg.style.display='none'; }
+  else if(len === 15){ msg.style.display='block'; msg.style.color='#2ecc71'; msg.textContent='✓ IMEI completo (15 dígitos)'; }
+  else { msg.style.display='block'; msg.style.color='#e74c3c'; msg.textContent=`⚠ Faltan ${15-len} dígito${15-len>1?'s':''} (${len}/15)`; }
+}
+
+function togglePassVisibility(inputId,btn){
+  const inp = document.getElementById(inputId);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🔒'; }
+  else { inp.type='password'; btn.textContent='👁️'; }
+}
+
 function consultarImei(){
   const imei = document.getElementById('rImei').value.trim();
-  if(!imei || imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('Ingresá un IMEI válido de 15 dígitos para consultar.'); return; }
+  if(!imei || imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos para consultar.'); return; }
   window.open('https://reincubate.com/es/lookup/?imei=' + imei, '_blank');
 }
 
@@ -4817,12 +4843,16 @@ function agregarReparacion(){
     id: uid(), clienteId: document.getElementById('rCliente').value, modelo,
     color: document.getElementById('rColor').value.trim(),
     imei: rImei,
+    codigo: document.getElementById('rCodigo').value.trim(),
+    icloud: document.getElementById('rIcloud').value.trim(),
+    icloudPass: document.getElementById('rIcloudPass').value.trim(),
     descripcion, costo: document.getElementById('rCosto').value,
     fecha: document.getElementById('rFecha').value || hoyISO(),
     estado: 'a reparar'
   });
   syncGuardar('reparaciones', reparaciones);
-  ['rModelo','rColor','rImei','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
+  ['rModelo','rColor','rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rImeiMsg').style.display='none';
   renderReparaciones();
 }
 
@@ -4978,7 +5008,9 @@ function renderReparaciones(){
       <td data-label="Cliente">${nombreCliente(r.clienteId)}</td>
       <td data-label="Modelo">${r.modelo}</td>
       <td data-label="Color">${r.color||'-'}</td>
-      <td data-label="IMEI">${r.imei||'-'}</td>
+      <td data-label="IMEI" style="font-size:12px;letter-spacing:0.5px;white-space:nowrap;">${r.imei||'-'}</td>
+      <td data-label="Código">${r.codigo||'-'}</td>
+      <td data-label="iCloud"><span style="font-size:11px;">${r.icloud ? r.icloud + (r.icloudPass ? '<br><span style="color:#888;">Pass: '+r.icloudPass+'</span>' : '') : '-'}</span></td>
       <td data-label="Problema">${r.descripcion}</td>
       <td data-label="Costo">$${fmt(r.costo)}</td>
       <td data-label="Pago">${pagoBadge}</td>
