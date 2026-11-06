@@ -1110,15 +1110,32 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="mini-card amber"><label>En reparación</label><div class="val" id="rCantEnReparacion">0</div></div>
       <div class="mini-card profit"><label>Reparados</label><div class="val" id="rCantReparado">0</div></div>
       <div class="mini-card"><label>Total en costos de servicio</label><div class="val" id="rCostoTotal">$ 0</div></div>
+      <div class="mini-card" style="border-left:3px solid #e74c3c;"><label>Pendientes de pago</label><div class="val" id="rCantSinPagar">0</div></div>
+      <div class="mini-card profit"><label>Cobrado</label><div class="val" id="rTotalCobrado">$ 0</div></div>
     </div>
 
     <div class="card">
       <h2>Ingresar equipo a reparar</h2>
       <div class="form-grid">
         <div class="field"><label>Cliente</label><select id="rCliente"><option value="">Sin especificar</option></select></div>
-        <div class="field"><label>Modelo</label><input id="rModelo" placeholder="Ej: iPhone 13"></div>
+        <div class="field"><label>Modelo</label><select id="rModelo" style="width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#e0e0e0;font-size:14px;">
+<option value="">Seleccionar modelo...</option>
+<optgroup label="── iPhone 18 ──"><option>iPhone 18 Pro Max</option><option>iPhone 18 Pro</option></optgroup>
+<optgroup label="── iPhone 17 ──"><option>iPhone 17 Pro Max</option><option>iPhone 17 Pro</option><option>iPhone 17 Air</option><option>iPhone 17</option><option>iPhone 17e</option></optgroup>
+<optgroup label="── iPhone 16 ──"><option>iPhone 16 Pro Max</option><option>iPhone 16 Pro</option><option>iPhone 16 Plus</option><option>iPhone 16</option><option>iPhone 16e</option></optgroup>
+<optgroup label="── iPhone 15 ──"><option>iPhone 15 Pro Max</option><option>iPhone 15 Pro</option><option>iPhone 15 Plus</option><option>iPhone 15</option></optgroup>
+<optgroup label="── iPhone 14 ──"><option>iPhone 14 Pro Max</option><option>iPhone 14 Pro</option><option>iPhone 14 Plus</option><option>iPhone 14</option></optgroup>
+<optgroup label="── iPhone 13 ──"><option>iPhone 13 Pro Max</option><option>iPhone 13 Pro</option><option>iPhone 13 Mini</option><option>iPhone 13</option></optgroup>
+<optgroup label="── iPhone 12 ──"><option>iPhone 12 Pro Max</option><option>iPhone 12 Pro</option><option>iPhone 12 Mini</option><option>iPhone 12</option></optgroup>
+<optgroup label="── iPhone 11 ──"><option>iPhone 11 Pro Max</option><option>iPhone 11 Pro</option><option>iPhone 11</option></optgroup>
+<optgroup label="── iPhone SE ──"><option>iPhone SE (3ra gen)</option><option>iPhone SE (2da gen)</option></optgroup>
+<optgroup label="── iPad Pro ──"><option>iPad Pro 13" (M5, 2025)</option><option>iPad Pro 11" (M5, 2025)</option><option>iPad Pro 13" (M4, 2024)</option><option>iPad Pro 11" (M4, 2024)</option><option>iPad Pro 12.9" (M2, 2022)</option><option>iPad Pro 11" (M2, 2022)</option><option>iPad Pro 12.9" (M1, 2021)</option><option>iPad Pro 11" (M1, 2021)</option></optgroup>
+<optgroup label="── iPad Air ──"><option>iPad Air 13" (M4, 2026)</option><option>iPad Air 11" (M4, 2026)</option><option>iPad Air 13" (M3, 2025)</option><option>iPad Air 11" (M3, 2025)</option><option>iPad Air 13" (M2, 2024)</option><option>iPad Air 11" (M2, 2024)</option><option>iPad Air (M1, 2022)</option></optgroup>
+<optgroup label="── iPad ──"><option>iPad 11ra gen (A16, 2025)</option><option>iPad 10ma gen (A14, 2022)</option><option>iPad 9na gen (A13, 2021)</option></optgroup>
+<optgroup label="── iPad Mini ──"><option>iPad Mini 7ma gen (A17 Pro, 2024)</option><option>iPad Mini 6ta gen (A15, 2021)</option></optgroup>
+</select></div>
         <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
-        <div class="field"><label>IMEI</label><input id="rImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
+        <div class="field"><label>IMEI</label><div style="display:flex;gap:6px;"><input id="rImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)" style="flex:1;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:8px 12px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div></div>
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
         <div class="field"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1130,7 +1147,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos en reparación</h2>
       <div class="search"><input id="buscarReparacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderReparaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Problema</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Problema</th><th>Costo</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="reparacionesBody"></tbody>
       </table></div>
       <div class="empty" id="reparacionesEmpty" style="display:none;">Todavía no cargaste reparaciones.</div>
@@ -3502,7 +3519,6 @@ function renderVentasCuotas(){
           ${esFinalizdo
             ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
             : `<button class="btn small" onclick="pagarCuota('${vc.id}')">Pagar cuota</button>`}
-          ${!vc.clienteId ? `<button class="btn ghost small" onclick="asignarClienteCuotas('${vc.id}')" style="color:var(--amber);">👤 Asignar cliente</button>` : ''}
           <button class="btn ghost small" onclick="reciboCuotas('${vc.id}')">🧾 Recibo</button>
           <button class="btn ghost small" onclick="facturaCuotasConIVA('${vc.id}')">📄 Factura</button>
           <button class="btn ghost small" onclick="generarContratoCuotas('${vc.id}')">📄 Contrato compraventa</button>
@@ -4139,47 +4155,6 @@ function cargarClientesSelectVenta(){
     sel.appendChild(o);
   });
   sel.value = actual;
-}
-
-/* ---------- ASIGNAR CLIENTE A VENTA EN CUOTAS ---------- */
-function asignarClienteCuotas(ventaId){
-  const vc = ventasCuotas.find(v=>v.id===ventaId);
-  if(!vc) return;
-  if(!clientes.length){ alert('No hay clientes cargados. Agregá un cliente primero en la sección Clientes.'); return; }
-
-  const opciones = clientes.map(c=>`<option value="${c.id}">${c.nombre} ${c.apellido} — DNI: ${c.dni||'-'}</option>`).join('');
-  const overlay = document.createElement('div');
-  overlay.id = 'modalAsignarClienteOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);padding:20px;';
-  overlay.innerHTML = `
-    <div style="background:var(--bg2,#1a1a2e);border-radius:16px;padding:24px;max-width:440px;width:100%;color:var(--txt1,#fff);box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-      <h3 style="margin:0 0 14px;">👤 Asignar cliente a venta en cuotas</h3>
-      <p style="margin:0 0 10px;">Venta: <b>${vc.modelo}</b> — ${vc.fecha}</p>
-      <p style="margin:0 0 10px;">Cliente actual: <b>${vc.cliente||'Consumidor final'}</b></p>
-      <label style="font-weight:600; font-size:14px;">Seleccionar cliente:</label>
-      <select id="selAsignarCliente" class="input" style="width:100%; margin-top:6px;">
-        <option value="">— Elegir cliente —</option>
-        ${opciones}
-      </select>
-      <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
-        <button class="btn ghost" onclick="document.getElementById('modalAsignarClienteOverlay').remove()">Cancelar</button>
-        <button class="btn" id="btnConfAsignarCliente">Asignar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  document.getElementById('btnConfAsignarCliente').onclick = ()=>{
-    const cid = document.getElementById('selAsignarCliente').value;
-    if(!cid){ alert('Seleccioná un cliente'); return; }
-    const cli = clientes.find(c=>c.id===cid);
-    if(!cli) return;
-    vc.clienteId = cid;
-    vc.cliente = `${cli.nombre} ${cli.apellido}`;
-    syncGuardar('ventas_cuotas', ventasCuotas);
-    document.getElementById('modalAsignarClienteOverlay').remove();
-    renderVentasCuotas();
-    verificarAlertasCuotas();
-    alert(`✅ Cliente "${cli.nombre} ${cli.apellido}" asignado a la venta de ${vc.modelo}`);
-  };
 }
 
 /* ---------- ALERTAS DE CUOTAS ---------- */
@@ -4826,6 +4801,12 @@ function cargarClienteSelectReparacion(){
   document.getElementById('rFecha').value = document.getElementById('rFecha').value || hoyISO();
 }
 
+function consultarImei(){
+  const imei = document.getElementById('rImei').value.trim();
+  if(!imei || imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('Ingresá un IMEI válido de 15 dígitos para consultar.'); return; }
+  window.open('https://reincubate.com/es/lookup/?imei=' + imei, '_blank');
+}
+
 function agregarReparacion(){
   const modelo = document.getElementById('rModelo').value.trim();
   const descripcion = document.getElementById('rDescripcion').value.trim();
@@ -4850,6 +4831,14 @@ function avanzarEstadoReparacion(id){
   if(r.estado==='a reparar') r.estado='en reparación';
   else if(r.estado==='en reparación') r.estado='reparado';
   else r.estado='a reparar';
+  syncGuardar('reparaciones', reparaciones);
+  renderReparaciones();
+}
+
+function togglePagoReparacion(id){
+  const r = reparaciones.find(x=>x.id===id);
+  if(!r) return;
+  r.pagado = !r.pagado;
   syncGuardar('reparaciones', reparaciones);
   renderReparaciones();
 }
@@ -4981,6 +4970,9 @@ function renderReparaciones(){
   const filtradas = reparaciones.filter(r => !q || (r.modelo+r.imei+nombreCliente(r.clienteId)).toLowerCase().includes(q));
   document.getElementById('reparacionesEmpty').style.display = filtradas.length ? 'none' : 'block';
   filtradas.forEach(r=>{
+    const pagado = r.pagado === true;
+    const pagoBadge = pagado ? '<span class="badge disponible">Pagado</span>' : '<span class="badge vendido">No pagado</span>';
+    const pagoBtn = pagado ? `<button class="btn ghost small" onclick="togglePagoReparacion('${r.id}')" style="color:#e74c3c;">Desmarcar pago</button>` : `<button class="btn ghost small" onclick="togglePagoReparacion('${r.id}')" style="color:#2ecc71;">💲 Marcar pagado</button>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td data-label="Cliente">${nombreCliente(r.clienteId)}</td>
@@ -4989,8 +4981,10 @@ function renderReparaciones(){
       <td data-label="IMEI">${r.imei||'-'}</td>
       <td data-label="Problema">${r.descripcion}</td>
       <td data-label="Costo">$${fmt(r.costo)}</td>
+      <td data-label="Pago">${pagoBadge}</td>
       <td data-label="Estado"><span class="badge ${estadoBadgeReparacion(r.estado)}">${r.estado}</span></td>
       <td data-label="Acciones"><div class="actions">
+        ${pagoBtn}
         <button class="btn ghost small" onclick="generarComprobanteReparacion('${r.id}')">📄 Comprobante</button>
         <button class="btn ghost small" onclick="avanzarEstadoReparacion('${r.id}')">${r.estado==='a reparar'?'Pasar a en reparación':r.estado==='en reparación'?'Marcar reparado':'Reabrir'}</button>
         <button class="btn danger small" onclick="borrarReparacion('${r.id}')">Borrar</button>
@@ -5001,6 +4995,8 @@ function renderReparaciones(){
   document.getElementById('rCantEnReparacion').textContent = reparaciones.filter(r=>r.estado==='en reparación').length;
   document.getElementById('rCantReparado').textContent = reparaciones.filter(r=>r.estado==='reparado').length;
   document.getElementById('rCostoTotal').textContent = '$ '+fmt(reparaciones.reduce((s,r)=>s+(Number(r.costo)||0),0));
+  document.getElementById('rCantSinPagar').textContent = reparaciones.filter(r=>!r.pagado).length;
+  document.getElementById('rTotalCobrado').textContent = '$ '+fmt(reparaciones.filter(r=>r.pagado).reduce((s,r)=>s+(Number(r.costo)||0),0));
 }
 
 /* ---------- MARKETING ---------- */
