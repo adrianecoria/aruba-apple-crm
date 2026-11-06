@@ -1124,7 +1124,8 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="card">
       <h2>Ingresar equipo a reparar</h2>
-      <div class="form-grid">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:end;">
+        <!-- Fila 1: Cliente, Modelo, Color -->
         <div class="field"><label>Cliente</label><select id="rCliente"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Modelo</label><select id="rModelo" style="width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#e0e0e0;font-size:14px;">
 <option value="">Seleccionar modelo...</option>
@@ -1143,16 +1144,20 @@ body.rol-usuario .solo-admin{display:none !important;}
 <optgroup label="── iPad Mini ──"><option>iPad Mini 7ma gen (A17 Pro, 2024)</option><option>iPad Mini 6ta gen (A15, 2021)</option></optgroup>
 </select></div>
         <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
-        <div class="field" style="grid-column:span 2;"><label>IMEI</label><div style="display:flex;gap:6px;"><input id="rImei" placeholder="Ingresá los 15 dígitos del IMEI" maxlength="15" oninput="validarImeiInput(this)" style="flex:1;min-width:200px;font-size:16px;letter-spacing:2px;font-family:monospace;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:8px 12px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div><div id="rImeiMsg" style="font-size:12px;margin-top:4px;color:#e74c3c;display:none;"></div></div>
-        <div class="field"><label>🔒 Código de desbloqueo / Patrón</label><input id="rCodigo" placeholder="Ej: 1234, patrón en L..."></div>
+        <!-- Fila 2: IMEI (ancho completo) -->
+        <div class="field" style="grid-column:1/-1;"><label>IMEI</label><div style="display:flex;gap:8px;align-items:center;"><input id="rImei" placeholder="Ingresá los 15 dígitos del IMEI" maxlength="15" oninput="validarImeiInput(this)" style="flex:1;font-size:16px;letter-spacing:2px;font-family:monospace;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:10px 16px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div><div id="rImeiMsg" style="font-size:12px;margin-top:4px;color:#e74c3c;display:none;"></div></div>
+        <!-- Fila 3: Código, iCloud, Contraseña -->
+        <div class="field"><label>🔒 Código desbloqueo / Patrón</label><input id="rCodigo" placeholder="Ej: 1234, patrón en L..."></div>
         <div class="field"><label>☁️ iCloud (Apple ID)</label><input id="rIcloud" placeholder="ejemplo@icloud.com" type="email"></div>
         <div class="field"><label>🔑 Contraseña iCloud</label><div style="display:flex;gap:6px;"><input id="rIcloudPass" placeholder="Contraseña" type="password" style="flex:1;"><button class="btn ghost small" onclick="togglePassVisibility('rIcloudPass',this)" type="button" style="padding:6px 10px;">👁️</button></div></div>
+        <!-- Fila 4: Descripción (2 cols) + Costo -->
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;align-items:flex-end;gap:12px;margin-top:12px;flex-wrap:wrap;">
-        <div class="field" style="margin:0;min-width:160px;"><label>Fecha</label><input id="rFecha" type="date"></div>
-        <div class="field" style="margin:0;"><button class="btn" onclick="agregarReparacion()" style="width:100%;min-width:140px;padding:12px 24px;font-size:15px;">Agregar</button></div>
+        <!-- Fila 5: Fecha + Agregar (alineados a la derecha) -->
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;align-items:flex-end;gap:12px;margin-top:4px;">
+          <div class="field" style="margin:0;min-width:160px;"><label>Fecha</label><input id="rFecha" type="date"></div>
+          <div class="field" style="margin:0;"><button class="btn" onclick="agregarReparacion()" style="width:100%;min-width:140px;padding:12px 24px;font-size:15px;">Agregar</button></div>
+        </div>
       </div>
     </div>
 
