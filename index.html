@@ -4668,14 +4668,31 @@ function anularVentaCuotas(id){
     const a = accesorios.find(x=>x.id===vc.itemId);
     if(a){ a.estado = 'disponible'; syncGuardar('stock_accesorios', accesorios); renderAccesorios(); }
   }
-  // Restaurar GPS vendidos a disponible
+  // Restaurar bonificados al stock y eliminar del historial de ventas
+  if(vc.bonificados && vc.bonificados.length){
+    const idsBonif = vc.bonificados.map(b=>b.id);
+    vc.bonificados.forEach(b=>{
+      const acc = accesorios.find(a=>a.id===b.itemId);
+      if(acc){ acc.estado = 'disponible'; }
+    });
+    syncGuardar('stock_accesorios', accesorios);
+    ventas = ventas.filter(v=>!idsBonif.includes(v.id));
+    renderAccesorios();
+  }
+  // Restaurar GPS vendidos a disponible y eliminar del historial de ventas
   if(vc.gpsVendidos && vc.gpsVendidos.length){
+    const idsGps = vc.gpsVendidos.map(gv=>gv.id);
     vc.gpsVendidos.forEach(gv=>{
       const gps = gpsItems.find(g=>g.id===gv.itemId);
       if(gps){ gps.estado = 'disponible'; }
     });
     syncGuardar('stock_gps', gpsItems);
+    ventas = ventas.filter(v=>!idsGps.includes(v.id));
     renderGps();
+  }
+  // Sincronizar ventas si se eliminaron bonificados o GPS
+  if((vc.bonificados && vc.bonificados.length) || (vc.gpsVendidos && vc.gpsVendidos.length)){
+    syncGuardar('ventas', ventas);
   }
   ventasCuotas = ventasCuotas.filter(x=>x.id!==id);
   syncGuardar('ventas_cuotas', ventasCuotas);
@@ -4683,6 +4700,7 @@ function anularVentaCuotas(id){
   cargarSelectVentaCuotas();
   cargarSelectEquiposVenta();
   renderVentasCuotas();
+  renderVentas();
   if(document.getElementById('movimientosBody')) renderCaja();
 }
 
