@@ -4089,6 +4089,12 @@ function reciboCuotas(id){
               </td>
             </tr>`;
           }).join('') : ''}
+          ${(vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.map(gv => {
+            return `<tr>
+              <td style="padding:6px; border-bottom:1px solid #ddd;">📍 GPS — ${gv.modelo||'GPS'}</td>
+              <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right; color:#3b82f6; font-weight:700;">U$S ${fmt(Number(gv.precioVenta)||0)}</td>
+            </tr>`;
+          }).join('') : ''}
         </table>
         ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:13px;">
           <span style="font-weight:700; color:#16a34a;">🎁 Accesorios bonificados sin cargo:</span>
@@ -4097,6 +4103,10 @@ function reciboCuotas(id){
             return `<br>&nbsp;&nbsp;• ${b.modelo} — <s>U$S ${fmt(pLista)}</s> → <b>U$S 0</b>`;
           }).join('')}
           <br><span style="color:#555; font-size:12px;">Valor total bonificado: U$S ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</span>
+        </div>` : ''}
+        ${(vc.gpsVendidos && vc.gpsVendidos.length) ? `<div style="margin-top:8px; padding:8px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; font-size:13px;">
+          <span style="font-weight:700; color:#3b82f6;">📍 GPS incluido:</span>
+          ${vc.gpsVendidos.map(gv => `<br>&nbsp;&nbsp;• ${gv.modelo||'GPS'} — <b>U$S ${fmt(Number(gv.precioVenta)||0)}</b>`).join('')}
         </div>` : ''}
       </div>
 
@@ -4196,8 +4206,19 @@ function facturaCuotasConIVA(id){
             <td style="border:1px solid #000; padding:6px; text-align:right; color:#16a34a; font-weight:700;">BONIFICADO</td>
           </tr>`;
         }).join('') : ''}
+        ${(vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.map(gv => {
+          const gpsVenta = Number(gv.precioVenta)||0;
+          const gpsNeto = gpsVenta / (1 + IVA/100);
+          return `<tr>
+            <td style="border:1px solid #000; padding:6px;">📍 GPS — ${gv.modelo||'GPS'}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+            <td style="border:1px solid #000; padding:6px; text-align:right; color:#3b82f6;">U$S ${fmt(gpsNeto)}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:right; color:#3b82f6; font-weight:700;">U$S ${fmt(gpsNeto)}</td>
+          </tr>`;
+        }).join('') : ''}
       </table>
       ${(vc.bonificados && vc.bonificados.length) ? `<div style="margin-top:8px; font-size:12px; color:#16a34a; font-weight:600;">🎁 Accesorios bonificados sin cargo — Valor total bonificado: U$S ${fmt(vc.bonificados.reduce((s,b)=>s+(Number(b.precioLista)||Number(b.precioCompra)||0),0))}</div>` : ''}
+      ${(vc.gpsVendidos && vc.gpsVendidos.length) ? `<div style="margin-top:4px; font-size:12px; color:#3b82f6; font-weight:600;">📍 GPS incluido — Total GPS: U$S ${fmt(vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0))}</div>` : ''}
 
       <div style="margin-top:10px; padding:8px 14px; border:1px solid #000; font-size:13px;">
         <b>Detalle de financiación:</b> ${cantCuotas} cuotas de U$S ${fmt(valorCuota)} — Frecuencia: ${vc.frecuencia||'-'}${Number(vc.interes)>0?' — Interés: '+vc.interes+'%':''}${anticipoVc>0?' — Anticipo: U$S '+fmt(anticipoVc):''}
@@ -4493,6 +4514,11 @@ function generarContratoCuotas(id){
         Anticipo / Seña entregado: U$S ${fmt(anticipo)}<br>
         <b>Total de la operación (anticipo + cuotas): U$S ${fmt(anticipo + precioCuotas)}</b>
       </p>
+      ${(vc.gpsVendidos && vc.gpsVendidos.length) ? `<p style="margin-left:18px; margin-top:6px; padding:8px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:4px;">
+        <b style="color:#3b82f6;">📍 Servicio de GPS incluido en la operación:</b><br>
+        ${vc.gpsVendidos.map(gv => `• ${gv.modelo||'GPS'}: U$S ${fmt(Number(gv.precioVenta)||0)}`).join('<br>')}
+        <br><b>Desglose del monto total:</b> Equipo: U$S ${fmt(anticipo + precioCuotas)} + GPS: U$S ${fmt(vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0))} = <b>Total general: U$S ${fmt(anticipo + precioCuotas + vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0))}</b>
+      </p>` : ''}
       <p>Valor de cada cuota: <b>U$S ${fmt(valorCuota)}</b>. Frecuencia de pago: ${frecTxt}. Fecha de finalización del plan: <b>${fechaFin}</b>.</p>
       <p>El pago se realizará conforme al siguiente cronograma de vencimientos:</p>
 
@@ -4597,7 +4623,12 @@ function generarPagareCuotas(id){
         <p style="margin:34px 0 0;">Firma del Avalista: _______________________________________</p>
       </div>
 
-      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''} — ${vc.cantCuotas} cuotas.</p>
+      ${(vc.gpsVendidos && vc.gpsVendidos.length) ? `<div style="border-top:1px solid #000; margin-top:14px; padding-top:10px;">
+        <p style="font-weight:700; color:#3b82f6; margin:0 0 4px;">📍 SERVICIO DE GPS INCLUIDO</p>
+        ${vc.gpsVendidos.map(gv => `<p style="margin:2px 0;">• ${gv.modelo||'GPS'}: U$S ${fmt(Number(gv.precioVenta)||0)}</p>`).join('')}
+        <p style="margin:6px 0 0;"><b>Desglose:</b> Equipo (cuotas): U$S ${fmt(precioCuotas)} + GPS: U$S ${fmt(vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0))} = <b>Total: U$S ${fmt(precioCuotas + vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0))}</b></p>
+      </div>` : ''}
+      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''}${(vc.gpsVendidos && vc.gpsVendidos.length) ? ' · GPS: '+vc.gpsVendidos.map(gv=>gv.modelo||'GPS').join(', ') : ''} — ${vc.cantCuotas} cuotas.</p>
     </div>`;
   abrirDocumentoEditable('Pagaré' + (deudorNombre ? ' — ' + deudorNombre : ''), cuerpoPagare);
 }
@@ -4613,6 +4644,15 @@ function anularVentaCuotas(id){
   } else {
     const a = accesorios.find(x=>x.id===vc.itemId);
     if(a){ a.estado = 'disponible'; syncGuardar('stock_accesorios', accesorios); renderAccesorios(); }
+  }
+  // Restaurar GPS vendidos a disponible
+  if(vc.gpsVendidos && vc.gpsVendidos.length){
+    vc.gpsVendidos.forEach(gv=>{
+      const gps = gpsItems.find(g=>g.id===gv.itemId);
+      if(gps){ gps.estado = 'disponible'; }
+    });
+    syncGuardar('stock_gps', gpsItems);
+    renderGps();
   }
   ventasCuotas = ventasCuotas.filter(x=>x.id!==id);
   syncGuardar('ventas_cuotas', ventasCuotas);
