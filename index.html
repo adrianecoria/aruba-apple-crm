@@ -659,6 +659,7 @@ body.rol-usuario .solo-admin{display:none !important;}
     <div class="tabs">
       <button class="tab active" id="tabEquiposBtn" onclick="switchTab('equipos')">Equipos</button>
       <button class="tab" id="tabAccesoriosBtn" onclick="switchTab('accesorios')">Accesorios</button>
+      <button class="tab" id="tabGpsBtn" onclick="switchTab('gps')">GPS</button>
     </div>
 
     <div id="panelEquipos">
@@ -727,6 +728,37 @@ body.rol-usuario .solo-admin{display:none !important;}
           <tbody id="accBody"></tbody>
         </table></div>
         <div class="empty" id="accEmpty" style="display:none;">Todavía no cargaste accesorios.</div>
+      </div>
+    </div>
+
+    <div id="panelGps" style="display:none;">
+      <div class="card card-destacada solo-admin">
+        <h2>Agregar GPS</h2>
+        <div class="form-row">
+          <div class="field"><label>Nombre / Modelo</label><input id="gNombre" placeholder="Ej: GPS Tracker Mini"></div>
+          <div class="field"><label>Proveedor</label><select id="gProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
+          <div class="field" style="min-width:150px;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div><label>Precio compra (USD)</label><input id="gCompra" type="number" placeholder="0"></div>
+              <div><label>Precio venta (USD)</label><input id="gVenta" type="number" placeholder="0"></div>
+            </div>
+          </div>
+          <div class="field"><label>Estado</label><select id="gEstado"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></div>
+          <div class="field"><label>Cantidad</label><select id="gCantidad"></select></div>
+          <div class="field"><button class="btn" onclick="agregarGps()" style="width:100%;">Agregar</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Inventario de GPS</h2>
+        <div class="search"><input id="buscarGps" placeholder="Buscar por nombre..." oninput="renderGps()"></div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2); margin-bottom:14px;">
+          <input type="checkbox" id="mostrarVendidosGps" onchange="renderGps()" style="width:auto;"> Mostrar GPS ya vendidos
+        </label>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Nombre</th><th>Proveedor</th><th class="solo-admin">Compra</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
+          <tbody id="gpsBody"></tbody>
+        </table></div>
+        <div class="empty" id="gpsEmpty" style="display:none;">Todavía no cargaste GPS.</div>
       </div>
     </div>
   </div>
@@ -1447,6 +1479,7 @@ function aplicarSesion(){
   document.getElementById('sesionNombre').textContent = sesionActual.nombre;
   renderEquipos();
   renderAccesorios();
+  renderGps();
   switchModule('inicio');
   sincronizarDesdeNube();
 }
@@ -1976,8 +2009,10 @@ let accesorios = ls_get('stock_accesorios', []);
 function switchTab(t){
   document.getElementById('panelEquipos').style.display = t==='equipos' ? 'block':'none';
   document.getElementById('panelAccesorios').style.display = t==='accesorios' ? 'block':'none';
+  document.getElementById('panelGps').style.display = t==='gps' ? 'block':'none';
   document.getElementById('tabEquiposBtn').classList.toggle('active', t==='equipos');
   document.getElementById('tabAccesoriosBtn').classList.toggle('active', t==='accesorios');
+  document.getElementById('tabGpsBtn').classList.toggle('active', t==='gps');
 }
 
 function initModelos(){
@@ -1985,6 +2020,8 @@ function initModelos(){
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
   const cant = document.getElementById('aCantidad');
   for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cant.appendChild(o); }
+  const cantGps = document.getElementById('gCantidad');
+  for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cantGps.appendChild(o); }
 }
 
 function ganancia(compra, venta, sugerido){
@@ -2355,6 +2392,91 @@ function renderAccesorios(){
   });
 }
 
+/* ---------- GPS ---------- */
+let gpsItems = ls_get('stock_gps', []);
+
+function agregarGps(){
+  if(!esAdmin()) return;
+  const nombre = document.getElementById('gNombre').value.trim();
+  if(!nombre){ alert('El nombre es obligatorio.'); return; }
+  const cantidad = parseInt(document.getElementById('gCantidad').value) || 1;
+  const proveedorId = document.getElementById('gProveedor').value;
+  const compra = document.getElementById('gCompra').value;
+  const venta = document.getElementById('gVenta').value;
+  const estado = document.getElementById('gEstado').value;
+  for(let i=0;i<cantidad;i++){
+    gpsItems.push({ id: uid(), nombre, proveedorId, compra, venta, estado });
+  }
+  syncGuardar('stock_gps', gpsItems);
+  ['gNombre','gCompra','gVenta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('gCantidad').value = '1';
+  renderGps();
+}
+function borrarGps(id){
+  if(!esAdmin()) return;
+  if(!confirm('¿Borrar este GPS?')) return;
+  gpsItems = gpsItems.filter(g=>g.id!==id);
+  syncGuardar('stock_gps', gpsItems);
+  renderGps();
+}
+function editarGps(id){
+  if(!esAdmin()) return;
+  const g = gpsItems.find(x=>x.id===id);
+  const row = document.querySelector(`tr[data-gpsid="${id}"]`);
+  row.innerHTML = `
+    <td data-label="Nombre"><input class="ed-nombre" value="${g.nombre}"></td>
+    <td data-label="Proveedor"><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===g.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
+    <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${g.compra}"></td>
+    <td data-label="Venta"><input class="ed-venta" type="number" value="${g.venta||''}"></td>
+    <td data-label="Ganancia" class="solo-admin">—</td>
+    <td data-label="Estado"><select class="ed-estado">
+      <option value="disponible" ${g.estado==='disponible'?'selected':''}>Disponible</option>
+      <option value="reservado" ${g.estado==='reservado'?'selected':''}>Reservado</option>
+      <option value="vendido" ${g.estado==='vendido'?'selected':''}>Vendido</option>
+    </select></td>
+    <td data-label="Acciones"><div class="actions">
+      <button class="btn small" onclick="guardarEdicionGps('${id}')">Guardar</button>
+      <button class="btn ghost small" onclick="renderGps()">Cancelar</button>
+    </div></td>`;
+}
+function guardarEdicionGps(id){
+  if(!esAdmin()) return;
+  const row = document.querySelector(`tr[data-gpsid="${id}"]`);
+  const g = gpsItems.find(x=>x.id===id);
+  g.nombre = row.querySelector('.ed-nombre').value.trim();
+  g.proveedorId = row.querySelector('.ed-proveedor').value;
+  g.compra = row.querySelector('.ed-compra').value;
+  g.venta = row.querySelector('.ed-venta').value;
+  g.estado = row.querySelector('.ed-estado').value;
+  syncGuardar('stock_gps', gpsItems);
+  renderGps();
+}
+function renderGps(){
+  const q = document.getElementById('buscarGps').value.toLowerCase();
+  const mostrarVendidos = document.getElementById('mostrarVendidosGps').checked;
+  const body = document.getElementById('gpsBody');
+  body.innerHTML = '';
+  const filtrados = gpsItems.filter(g => (mostrarVendidos || g.estado!=='vendido') && (!q || g.nombre.toLowerCase().includes(q)));
+  document.getElementById('gpsEmpty').style.display = filtrados.length ? 'none' : 'block';
+  filtrados.forEach(g=>{
+    const gan = ganancia(g.compra, g.venta, 0);
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-gpsid', g.id);
+    tr.innerHTML = `
+      <td data-label="Nombre">${g.nombre}</td>
+      <td data-label="Proveedor">${nombreProveedor(g.proveedorId)}</td>
+      <td data-label="Compra" class="solo-admin">$${fmt(g.compra)}</td>
+      <td data-label="Venta">${g.venta?'$'+fmt(g.venta):'-'}</td>
+      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(gan)}</td>
+      <td data-label="Estado"><span class="badge ${g.estado}">${g.estado}</span></td>
+      <td data-label="Acciones" class="solo-admin"><div class="actions">
+        <button class="btn ghost small" onclick="editarGps('${g.id}')">Editar</button>
+        <button class="btn danger small" onclick="borrarGps('${g.id}')">Borrar</button>
+      </div></td>`;
+    body.appendChild(tr);
+  });
+}
+
 /* ---------- VENTA ---------- */
 let ventas = ls_get('ventas', []);
 let ventasMensajes = ls_get('ventas_mensajes', []); // ventas cerradas desde la app de Mensajes
@@ -2511,6 +2633,27 @@ function mostrarModalBonificacion(callbackConfirmar){
       </label>`;
   });
 
+  // GPS disponibles (se cobran, no se bonifican)
+  const gpsDisponibles = gpsItems.filter(g => g.estado !== 'vendido' && g.estado !== 'reservado');
+  const hayGps = gpsDisponibles.length > 0;
+  let gpsHTML = `
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--card-b);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:16px;">📡</span>
+        <span style="font-weight:700;font-size:14px;">GPS (con cargo)</span>
+      </div>
+      <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid ${hayGps?'rgba(59,130,246,0.4)':'var(--card-b)'};background:${hayGps?'rgba(59,130,246,0.08)':'rgba(255,255,255,0.04)'};cursor:${hayGps?'pointer':'not-allowed'};opacity:${hayGps?'1':'0.4'};transition:all 0.2s;"
+        ${hayGps?`onmouseenter="this.style.borderColor='#3b82f6';this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.borderColor='rgba(59,130,246,0.4)';this.style.background='rgba(59,130,246,0.08)'"`:''}>
+        <input type="checkbox" class="gps-check" ${hayGps?'':'disabled'} style="width:20px;height:20px;accent-color:#3b82f6;cursor:${hayGps?'pointer':'not-allowed'};">
+        <span style="font-size:22px;">📡</span>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;">${hayGps ? gpsDisponibles[0].nombre : 'GPS'}</div>
+          <div style="font-size:12px;color:var(--txt3);">${hayGps?`${gpsDisponibles.length} disponible${gpsDisponibles.length>1?'s':''}`:'Sin stock'}</div>
+        </div>
+        ${hayGps?`<div style="font-weight:700;color:#3b82f6;font-size:15px;">USD $${fmt(gpsDisponibles[0].venta||gpsDisponibles[0].compra)}</div>`:''}
+      </label>
+    </div>`;
+
   const overlay = document.createElement('div');
   overlay.id = 'modalBonificacionOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);padding:20px;animation:fadeInBonif 0.2s ease;';
@@ -2519,14 +2662,15 @@ function mostrarModalBonificacion(callbackConfirmar){
       @keyframes fadeInBonif { from { opacity:0; } to { opacity:1; } }
       @keyframes slideUpBonif { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
     </style>
-    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:20px;padding:28px;max-width:440px;width:100%;animation:slideUpBonif 0.25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:20px;padding:28px;max-width:440px;width:100%;animation:slideUpBonif 0.25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
       <div style="text-align:center;margin-bottom:20px;">
         <div style="font-size:32px;margin-bottom:8px;">🎁</div>
-        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">Bonificación de Accesorios</h2>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">Bonificación y Accesorios</h2>
         <p style="font-size:13px;color:var(--txt2);">Seleccioná los accesorios a bonificar con esta venta.<br><span style="color:var(--txt3);font-size:11.5px;">Solo se descontarán del stock (costo de compra). No afecta el precio de venta.</span></p>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px;">
         ${itemsHTML}
+        ${gpsHTML}
       </div>
       <div style="display:flex;gap:10px;">
         <button class="btn" style="flex:1;background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;font-weight:700;padding:13px;border-radius:12px;font-size:14px;" onclick="confirmarBonificacion()">✅ Confirmar venta</button>
@@ -2571,11 +2715,35 @@ function confirmarBonificacion(){
     renderAccesorios();
   }
 
+  // GPS (con cargo, no bonificado)
+  const gpsCheck = document.querySelector('#modalBonificacionOverlay .gps-check:checked');
+  const gpsVendidos = [];
+  if(gpsCheck){
+    const gpsDisp = gpsItems.filter(g => g.estado !== 'vendido' && g.estado !== 'reservado');
+    if(gpsDisp.length > 0){
+      const gps = gpsDisp[0];
+      gps.estado = 'vendido';
+      gpsVendidos.push({
+        id: uid(),
+        tipo: 'gps',
+        itemId: gps.id,
+        modelo: gps.nombre,
+        color: '',
+        imei: '',
+        precioCompra: gps.compra,
+        precioVenta: gps.venta || gps.compra,
+        esBonificacion: false
+      });
+      syncGuardar('stock_gps', gpsItems);
+      renderGps();
+    }
+  }
+
   const overlay = document.getElementById('modalBonificacionOverlay');
   if(overlay) overlay.remove();
 
   if(window._bonifCallback){
-    window._bonifCallback(bonificados);
+    window._bonifCallback(bonificados, gpsVendidos);
     window._bonifCallback = null;
   }
 }
@@ -2602,12 +2770,13 @@ function venderItemVenta(){
   }
 
   // Mostrar modal de bonificación antes de confirmar
-  mostrarModalBonificacion(function(bonificados){
-    _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados);
+  mostrarModalBonificacion(function(bonificados, gpsVendidos){
+    _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos);
   });
 }
 
-function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados){
+function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente, precio, fecha, bonificados, gpsVendidos){
+  gpsVendidos = gpsVendidos || [];
   if(tipo==='equipo'){
     const id = document.getElementById('vEquipo').value;
     const e = equipos.find(x=>x.id===id);
@@ -2645,6 +2814,15 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
       precioCompra: b.precioCompra,
       fecha,
       esBonificacion: true
+    });
+  });
+
+  // Registrar GPS vendidos (con cargo)
+  gpsVendidos.forEach(g => {
+    ventas.push({
+      id: g.id, tipo: 'gps', itemId: g.itemId, modelo: g.modelo, color: '', imei: '',
+      cliente, clienteId, comercioId, vendedorId,
+      precioVenta: g.precioVenta, precioCompra: g.precioCompra, fecha
     });
   });
 
@@ -3354,12 +3532,13 @@ function venderEnCuotas(){
   }
 
   // Mostrar modal de bonificación antes de confirmar
-  mostrarModalBonificacion(function(bonificados){
-    _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados);
+  mostrarModalBonificacion(function(bonificados, gpsVendidos){
+    _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos);
   });
 }
 
-function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados){
+function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, precioSugerido, anticipo, interes, precioCuotas, cantCuotas, frecuencia, fechaPago, fechaInicio, bonificados, gpsVendidos){
+  gpsVendidos = gpsVendidos || [];
   let modelo = '', imei = '', color = '', itemId = '', precioCompra = 0, bateria = '';
 
   if(tipo==='equipo'){
@@ -3443,9 +3622,22 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
       esBonificacion: true
     });
   });
-  if(bonificados.length) syncGuardar('ventas', ventas);
+  // Registrar GPS vendidos (con cargo)
+  gpsVendidos.forEach(g => {
+    ventas.push({
+      id: g.id, tipo: 'gps', itemId: g.itemId, modelo: g.modelo, color: '', imei: '',
+      cliente, clienteId, comercioId, vendedorId,
+      precioVenta: g.precioVenta, precioCompra: g.precioCompra, fecha: hoyISO()
+    });
+  });
 
-  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
+  if(bonificados.length || gpsVendidos.length) syncGuardar('ventas', ventas);
+
+  // Guardar GPS en registro de cuotas
+  registro.gpsVendidos = gpsVendidos.length ? gpsVendidos : undefined;
+  syncGuardar('ventas_cuotas', ventasCuotas);
+
+  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}${gpsVendidos.length?' + GPS: '+gpsVendidos.map(g=>g.modelo).join(', '):''}`);
 
   // Limpiar formulario
   document.getElementById('vcPrecioCuotas').value = '';
@@ -5792,7 +5984,7 @@ function mostrarEstadoConexion(){
 }
 
 /* ---------- SINCRONIZACIÓN EN LA NUBE (Supabase) ---------- */
-const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','ventas','ventas_mensajes','clientes','caja_movimientos','caja_cierre','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
+const CLAVES_SINCRONIZADAS = ['stock_equipos','stock_accesorios','stock_gps','ventas','ventas_mensajes','clientes','caja_movimientos','caja_cierre','proveedores','consignaciones','reparaciones','usuarios','admin_cred','comercios','empleados','pagos_sueldo','pagos_vendedor','actividad','mi_cuenta','ventas_cuotas'];
 
 function syncGuardar(clave, valor){
   ls_set(clave, valor);
@@ -5820,6 +6012,9 @@ async function sincronizarDesdeNube(mostrarCartel){
 
     if('stock_accesorios' in mapa){ accesorios = mapa.stock_accesorios; ls_set('stock_accesorios', accesorios); }
     else if(accesorios && accesorios.length){ syncGuardar('stock_accesorios', accesorios); }
+
+    if('stock_gps' in mapa){ gpsItems = mapa.stock_gps; ls_set('stock_gps', gpsItems); }
+    else if(gpsItems && gpsItems.length){ syncGuardar('stock_gps', gpsItems); }
 
     if('ventas' in mapa){ ventas = mapa.ventas; ls_set('ventas', ventas); }
     else if(ventas && ventas.length){ syncGuardar('ventas', ventas); }
@@ -5871,7 +6066,7 @@ async function sincronizarDesdeNube(mostrarCartel){
     if('ventas_cuotas' in mapa){ ventasCuotas = mapa.ventas_cuotas; ls_set('ventas_cuotas', ventasCuotas); }
     else if(ventasCuotas && ventasCuotas.length){ syncGuardar('ventas_cuotas', ventasCuotas); }
 
-    renderEquipos(); renderAccesorios(); renderClientes(); renderProveedores();
+    renderEquipos(); renderAccesorios(); renderGps(); renderClientes(); renderProveedores();
     renderConsignaciones(); renderReparaciones(); renderVentas();
     renderStockResumen(); renderInicioVentaGanancia();
     if(document.getElementById('movimientosBody')) renderCaja();
