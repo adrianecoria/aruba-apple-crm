@@ -3638,6 +3638,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
 
   // Guardar GPS en registro de cuotas
   registro.gpsVendidos = gpsVendidos.length ? gpsVendidos : undefined;
+  if(gpsVendidos.length) registro.gpsIncluidoEnPrecio = true;
   syncGuardar('ventas_cuotas', ventasCuotas);
 
   registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}${gpsVendidos.length?' + GPS: '+gpsVendidos.map(g=>g.modelo).join(', '):''}`);
@@ -4043,7 +4044,8 @@ function reciboCuotas(id){
   let bateria = vc.bateria || '';
   if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===vc.itemId); if(e) bateria = e.bateria||''; }
   const anticipoVc = Number(vc.anticipo)||0;
-  const precioCuotas = Number(vc.precioCuotas)||0;
+  const gpsSumarRecibo = (vc.gpsVendidos && vc.gpsVendidos.length && !vc.gpsIncluidoEnPrecio) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const precioCuotas = (Number(vc.precioCuotas)||0) + gpsSumarRecibo;
   const totalOperacion = anticipoVc + precioCuotas;
   const totalGps = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
   const cantCuotas = Number(vc.cantCuotas)||1;
@@ -4153,7 +4155,8 @@ function facturaCuotasConIVA(id){
   if(!bateria && esEquipo){ const e = equipos.find(x=>x.id===vc.itemId); if(e) bateria = e.bateria||''; }
 
   const anticipoVc = Number(vc.anticipo)||0;
-  const precioCuotas = Number(vc.precioCuotas)||0;
+  const gpsSumarFactura = (vc.gpsVendidos && vc.gpsVendidos.length && !vc.gpsIncluidoEnPrecio) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const precioCuotas = (Number(vc.precioCuotas)||0) + gpsSumarFactura;
   const totalOperacion = anticipoVc + precioCuotas;
   const totalGpsF = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
   const cantCuotas = Number(vc.cantCuotas)||1;
@@ -4257,7 +4260,8 @@ function imprimirComprobanteCuotas(id){
   const ahora = new Date();
   const fechaEmision = ahora.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
-  const totalCuotas = Number(vc.precioCuotas)||0;
+  const gpsSumarComp = (vc.gpsVendidos && vc.gpsVendidos.length && !vc.gpsIncluidoEnPrecio) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const totalCuotas = (Number(vc.precioCuotas)||0) + gpsSumarComp;
   const anticipo = Number(vc.anticipo)||0;
   const totalGpsC = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
   const totalOp = totalCuotas + anticipo;
@@ -4471,7 +4475,9 @@ function generarContratoCuotas(id){
 
   // Montos
   const anticipo = Number(vc.anticipo)||0;
-  const precioCuotas = Number(vc.precioCuotas)||0;
+  const gpsTotalContrato = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const gpsSumarContrato = (vc.gpsVendidos && vc.gpsVendidos.length && !vc.gpsIncluidoEnPrecio) ? gpsTotalContrato : 0;
+  const precioCuotas = (Number(vc.precioCuotas)||0) + gpsSumarContrato;
   const sugerido = Number(vc.precioSugerido)||0;
   const cant = Number(vc.cantCuotas)||1;
   let capital = Math.max(0, sugerido - anticipo);
@@ -4588,8 +4594,9 @@ function generarPagareCuotas(id){
   const deudorDom = cli && cli.direccion ? cli.direccion : '';
   const L = (v, n)=> v && String(v).trim() ? v : '_'.repeat(n); // valor o línea en blanco
 
-  // Monto = total adeudado en cuotas (lo financiado)
-  const precioCuotas = Number(vc.precioCuotas)||0;
+  // Monto = total adeudado en cuotas (lo financiado) + GPS si no estaba incluido
+  const gpsSumarPagare = (vc.gpsVendidos && vc.gpsVendidos.length && !vc.gpsIncluidoEnPrecio) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const precioCuotas = (Number(vc.precioCuotas)||0) + gpsSumarPagare;
   const montoLetras = numALetrasVC(precioCuotas);
 
   // Fechas
