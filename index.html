@@ -4042,6 +4042,8 @@ function reciboCuotas(id){
   const anticipoVc = Number(vc.anticipo)||0;
   const precioCuotas = Number(vc.precioCuotas)||0;
   const totalOperacion = anticipoVc + precioCuotas;
+  const totalGps = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const totalConGps = totalOperacion + totalGps;
   const cantCuotas = Number(vc.cantCuotas)||1;
   const valorCuota = precioCuotas / cantCuotas;
   const nro = (vc.id||'').slice(-6).toUpperCase();
@@ -4116,8 +4118,9 @@ function reciboCuotas(id){
         ${anticipoVc > 0 ? `<div>Anticipo / Seña: <b>U$S ${fmt(anticipoVc)}</b></div>` : ''}
         <div>Monto financiado en cuotas: <b>U$S ${fmt(precioCuotas)}</b></div>
         <div>Valor de cada cuota: <b>U$S ${fmt(valorCuota)}</b></div>
-        <div style="font-size:18px; font-weight:800; margin-top:6px;">TOTAL DE LA OPERACIÓN: U$S ${fmt(totalOperacion)}</div>
-        <div style="font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
+        ${totalGps > 0 ? `<div style="margin-top:6px; font-size:14px;">Equipo: U$S ${fmt(totalOperacion)} + GPS: U$S ${fmt(totalGps)}</div>` : ''}
+        <div style="font-size:18px; font-weight:800; margin-top:${totalGps>0?'2':'6'}px;">TOTAL DE LA OPERACIÓN: U$S ${fmt(totalConGps)}</div>
+        <div style="font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(totalConGps)}.</div>
       </div>
 
       <div style="margin-top:12px; font-size:13px;">
@@ -4150,10 +4153,12 @@ function facturaCuotasConIVA(id){
   const anticipoVc = Number(vc.anticipo)||0;
   const precioCuotas = Number(vc.precioCuotas)||0;
   const totalOperacion = anticipoVc + precioCuotas;
+  const totalGpsF = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
+  const totalConGpsF = totalOperacion + totalGpsF;
   const cantCuotas = Number(vc.cantCuotas)||1;
   const valorCuota = precioCuotas / cantCuotas;
   const IVA = 21;
-  const neto = totalOperacion / (1 + IVA/100);
+  const neto = totalConGpsF / (1 + IVA/100);
   const ivaMonto = totalOperacion - neto;
   const nro = (vc.id||'').slice(-8).toUpperCase();
 
@@ -4228,10 +4233,11 @@ function facturaCuotasConIVA(id){
         <table style="border-collapse:collapse; font-size:14px; min-width:280px;">
           <tr><td style="padding:4px 8px;">Importe Neto Gravado:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(neto)}</td></tr>
           <tr><td style="padding:4px 8px;">IVA ${IVA}%:</td><td style="padding:4px 8px; text-align:right;">U$S ${fmt(ivaMonto)}</td></tr>
-          <tr><td style="padding:6px 8px; font-weight:800; border-top:2px solid #000; font-size:17px;">IMPORTE TOTAL:</td><td style="padding:6px 8px; text-align:right; font-weight:800; border-top:2px solid #000; font-size:17px;">U$S ${fmt(totalOperacion)}</td></tr>
+          ${totalGpsF > 0 ? `<tr><td style="padding:4px 8px; color:#3b82f6;">GPS:</td><td style="padding:4px 8px; text-align:right; color:#3b82f6;">U$S ${fmt(totalGpsF)}</td></tr>` : ''}
+          <tr><td style="padding:6px 8px; font-weight:800; border-top:2px solid #000; font-size:17px;">IMPORTE TOTAL:</td><td style="padding:6px 8px; text-align:right; font-weight:800; border-top:2px solid #000; font-size:17px;">U$S ${fmt(totalConGpsF)}</td></tr>
         </table>
       </div>
-      <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
+      <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(totalConGpsF)}.</div>
 
       <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
         <div>CAE N°: _______________________</div>
@@ -4252,7 +4258,9 @@ function imprimirComprobanteCuotas(id){
   const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
   const totalCuotas = Number(vc.precioCuotas)||0;
   const anticipo = Number(vc.anticipo)||0;
+  const totalGpsC = (vc.gpsVendidos && vc.gpsVendidos.length) ? vc.gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0) : 0;
   const totalOp = totalCuotas + anticipo;
+  const totalOpConGps = totalOp + totalGpsC;
   const filas = (vc.cronograma||[]).map(c=>
     `<tr>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:600;">${c.nro}</td>
@@ -4348,6 +4356,16 @@ function imprimirComprobanteCuotas(id){
   </div>
 
   ${bonificadosHTML}
+
+  ${totalGpsC > 0 ? `<div style="margin-top:16px;padding:14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;">
+    <h3 style="font-size:13px;color:#3b82f6;margin:0 0 8px;text-transform:uppercase;">📍 GPS Incluido</h3>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+      ${vc.gpsVendidos.map(gv => '<tr><td style="padding:4px 0;">'+( gv.modelo||'GPS')+'</td><td style="padding:4px 0;text-align:right;font-weight:700;color:#3b82f6;">USD $'+fmt(Number(gv.precioVenta)||0)+'</td></tr>').join('')}
+    </table>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe;font-size:13px;text-align:right;">
+      Equipo: USD $${fmt(totalOp)} + GPS: USD $${fmt(totalGpsC)} = <b>Total: USD $${fmt(totalOpConGps)}</b>
+    </div>
+  </div>` : ''}
 
   <div class="estado-box" style="background:${vc.estado==='finalizado'?'#e8f5e9;color:#27ae60;border:1px solid #27ae60':'#fff3e0;color:#e67e22;border:1px solid #e67e22'};">
     ${vc.estado==='finalizado' ? '✓ CRÉDITO FINALIZADO — Todas las cuotas abonadas' : `EN CURSO — ${vc.cuotasPagadas||0}/${vc.cantCuotas} cuotas pagadas`}
