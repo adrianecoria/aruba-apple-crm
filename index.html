@@ -4832,7 +4832,7 @@ function togglePassVisibility(inputId,btn){
 function consultarImei(){
   const imei = document.getElementById('rImei').value.trim();
   if(!imei || imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos para consultar.'); return; }
-  window.open('https://reincubate.com/es/lookup/?imei=' + imei, '_blank');
+  window.open('https://reincubate.com/es/lookup/' + imei + '/', '_blank');
 }
 
 function agregarReparacion(){
