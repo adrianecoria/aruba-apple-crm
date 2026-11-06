@@ -782,6 +782,9 @@ body.rol-usuario .solo-admin{display:none !important;}
   <div id="moduloVentaCuotas" style="display:none;">
     <header class="top"><h1>Venta en Cuotas</h1></header>
 
+    <!-- MINI DASHBOARD CUOTAS ACTIVAS -->
+    <div id="dashCuotasActivas" class="card solo-admin" style="display:none;"></div>
+
     <!-- ALERTAS DE CUOTAS PRÓXIMAS A VENCER -->
     <div id="alertasCuotas" class="card solo-admin" style="display:none; border:1px solid rgba(255,140,66,0.4); background:linear-gradient(135deg,rgba(255,140,66,0.08),rgba(255,60,60,0.06));">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
@@ -3481,6 +3484,89 @@ function filtrarVentasCuotas(f){
   renderVentasCuotas();
 }
 
+function renderDashCuotasActivas(){
+  const container = document.getElementById('dashCuotasActivas');
+  if(!container) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const manana = new Date(hoy); manana.setDate(manana.getDate()+1);
+  const hoyStr = hoy.toISOString().slice(0,10);
+  const mananaStr = manana.toISOString().slice(0,10);
+
+  // Solo ventas activas (no finalizadas, no propuestas)
+  const activas = ventasCuotas.filter(v=> v.tipo !== 'posible_financiacion' && v.estado !== 'finalizado');
+  if(!activas.length){ container.style.display='none'; return; }
+  container.style.display='block';
+
+  let totalEquipos = activas.length;
+  let totalCuotasPendientes = 0;
+  let totalMontoRestante = 0;
+
+  const filas = activas.map(vc => {
+    const crono = vc.cronograma || [];
+    const pendientes = crono.filter(c=>!c.pagada);
+    const cuotasFaltan = pendientes.length;
+    totalCuotasPendientes += cuotasFaltan;
+    const montoRestante = pendientes.reduce((s,c)=>s+(Number(c.monto)||0),0);
+    totalMontoRestante += montoRestante;
+    const siguiente = pendientes[0];
+    let color = ''; let icono = ''; let estadoTxt = '';
+    if(siguiente){
+      const venc = siguiente.vencimiento;
+      if(venc < hoyStr){ color='#dc2626'; icono='🔴'; estadoTxt='VENCIDA'; }
+      else if(venc === hoyStr){ color='#ea580c'; icono='🟠'; estadoTxt='VENCE HOY'; }
+      else if(venc === mananaStr){ color='#eab308'; icono='🟡'; estadoTxt='VENCE MAÑANA'; }
+      else { color='#22c55e'; icono='🟢'; estadoTxt='Al día'; }
+    }
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:10px 8px;font-weight:600;">${vc.modelo||'-'}</td>
+      <td style="padding:10px 8px;">${vc.cliente||'-'}</td>
+      <td style="padding:10px 8px;text-align:center;"><span class="badge ${vc.cuotasPagadas>=vc.cantCuotas*0.7?'vendido':'reservado'}">${vc.cuotasPagadas}/${vc.cantCuotas}</span></td>
+      <td style="padding:10px 8px;text-align:center;font-weight:700;">${cuotasFaltan}</td>
+      <td style="padding:10px 8px;text-align:right;font-weight:600;">USD $${fmt(montoRestante)}</td>
+      <td style="padding:10px 8px;text-align:center;">${siguiente ? siguiente.vencimiento : '-'}</td>
+      <td style="padding:10px 8px;text-align:center;"><span style="color:${color};font-weight:700;font-size:12px;">${icono} ${estadoTxt}</span></td>
+      <td style="padding:10px 8px;text-align:center;"><button class="btn small" onclick="pagarCuota('${vc.id}')" style="font-size:11px;padding:4px 10px;">Pagar</button></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;font-size:16px;">📊 Equipos con Cuotas Activas</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="text-align:center;padding:8px 16px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:10px;">
+          <div style="font-size:22px;font-weight:800;color:#3b82f6;">${totalEquipos}</div>
+          <div style="font-size:11px;color:var(--txt3);">Equipos activos</div>
+        </div>
+        <div style="text-align:center;padding:8px 16px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
+          <div style="font-size:22px;font-weight:800;color:#f59e0b;">${totalCuotasPendientes}</div>
+          <div style="font-size:11px;color:var(--txt3);">Cuotas pendientes</div>
+        </div>
+        <div style="text-align:center;padding:8px 16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:10px;">
+          <div style="font-size:22px;font-weight:800;color:#ef4444;">USD $${fmt(totalMontoRestante)}</div>
+          <div style="font-size:11px;color:var(--txt3);">Monto por cobrar</div>
+        </div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="border-bottom:2px solid rgba(255,255,255,0.1);">
+          <th style="padding:8px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--txt3);">Equipo</th>
+          <th style="padding:8px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--txt3);">Cliente</th>
+          <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Pagadas</th>
+          <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Faltan</th>
+          <th style="padding:8px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--txt3);">Monto restante</th>
+          <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Próx. vencimiento</th>
+          <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);">Estado</th>
+          <th style="padding:8px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--txt3);"></th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:14px;font-size:11px;color:var(--txt3);flex-wrap:wrap;">
+      <span>🔴 Vencida</span><span>🟠 Vence hoy</span><span>🟡 Vence mañana</span><span>🟢 Al día</span>
+    </div>`;
+}
+
 function renderVentasCuotas(){
   const hoy = hoyISO(); const mes = hoy.slice(0,7);
   const body = document.getElementById('vcHistBody');
@@ -3553,6 +3639,7 @@ function renderVentasCuotas(){
   const gananciaTotal = vcConfirmadas.reduce((s,v)=>s+(((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0))-(Number(v.precioCompra)||0)),0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
   document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
+  renderDashCuotasActivas();
 }
 
 function reciboCuotas(id){
