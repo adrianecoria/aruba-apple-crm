@@ -3487,6 +3487,7 @@ function mostrarModalComprobanteCuota(vc, cuota){
     <p style="color:var(--txt2,#aaa);font-size:14px;margin:0 0 18px;">${vc.modelo} — ${vc.cliente||'Consumidor final'}<br>Monto: <b>USD $${fmt(cuota.monto)}</b></p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn" onclick="imprimirComprobanteCuotaPagada('${vc.id}',${cuota.nro})" style="background:#007aff;">🖨️ Imprimir comprobante</button>
+      <button class="btn" onclick="enviarWhatsAppCuotaPagada('${vc.id}',${cuota.nro})" style="background:#25d366;">📲 Enviar por WhatsApp</button>
       <button class="btn ghost" onclick="document.getElementById('modalCuotaPagada').remove()">Cerrar</button>
     </div>
   </div>`;
@@ -3584,6 +3585,33 @@ function imprimirComprobanteCuotaPagada(ventaId, nroCuota){
 </body></html>`);
   w.document.close();
   // Cerrar el modal si está abierto
+  const m = document.getElementById('modalCuotaPagada');
+  if(m) m.remove();
+}
+
+function enviarWhatsAppCuotaPagada(ventaId, nroCuota){
+  const vc = ventasCuotas.find(x=>x.id===ventaId);
+  if(!vc) return;
+  const cuota = (vc.cronograma||[]).find(c=>c.nro===nroCuota);
+  if(!cuota) return;
+  const cli = clientes.find(c=>c.id===vc.clienteId);
+  const tel = cli && cli.telefono ? cli.telefono.replace(/\D/g,'') : '';
+  if(!tel){ alert('El cliente no tiene teléfono cargado.'); return; }
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const pagadas = vc.cronograma.filter(c=>c.pagada).length;
+  const restante = (Number(vc.precioCuotas)||0) - vc.cronograma.filter(c=>c.pagada).reduce((s,c)=>s+(Number(c.monto)||0),0);
+  const nombre = cli ? cli.nombre : (vc.cliente||'');
+  let msg = `✅ *ARUBA APPLE — Comprobante de Pago*\n\n`;
+  msg += `Hola${nombre ? ' '+nombre : ''}! Te confirmamos que tu cuota fue abonada con éxito.\n\n`;
+  msg += `📱 *Equipo:* ${vc.modelo||'-'}\n`;
+  msg += `💰 *Cuota pagada:* ${nroCuota} de ${vc.cantCuotas}\n`;
+  msg += `💵 *Monto:* USD $${fmt(cuota.monto)} (≈ ARS $${fmt(cuota.monto * dolar)})\n`;
+  msg += `📅 *Fecha de pago:* ${cuota.fechaPago||hoyISO()}\n`;
+  msg += `📊 *Progreso:* ${pagadas}/${vc.cantCuotas} cuotas pagadas\n`;
+  if(restante > 0) msg += `💳 *Saldo restante:* USD $${fmt(restante)}\n`;
+  else msg += `🎉 *¡Crédito cancelado en su totalidad!*\n`;
+  msg += `\n¡Gracias por tu pago! 🙌`;
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
   const m = document.getElementById('modalCuotaPagada');
   if(m) m.remove();
 }
