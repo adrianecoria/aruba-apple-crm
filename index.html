@@ -4858,9 +4858,124 @@ function agregarReparacion(){
     estado: 'a reparar'
   });
   syncGuardar('reparaciones', reparaciones);
+  const repAgregada = reparaciones[reparaciones.length - 1];
   ['rModelo','rColor','rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('rImeiMsg').style.display='none';
   renderReparaciones();
+  mostrarModalComprobante(repAgregada);
+}
+
+function mostrarModalComprobante(rep){
+  const cliente = nombreCliente(rep.clienteId);
+  const overlay = document.createElement('div');
+  overlay.id = 'comprobanteOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  overlay.innerHTML = `
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+      <h2 style="margin:0 0 8px;color:#e0e0e0;font-size:20px;">✅ Reparación registrada</h2>
+      <p style="color:#aaa;margin:0 0 24px;font-size:14px;">${rep.modelo} — ${cliente}</p>
+      <p style="color:#ccc;margin:0 0 20px;font-size:15px;">¿Querés imprimir un comprobante?</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button class="btn" onclick="imprimirComprobanteCliente('${rep.id}')" style="padding:14px;font-size:15px;width:100%;">🧾 Comprobante para el Cliente</button>
+        <button class="btn" onclick="imprimirComprobanteTecnico('${rep.id}')" style="padding:14px;font-size:15px;width:100%;background:#e67e22;">🔧 Comprobante para el Técnico</button>
+        <button class="btn ghost" onclick="cerrarModalComprobante()" style="padding:12px;font-size:14px;width:100%;margin-top:4px;">✖ Cerrar sin imprimir</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function cerrarModalComprobante(){
+  const o = document.getElementById('comprobanteOverlay');
+  if(o) o.remove();
+}
+
+function imprimirComprobanteCliente(id){
+  const r = reparaciones.find(x=>x.id===id);
+  if(!r) return;
+  const cliente = nombreCliente(r.clienteId);
+  const w = window.open('','_blank','width=400,height=600');
+  w.document.write(`<!DOCTYPE html><html><head><title>Comprobante Cliente</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:24px;color:#111;max-width:380px;margin:0 auto;}
+  .header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px;}
+  .header h1{font-size:20px;margin-bottom:4px;}
+  .header p{font-size:12px;color:#555;}
+  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:14px;}
+  .row .label{font-weight:bold;color:#333;}
+  .row .value{text-align:right;max-width:55%;}
+  .footer{margin-top:20px;text-align:center;font-size:11px;color:#888;border-top:2px solid #111;padding-top:12px;}
+  .total{font-size:18px;font-weight:bold;text-align:center;margin:16px 0;padding:10px;background:#f5f5f5;border-radius:8px;}
+  .note{margin-top:12px;font-size:11px;color:#666;text-align:center;font-style:italic;}
+  @media print{body{padding:10px;}}
+</style></head><body>
+  <div class="header">
+    <h1>Aruba Apple</h1>
+    <p>Comprobante de Reparación — Cliente</p>
+  </div>
+  <div class="row"><span class="label">Fecha:</span><span class="value">${r.fecha}</span></div>
+  <div class="row"><span class="label">Cliente:</span><span class="value">${cliente}</span></div>
+  <div class="row"><span class="label">Modelo:</span><span class="value">${r.modelo}</span></div>
+  <div class="row"><span class="label">Color:</span><span class="value">${r.color || '—'}</span></div>
+  <div class="row"><span class="label">IMEI:</span><span class="value" style="font-family:monospace;letter-spacing:1px;">${r.imei || '—'}</span></div>
+  <div class="row"><span class="label">Problema:</span><span class="value">${r.descripcion}</span></div>
+  <div class="total">Costo: $${Number(r.costo||0).toLocaleString()}</div>
+  <div class="row"><span class="label">Estado:</span><span class="value">${r.pagado ? '✅ Pagado' : '⏳ Pendiente de pago'}</span></div>
+  <div class="note">Este comprobante no incluye datos de acceso al dispositivo.<br>Conserve este ticket como respaldo de su reparación.</div>
+  <div class="footer">Aruba Apple — Comprobante generado el ${new Date().toLocaleDateString('es-AR')}</div>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+  cerrarModalComprobante();
+}
+
+function imprimirComprobanteTecnico(id){
+  const r = reparaciones.find(x=>x.id===id);
+  if(!r) return;
+  const cliente = nombreCliente(r.clienteId);
+  const w = window.open('','_blank','width=400,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><title>Comprobante Técnico</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:24px;color:#111;max-width:380px;margin:0 auto;}
+  .header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px;}
+  .header h1{font-size:20px;margin-bottom:4px;}
+  .header p{font-size:12px;color:#e67e22;font-weight:bold;}
+  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:14px;}
+  .row .label{font-weight:bold;color:#333;}
+  .row .value{text-align:right;max-width:55%;word-break:break-all;}
+  .section{margin-top:16px;padding:10px;background:#fff8e1;border:1px solid #e67e22;border-radius:8px;}
+  .section h3{font-size:13px;color:#e67e22;margin-bottom:8px;text-transform:uppercase;}
+  .footer{margin-top:20px;text-align:center;font-size:11px;color:#888;border-top:2px solid #111;padding-top:12px;}
+  .total{font-size:18px;font-weight:bold;text-align:center;margin:16px 0;padding:10px;background:#f5f5f5;border-radius:8px;}
+  .warn{margin-top:12px;font-size:11px;color:#c0392b;text-align:center;font-weight:bold;}
+  @media print{body{padding:10px;}}
+</style></head><body>
+  <div class="header">
+    <h1>Aruba Apple</h1>
+    <p>🔧 Comprobante de Reparación — TÉCNICO</p>
+  </div>
+  <div class="row"><span class="label">Fecha:</span><span class="value">${r.fecha}</span></div>
+  <div class="row"><span class="label">Cliente:</span><span class="value">${cliente}</span></div>
+  <div class="row"><span class="label">Modelo:</span><span class="value">${r.modelo}</span></div>
+  <div class="row"><span class="label">Color:</span><span class="value">${r.color || '—'}</span></div>
+  <div class="row"><span class="label">IMEI:</span><span class="value" style="font-family:monospace;letter-spacing:1px;">${r.imei || '—'}</span></div>
+  <div class="row"><span class="label">Problema:</span><span class="value">${r.descripcion}</span></div>
+  <div class="total">Costo: $${Number(r.costo||0).toLocaleString()}</div>
+  <div class="section">
+    <h3>🔒 Datos de acceso al dispositivo</h3>
+    <div class="row"><span class="label">Código / Patrón:</span><span class="value">${r.codigo || '—'}</span></div>
+    <div class="row"><span class="label">iCloud:</span><span class="value">${r.icloud || '—'}</span></div>
+    <div class="row"><span class="label">Contraseña iCloud:</span><span class="value">${r.icloudPass || '—'}</span></div>
+  </div>
+  <div class="warn">⚠ CONFIDENCIAL — Solo para uso interno del técnico</div>
+  <div class="footer">Aruba Apple — Comprobante generado el ${new Date().toLocaleDateString('es-AR')}</div>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+  cerrarModalComprobante();
 }
 
 function avanzarEstadoReparacion(id){
