@@ -811,11 +811,21 @@ body.rol-usuario .solo-admin{display:none !important;}
 
     <div class="solo-admin" style="display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:18px;">
       <div style="display:flex; flex-direction:column; gap:16px;">
-        <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100px; box-shadow:0 0 18px 4px rgba(245,158,11,0.45), 0 0 40px 8px rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
-          <label>Ventas Totales (Cuotas)</label><div class="val" id="vcVentasTotales">$ 0</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:90px; box-shadow:0 0 18px 4px rgba(245,158,11,0.45), 0 0 40px 8px rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+            <label style="font-size:11px;">Ventas Totales</label><div class="val" id="vcVentasTotales" style="font-size:20px;">$ 0</div>
+          </div>
+          <div class="mini-card amber" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:90px; box-shadow:0 0 18px 4px rgba(245,158,11,0.45), 0 0 40px 8px rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+            <label style="font-size:11px;">Recupero de Compra</label><div class="val" id="vcRecuperoCompra" style="font-size:20px;">$ 0</div>
+          </div>
         </div>
-        <div class="mini-card profit" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100px; box-shadow:0 0 18px 4px rgba(34,197,94,0.45), 0 0 40px 8px rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.35);">
-          <label>Ganancia Totales (Cuotas)</label><div class="val" id="vcGananciaTotales">$ 0</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="mini-card profit" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:90px; box-shadow:0 0 18px 4px rgba(34,197,94,0.45), 0 0 40px 8px rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.35);">
+            <label style="font-size:11px;">Ganancia Totales</label><div class="val" id="vcGananciaTotales" style="font-size:20px;">$ 0</div>
+          </div>
+          <div class="mini-card profit" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:90px; box-shadow:0 0 18px 4px rgba(34,197,94,0.45), 0 0 40px 8px rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.35);">
+            <label style="font-size:11px;">Ganancia Actual Neta</label><div class="val" id="vcGananciaActualNeta" style="font-size:20px;">$ 0</div>
+          </div>
         </div>
         <!-- PORCENTAJES + GRÁFICO SEMICÍRCULO -->
         <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px 18px; text-align:center;">
@@ -3791,10 +3801,25 @@ function renderVentasCuotas(){
 
   // Totales (excluir propuestas de financiación del cálculo)
   const vcConfirmadas = ventasCuotas.filter(v=>v.tipo !== 'posible_financiacion');
+  // Ventas Totales = precio cuotas + anticipo (lo que va a entrar en total)
   const ventaTotal = vcConfirmadas.reduce((s,v)=>s+((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0)),0);
+  // Ganancia Totales = ventas totales - precio de compra (ganancia proyectada total)
   const gananciaTotal = vcConfirmadas.reduce((s,v)=>s+(((Number(v.precioCuotas)||0)+(Number(v.anticipo)||0))-(Number(v.precioCompra)||0)),0);
+  // Recupero de Compra = cuánto se recuperó ya de lo invertido en compra (cuotas cobradas + anticipos)
+  const recuperoCompra = vcConfirmadas.reduce((s,v)=>{
+    const cobrado = (Number(v.anticipo)||0) + (v.cronograma||[]).filter(c=>c.pagada).reduce((sc,c)=>sc+(Number(c.monto)||0),0);
+    return s + Math.min(cobrado, Number(v.precioCompra)||0);
+  },0);
+  // Ganancia Actual Neta = dinero cobrado hasta ahora - precio de compra (solo lo que realmente entró)
+  const gananciaActualNeta = vcConfirmadas.reduce((s,v)=>{
+    const cobrado = (Number(v.anticipo)||0) + (v.cronograma||[]).filter(c=>c.pagada).reduce((sc,c)=>sc+(Number(c.monto)||0),0);
+    const compra = Number(v.precioCompra)||0;
+    return s + (cobrado - compra);
+  },0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
   document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
+  document.getElementById('vcRecuperoCompra').textContent = '$ ' + fmt(recuperoCompra);
+  document.getElementById('vcGananciaActualNeta').textContent = '$ ' + fmt(gananciaActualNeta);
   renderDashCuotasActivas();
 }
 
