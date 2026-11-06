@@ -3827,22 +3827,20 @@ function imprimirComprobanteCuotas(id){
     <div class="fecha-emision">Emitido: ${fechaEmision}</div>
   </div>
 
-  <div class="seccion"><h3>Datos del Cliente</h3><table>
-    <tr><td>Cliente:</td><td>${vc.cliente||'-'}</td></tr>
-    <tr><td>Fecha de venta:</td><td>${vc.fecha||'-'}</td></tr>
-  </table></div>
-
-  <div class="seccion"><h3>Datos del Equipo</h3><table>
-    <tr><td>Modelo:</td><td>${vc.modelo||'-'}</td></tr>
-    <tr><td>Color:</td><td>${vc.color||'-'}</td></tr>
-    ${vc.imei ? `<tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1.5px;">${vc.imei}</td></tr>` : ''}
-  </table></div>
+  <div style="display:flex;gap:16px;margin-bottom:16px;">
+    <div class="seccion" style="flex:1;margin-bottom:0;"><h3>Datos del Cliente</h3><table>
+      <tr><td>Cliente:</td><td>${vc.cliente||'-'}</td></tr>
+      <tr><td>Fecha de venta:</td><td>${vc.fecha||'-'}</td></tr>
+    </table></div>
+    <div class="seccion" style="flex:1;margin-bottom:0;"><h3>Datos del Equipo</h3><table>
+      <tr><td>Modelo:</td><td>${vc.modelo||'-'}</td></tr>
+      <tr><td>Color:</td><td>${vc.color||'-'}</td></tr>
+      ${vc.imei ? `<tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1.5px;">${vc.imei}</td></tr>` : ''}
+    </table></div>
+  </div>
 
   <div class="seccion"><h3>Plan de Financiación</h3><table>
-    <tr><td>Cantidad de cuotas:</td><td><b>${vc.cantCuotas}</b></td></tr>
-    <tr><td>Valor por cuota:</td><td><b>USD $${fmt(valorCuota)}</b></td></tr>
-    <tr><td>Frecuencia:</td><td>${vc.frecuencia||'-'}</td></tr>
-    ${anticipo > 0 ? `<tr><td>Anticipo / Seña:</td><td><b>USD $${fmt(anticipo)}</b></td></tr>` : ''}
+    <tr><td>Cuotas:</td><td><b>${vc.cantCuotas} x USD $${fmt(valorCuota)}</b></td><td style="padding-left:24px;">Frecuencia:</td><td>${vc.frecuencia||'-'}</td>${anticipo > 0 ? `<td style="padding-left:24px;">Anticipo:</td><td><b>USD $${fmt(anticipo)}</b></td>` : ''}</tr>
   </table></div>
 
   <div class="seccion"><h3>Cronograma de Cuotas</h3>
