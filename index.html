@@ -3091,14 +3091,302 @@ function equipoIdDeReserva(nro){
   const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
   return r ? (r.equipo_id||null) : null;
 }
-async function marcarReservaEntregada(nro){
+function marcarReservaEntregada(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  if(!r) return;
+  // Abrir modal de entrega con medio de pago + documentos
+  const overlay = document.createElement('div');
+  overlay.id = 'modalEntregaReserva';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);padding:20px;animation:fadeInEntrega 0.2s ease;';
+  const precio = (r.precio!=null && r.precio!=='') ? 'U$S '+fmt(r.precio) : '—';
+  overlay.innerHTML = `
+    <style>
+      @keyframes fadeInEntrega { from { opacity:0; } to { opacity:1; } }
+      @keyframes slideUpEntrega { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+    </style>
+    <div style="background:var(--bg);border:1px solid var(--card-b);border-radius:20px;padding:28px;max-width:480px;width:100%;animation:slideUpEntrega 0.25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:32px;margin-bottom:8px;">📦</div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">Entregar equipo — Venta Nº ${nro}</h2>
+        <p style="font-size:13px;color:var(--txt2);">${r.modelo||'Equipo'}${r.color?' · '+r.color:''} — ${precio}</p>
+        <p style="font-size:12px;color:var(--txt3);">Cliente: ${r.cliente||'-'}${r.agente?' &nbsp;·&nbsp; Agente: '+r.agente:''}</p>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Medio de pago</label>
+        <select id="entregaMedioPago" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--card-b);background:var(--bg2);color:var(--txt);font-size:14px;">
+          <option value="">— Seleccionar —</option>
+          <option value="efectivo">💵 Efectivo</option>
+          <option value="transferencia">🏦 Transferencia</option>
+          <option value="cripto">₿ Cripto</option>
+          <option value="debito">💳 Débito</option>
+          <option value="credito">💳 Crédito</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button class="btn ghost small" style="flex:1;padding:12px;font-size:13px;" onclick="reciboReservaMensaje('${nro}')">🧾 Recibo</button>
+        <button class="btn ghost small" style="flex:1;padding:12px;font-size:13px;" onclick="facturaReservaMensaje('${nro}')">📄 Factura</button>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" style="flex:1;background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;font-weight:700;padding:13px;border-radius:12px;font-size:14px;" onclick="confirmarEntregaReserva('${nro}')">✅ Confirmar Entrega</button>
+        <button class="btn ghost" style="flex:1;padding:13px;border-radius:12px;font-size:14px;" onclick="cerrarModalEntrega()">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+function cerrarModalEntrega(){
+  const o = document.getElementById('modalEntregaReserva');
+  if(o) o.remove();
+}
+async function confirmarEntregaReserva(nro){
+  const sel = document.getElementById('entregaMedioPago');
+  const medioPago = sel ? sel.value : '';
+  if(!medioPago){ alert('Seleccioná un medio de pago antes de confirmar.'); return; }
+  cerrarModalEntrega();
   const equipoId = equipoIdDeReserva(nro);
-  const ok = await actualizarReservaMensaje(nro, { estado:'vendido', entregado_en:new Date().toISOString() },
+  const cambios = { estado:'vendido', entregado_en:new Date().toISOString(), medioPago };
+  const ok = await actualizarReservaMensaje(nro, cambios,
     `¿Confirmás que la venta Nº ${nro} fue entregada en el local? Pasará a "Vendido".`);
   if(ok){
     await setEstadoEquipoReserva(equipoId, 'vendido');
-    registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido).`);
+    registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido) — ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.`);
   }
+}
+function reciboReservaMensaje(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  if(!r) return;
+  const sel = document.getElementById('entregaMedioPago');
+  const medioPago = sel ? sel.value : '';
+  const cliNombre = r.cliente || 'Consumidor final';
+  const agenteTxt = r.agente || '-';
+  const total = Number(r.precio)||0;
+  const nroCorto = (r.nro_venta||'').slice(-6).toUpperCase();
+  const bateria = '';
+  const cuerpo = `
+    <div style="line-height:1.5;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:700;">RECIBO DE COMPRA</div>
+          <div style="font-size:13px;">N° ${nroCorto}</div>
+          <div style="font-size:13px;">Fecha: ${r.fecha||hoyISO()}</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL CLIENTE</div>
+        <div>Nombre y Apellido: ${cliNombre}</div>
+      </div>
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DETALLE DE LA COMPRA</div>
+        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th>
+            <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
+          </tr>
+          <tr>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">Teléfono celular marca Apple — ${r.modelo||'-'}${r.color?' · '+r.color:''}${r.imei?'<br>IMEI: '+r.imei:''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(total)}</td>
+          </tr>
+        </table>
+        <div style="text-align:right; font-size:20px; font-weight:800; margin-top:10px;">TOTAL: U$S ${fmt(total)}</div>
+        <div style="text-align:right; font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
+      </div>
+      <div style="margin-top:12px; font-size:13px;">
+        Agente / Vendedor: ${agenteTxt}<br>
+        Forma de pago: ${medioPago ? (MEDIOS_PAGO_LABELS[medioPago]||medioPago) : 'Contado'}.
+      </div>
+      <p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA APPLE</p>
+    </div>`;
+  abrirDocumentoEditable('Recibo de compra' + (' — ' + cliNombre), cuerpo);
+}
+function facturaReservaMensaje(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  if(!r) return;
+  const sel = document.getElementById('entregaMedioPago');
+  const medioPago = sel ? sel.value : '';
+  const cliNombre = r.cliente || 'Consumidor Final';
+  const agenteTxt = r.agente || '-';
+  const total = Number(r.precio)||0;
+  const IVA = 21;
+  const neto = total / (1 + IVA/100);
+  const ivaMonto = total - neto;
+  const nroCorto = (r.nro_venta||'').slice(-8).toUpperCase();
+  const cuerpo = `
+    <div style="line-height:1.45; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div>Razón Social: _______________________________</div>
+          <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
+          <div>Condición frente al IVA: _______________________</div>
+        </div>
+        <div style="width:64px; border-left:1px solid #000; border-right:1px solid #000; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:800;">B</div>
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:18px; font-weight:700;">FACTURA</div>
+          <div>N° _______________________</div>
+          <div>Fecha: ${r.fecha||hoyISO()}</div>
+          <div>CUIT: __________________________</div>
+          <div>Ingresos Brutos: ________________</div>
+          <div>Inicio de actividades: ___ / ___ / ______</div>
+        </div>
+      </div>
+      <div style="border:1px solid #000; border-top:0; padding:10px 14px;">
+        <div><b>Cliente:</b> ${cliNombre}</div>
+        <div><b>DNI / CUIT:</b> ____________ &nbsp;&nbsp; <b>Domicilio:</b> ____________________________</div>
+        <div><b>Condición frente al IVA:</b> Consumidor Final</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; margin-top:14px; font-size:13px;">
+        <tr>
+          <th style="text-align:left; border:1px solid #000; padding:6px;">Descripción</th>
+          <th style="text-align:center; border:1px solid #000; padding:6px;">Cant.</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">P. Unit. (neto)</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000; padding:6px;">Teléfono celular marca Apple — ${r.modelo||'-'}${r.color?' · '+r.color:''}${r.imei?' · IMEI '+r.imei:''}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+        </tr>
+      </table>
+      <div style="text-align:right; margin-top:10px; font-size:13px;">
+        Subtotal (neto): U$S ${fmt(neto)}<br>
+        IVA ${IVA}%: U$S ${fmt(ivaMonto)}<br>
+        <span style="font-size:18px; font-weight:800;">TOTAL: U$S ${fmt(total)}</span>
+      </div>
+      <div style="margin-top:14px; font-size:13px;">
+        Agente / Vendedor: ${agenteTxt}
+      </div>
+      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.</div>` : ''}
+      <div style="margin-top:16px; border-top:1px solid #000; padding-top:10px; font-size:11px; color:#555;">
+        CAE N°: _________________________ &nbsp; Vto. CAE: ___ / ___ / ______
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Factura' + (' — ' + cliNombre), cuerpo);
+}
+function reciboReservaMensajeVendida(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  if(!r) return;
+  const medioPago = r.medioPago || '';
+  const cliNombre = r.cliente || 'Consumidor final';
+  const agenteTxt = r.agente || '-';
+  const total = Number(r.precio)||0;
+  const nroCorto = (r.nro_venta||'').slice(-6).toUpperCase();
+  const cuerpo = `
+    <div style="line-height:1.5;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:700;">RECIBO DE COMPRA</div>
+          <div style="font-size:13px;">N° ${nroCorto}</div>
+          <div style="font-size:13px;">Fecha: ${r.fecha||hoyISO()}</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL CLIENTE</div>
+        <div>Nombre y Apellido: ${cliNombre}</div>
+      </div>
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">DETALLE DE LA COMPRA</div>
+        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th>
+            <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
+          </tr>
+          <tr>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">Teléfono celular marca Apple — ${r.modelo||'-'}${r.color?' · '+r.color:''}${r.imei?'<br>IMEI: '+r.imei:''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(total)}</td>
+          </tr>
+        </table>
+        <div style="text-align:right; font-size:20px; font-weight:800; margin-top:10px;">TOTAL: U$S ${fmt(total)}</div>
+        <div style="text-align:right; font-size:12px; color:#555;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
+      </div>
+      <div style="margin-top:12px; font-size:13px;">
+        Agente / Vendedor: ${agenteTxt}<br>
+        Forma de pago: ${medioPago ? (MEDIOS_PAGO_LABELS[medioPago]||medioPago) : 'Contado'}.
+      </div>
+      <p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>
+      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
+        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración (Vendedor)</div>
+        <div style="text-align:center; flex:1;">_______________________<br>Recibí conforme (Cliente)</div>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">¡Gracias por su compra! — ARUBA APPLE</p>
+    </div>`;
+  abrirDocumentoEditable('Recibo de compra — ' + cliNombre, cuerpo);
+}
+function facturaReservaMensajeVendida(nro){
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  if(!r) return;
+  const medioPago = r.medioPago || '';
+  const cliNombre = r.cliente || 'Consumidor Final';
+  const agenteTxt = r.agente || '-';
+  const total = Number(r.precio)||0;
+  const IVA = 21;
+  const neto = total / (1 + IVA/100);
+  const ivaMonto = total - neto;
+  const nroCorto = (r.nro_venta||'').slice(-8).toUpperCase();
+  const cuerpo = `
+    <div style="line-height:1.45; font-size:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:stretch; gap:10px; border:1px solid #000;">
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
+          <div>Razón Social: _______________________________</div>
+          <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Bs. As.</div>
+          <div>Condición frente al IVA: _______________________</div>
+        </div>
+        <div style="width:64px; border-left:1px solid #000; border-right:1px solid #000; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:800;">B</div>
+        <div style="flex:1; padding:12px 14px;">
+          <div style="font-size:18px; font-weight:700;">FACTURA</div>
+          <div>N° _______________________</div>
+          <div>Fecha: ${r.fecha||hoyISO()}</div>
+          <div>CUIT: __________________________</div>
+          <div>Ingresos Brutos: ________________</div>
+          <div>Inicio de actividades: ___ / ___ / ______</div>
+        </div>
+      </div>
+      <div style="border:1px solid #000; border-top:0; padding:10px 14px;">
+        <div><b>Cliente:</b> ${cliNombre}</div>
+        <div><b>DNI / CUIT:</b> ____________ &nbsp;&nbsp; <b>Domicilio:</b> ____________________________</div>
+        <div><b>Condición frente al IVA:</b> Consumidor Final</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; margin-top:14px; font-size:13px;">
+        <tr>
+          <th style="text-align:left; border:1px solid #000; padding:6px;">Descripción</th>
+          <th style="text-align:center; border:1px solid #000; padding:6px;">Cant.</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">P. Unit. (neto)</th>
+          <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
+        </tr>
+        <tr>
+          <td style="border:1px solid #000; padding:6px;">Teléfono celular marca Apple — ${r.modelo||'-'}${r.color?' · '+r.color:''}${r.imei?' · IMEI '+r.imei:''}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+          <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
+        </tr>
+      </table>
+      <div style="text-align:right; margin-top:10px; font-size:13px;">
+        Subtotal (neto): U$S ${fmt(neto)}<br>
+        IVA ${IVA}%: U$S ${fmt(ivaMonto)}<br>
+        <span style="font-size:18px; font-weight:800;">TOTAL: U$S ${fmt(total)}</span>
+      </div>
+      <div style="margin-top:14px; font-size:13px;">
+        Agente / Vendedor: ${agenteTxt}
+      </div>
+      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.</div>` : ''}
+      <div style="margin-top:16px; border-top:1px solid #000; padding-top:10px; font-size:11px; color:#555;">
+        CAE N°: _________________________ &nbsp; Vto. CAE: ___ / ___ / ______
+      </div>
+    </div>`;
+  abrirDocumentoEditable('Factura — ' + cliNombre, cuerpo);
 }
 async function revertirReservaMensaje(nro){
   const equipoId = equipoIdDeReserva(nro);
@@ -3145,7 +3433,8 @@ function renderVentas(){
     cliente:r.cliente||'-',
     precio: (r.precio!=null && r.precio!=='') ? r.precio : null,
     ganancia: (r.precio!=null && r.precio!=='' && r.compra!=null && r.compra!=='') ? (Number(r.precio)-Number(r.compra)) : null,
-    agente:r.agente||'', estado:r.estado||'reservado', equipo_id:r.equipo_id||null
+    agente:r.agente||'', estado:r.estado||'reservado', equipo_id:r.equipo_id||null,
+    medioPago:r.medioPago||''
   }));
 
   let filtradas = manuales.concat(reservas);
@@ -3161,6 +3450,10 @@ function renderVentas(){
       const accEstado = v.estado==='reservado'
         ? `<button class="btn small" onclick="marcarReservaEntregada('${v.nro}')">Entregar (Vendido)</button>`
         : `<button class="btn ghost small" onclick="revertirReservaMensaje('${v.nro}')">Volver a reservado</button>`;
+      const docsBtns = v.estado==='vendido'
+        ? `<button class="btn ghost small" onclick="reciboReservaMensajeVendida('${v.nro}')">🧾 Recibo</button>
+           <button class="btn ghost small" onclick="facturaReservaMensajeVendida('${v.nro}')">📄 Factura</button>`
+        : '';
       tr.innerHTML = `
         <td data-label="Fecha">${v.fecha||'-'}</td>
         <td data-label="Nro. de Venta"><b>${v.nro}</b></td>
@@ -3173,6 +3466,7 @@ function renderVentas(){
         <td data-label="Estado">${badge}</td>
         <td data-label="Acciones"><div class="actions">
           ${accEstado}
+          ${docsBtns}
           <button class="btn danger small solo-admin" onclick="borrarReservaMensaje('${v.nro}')">Borrar</button>
         </div></td>`;
     } else {
