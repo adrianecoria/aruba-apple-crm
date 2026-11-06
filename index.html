@@ -4889,92 +4889,142 @@ function cerrarModalComprobante(){
   if(o) o.remove();
 }
 
+function _estilosComprobanteA4(tipo){
+  return `*{margin:0;padding:0;box-sizing:border-box;}
+  @page{size:A4;margin:20mm;}
+  body{font-family:Arial,sans-serif;padding:40px;color:#222;width:210mm;min-height:297mm;margin:0 auto;}
+  .toolbar{text-align:center;margin-bottom:20px;}
+  .toolbar button{padding:10px 24px;font-size:14px;border:none;border-radius:8px;cursor:pointer;margin:0 6px;font-weight:600;}
+  .toolbar .imprimir{background:#007aff;color:#fff;}
+  .toolbar .cerrar{background:#eee;color:#333;}
+  @media print{.toolbar{display:none !important;}}
+  .header{text-align:center;border-bottom:2px solid #111;padding-bottom:16px;margin-bottom:24px;}
+  .header h1{font-size:24px;margin-bottom:4px;}
+  .header h2{font-size:14px;color:#666;font-weight:400;margin-bottom:2px;}
+  .header .tipo{font-size:12px;color:${tipo==='tecnico'?'#e67e22':'#007aff'};font-weight:700;text-transform:uppercase;margin-top:4px;}
+  .header .fecha-emision{font-size:11px;color:#999;margin-top:6px;}
+  .seccion{border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:16px;}
+  .seccion h3{font-size:13px;margin:0 0 10px;border-bottom:1px solid #eee;padding-bottom:6px;color:#333;text-transform:uppercase;letter-spacing:0.5px;}
+  .seccion table{width:100%;font-size:13px;border-collapse:collapse;}
+  .seccion td{padding:5px 0;}
+  .seccion td:first-child{width:160px;color:#555;font-weight:600;}
+  .monto-box{text-align:center;padding:18px;background:#f7f7f7;border-radius:12px;margin:16px 0;border:1px solid #ddd;}
+  .monto-box .label{font-size:12px;color:#555;margin-bottom:4px;}
+  .monto-box .usd{font-size:28px;font-weight:700;}
+  .monto-box .ars{font-size:15px;color:#555;margin-top:4px;}
+  .acceso{margin-top:16px;padding:16px;background:#fff8e1;border:2px solid #e67e22;border-radius:10px;}
+  .acceso h3{font-size:14px;color:#e67e22;margin:0 0 10px;text-transform:uppercase;}
+  .acceso table{width:100%;font-size:13px;border-collapse:collapse;}
+  .acceso td{padding:5px 0;}
+  .acceso td:first-child{width:160px;color:#555;font-weight:600;}
+  .aviso{margin-top:20px;padding:14px;background:#fffbe6;border:1px solid #f0e4a0;border-radius:10px;font-size:11px;color:#666;line-height:1.6;}
+  .aviso b{color:#b8860b;}
+  .warn{margin-top:16px;font-size:12px;color:#c0392b;text-align:center;font-weight:bold;padding:10px;background:#ffeaea;border-radius:8px;}
+  .firmas{margin-top:40px;display:flex;justify-content:space-between;}
+  .firmas div{text-align:center;width:40%;border-top:1px solid #222;padding-top:8px;font-size:12px;}
+  .footer{margin-top:30px;text-align:center;font-size:10px;color:#aaa;border-top:1px solid #ddd;padding-top:10px;}`;
+}
+
 function imprimirComprobanteCliente(id){
   const r = reparaciones.find(x=>x.id===id);
   if(!r) return;
-  const cliente = nombreCliente(r.clienteId);
-  const w = window.open('','_blank','width=400,height=600');
-  w.document.write(`<!DOCTYPE html><html><head><title>Comprobante Cliente</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:Arial,sans-serif;padding:24px;color:#111;max-width:380px;margin:0 auto;}
-  .header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px;}
-  .header h1{font-size:20px;margin-bottom:4px;}
-  .header p{font-size:12px;color:#555;}
-  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:14px;}
-  .row .label{font-weight:bold;color:#333;}
-  .row .value{text-align:right;max-width:55%;}
-  .footer{margin-top:20px;text-align:center;font-size:11px;color:#888;border-top:2px solid #111;padding-top:12px;}
-  .total{font-size:18px;font-weight:bold;text-align:center;margin:16px 0;padding:10px;background:#f5f5f5;border-radius:8px;}
-  .note{margin-top:12px;font-size:11px;color:#666;text-align:center;font-style:italic;}
-  @media print{body{padding:10px;}}
-</style></head><body>
-  <div class="header">
-    <h1>Aruba Apple</h1>
-    <p>Comprobante de Reparación — Cliente</p>
+  const c = clientes.find(x=>x.id===r.clienteId);
+  const clienteNombre = c ? c.nombre+' '+c.apellido : 'Sin especificar';
+  const clienteDni = c&&c.dni?c.dni:'-';
+  const clienteTel = c&&c.telefono?c.telefono:'-';
+  const ahora = new Date();
+  const fechaEmision = ahora.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const costoNum = Number(r.costo)||0;
+  const costoARS = costoNum * dolar;
+  const w = window.open('','_blank');
+  if(!w){alert('Permití los popups para este sitio.');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante Cliente - ${r.modelo}</title>
+<style>${_estilosComprobanteA4('cliente')}</style></head><body>
+  <div class="toolbar">
+    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="cerrar" onclick="window.close()">Cerrar</button>
   </div>
-  <div class="row"><span class="label">Fecha:</span><span class="value">${r.fecha}</span></div>
-  <div class="row"><span class="label">Cliente:</span><span class="value">${cliente}</span></div>
-  <div class="row"><span class="label">Modelo:</span><span class="value">${r.modelo}</span></div>
-  <div class="row"><span class="label">Color:</span><span class="value">${r.color || '—'}</span></div>
-  <div class="row"><span class="label">IMEI:</span><span class="value" style="font-family:monospace;letter-spacing:1px;">${r.imei || '—'}</span></div>
-  <div class="row"><span class="label">Problema:</span><span class="value">${r.descripcion}</span></div>
-  <div class="total">Costo: $${Number(r.costo||0).toLocaleString()}</div>
-  <div class="row"><span class="label">Estado:</span><span class="value">${r.pagado ? '✅ Pagado' : '⏳ Pendiente de pago'}</span></div>
-  <div class="note">Este comprobante no incluye datos de acceso al dispositivo.<br>Conserve este ticket como respaldo de su reparación.</div>
-  <div class="footer">Aruba Apple — Comprobante generado el ${new Date().toLocaleDateString('es-AR')}</div>
+  <div class="header">
+    <h1>ARUBA APPLE</h1>
+    <h2>Comprobante de Reparación</h2>
+    <div class="tipo">Copia para el Cliente</div>
+    <div class="fecha-emision">Emitido: ${fechaEmision}</div>
+  </div>
+  <div class="seccion"><h3>Datos del Cliente</h3><table>
+    <tr><td>Nombre:</td><td>${clienteNombre}</td></tr>
+    <tr><td>DNI:</td><td>${clienteDni}</td></tr>
+    <tr><td>Teléfono:</td><td>${clienteTel}</td></tr>
+  </table></div>
+  <div class="seccion"><h3>Datos del Equipo</h3><table>
+    <tr><td>Modelo:</td><td>${r.modelo}</td></tr>
+    <tr><td>Color:</td><td>${r.color||'-'}</td></tr>
+    <tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1.5px;">${r.imei||'-'}</td></tr>
+  </table></div>
+  <div class="seccion"><h3>Detalle de Reparación</h3><table>
+    <tr><td>Problema:</td><td>${r.descripcion}</td></tr>
+    <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
+    <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
+    <tr><td>Pago:</td><td>${r.pagado?'✅ Pagado':'⏳ Pendiente de pago'}</td></tr>
+  </table></div>
+  <div class="monto-box">
+    <div class="label">Costo estimado de reparación</div>
+    <div class="usd">USD $${fmt(costoNum)}</div>
+    <div class="ars">≈ ARS $${fmt(costoARS)}</div>
+  </div>
+  <div class="aviso"><b>AVISO:</b> El costo indicado es estimativo. Una vez realizado el diagnóstico técnico, el presupuesto definitivo podría variar. Se notificará al cliente ante cualquier modificación antes de proceder.</div>
+  <div class="firmas"><div>Firma del cliente</div><div>Firma del responsable</div></div>
+  <div class="footer">Aruba Apple — Este comprobante no incluye datos de acceso al dispositivo</div>
 </body></html>`);
   w.document.close();
-  w.focus();
-  w.print();
   cerrarModalComprobante();
 }
 
 function imprimirComprobanteTecnico(id){
   const r = reparaciones.find(x=>x.id===id);
   if(!r) return;
-  const cliente = nombreCliente(r.clienteId);
-  const w = window.open('','_blank','width=400,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><title>Comprobante Técnico</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:Arial,sans-serif;padding:24px;color:#111;max-width:380px;margin:0 auto;}
-  .header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px;}
-  .header h1{font-size:20px;margin-bottom:4px;}
-  .header p{font-size:12px;color:#e67e22;font-weight:bold;}
-  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:14px;}
-  .row .label{font-weight:bold;color:#333;}
-  .row .value{text-align:right;max-width:55%;word-break:break-all;}
-  .section{margin-top:16px;padding:10px;background:#fff8e1;border:1px solid #e67e22;border-radius:8px;}
-  .section h3{font-size:13px;color:#e67e22;margin-bottom:8px;text-transform:uppercase;}
-  .footer{margin-top:20px;text-align:center;font-size:11px;color:#888;border-top:2px solid #111;padding-top:12px;}
-  .total{font-size:18px;font-weight:bold;text-align:center;margin:16px 0;padding:10px;background:#f5f5f5;border-radius:8px;}
-  .warn{margin-top:12px;font-size:11px;color:#c0392b;text-align:center;font-weight:bold;}
-  @media print{body{padding:10px;}}
-</style></head><body>
+  const c = clientes.find(x=>x.id===r.clienteId);
+  const clienteNombre = c ? c.nombre+' '+c.apellido : 'Sin especificar';
+  const clienteTel = c&&c.telefono?c.telefono:'-';
+  const ahora = new Date();
+  const fechaEmision = ahora.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const w = window.open('','_blank');
+  if(!w){alert('Permití los popups para este sitio.');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprobante Técnico - ${r.modelo}</title>
+<style>${_estilosComprobanteA4('tecnico')}</style></head><body>
+  <div class="toolbar">
+    <button class="imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="cerrar" onclick="window.close()">Cerrar</button>
+  </div>
   <div class="header">
-    <h1>Aruba Apple</h1>
-    <p>🔧 Comprobante de Reparación — TÉCNICO</p>
+    <h1>ARUBA APPLE</h1>
+    <h2>Comprobante de Reparación</h2>
+    <div class="tipo">🔧 Uso Interno — Técnico</div>
+    <div class="fecha-emision">Emitido: ${fechaEmision}</div>
   </div>
-  <div class="row"><span class="label">Fecha:</span><span class="value">${r.fecha}</span></div>
-  <div class="row"><span class="label">Cliente:</span><span class="value">${cliente}</span></div>
-  <div class="row"><span class="label">Modelo:</span><span class="value">${r.modelo}</span></div>
-  <div class="row"><span class="label">Color:</span><span class="value">${r.color || '—'}</span></div>
-  <div class="row"><span class="label">IMEI:</span><span class="value" style="font-family:monospace;letter-spacing:1px;">${r.imei || '—'}</span></div>
-  <div class="row"><span class="label">Problema:</span><span class="value">${r.descripcion}</span></div>
-  <div class="total">Costo: $${Number(r.costo||0).toLocaleString()}</div>
-  <div class="section">
-    <h3>🔒 Datos de acceso al dispositivo</h3>
-    <div class="row"><span class="label">Código / Patrón:</span><span class="value">${r.codigo || '—'}</span></div>
-    <div class="row"><span class="label">iCloud:</span><span class="value">${r.icloud || '—'}</span></div>
-    <div class="row"><span class="label">Contraseña iCloud:</span><span class="value">${r.icloudPass || '—'}</span></div>
-  </div>
-  <div class="warn">⚠ CONFIDENCIAL — Solo para uso interno del técnico</div>
-  <div class="footer">Aruba Apple — Comprobante generado el ${new Date().toLocaleDateString('es-AR')}</div>
+  <div class="seccion"><h3>Cliente</h3><table>
+    <tr><td>Nombre:</td><td>${clienteNombre}</td></tr>
+    <tr><td>Teléfono:</td><td>${clienteTel}</td></tr>
+  </table></div>
+  <div class="seccion"><h3>Datos del Equipo</h3><table>
+    <tr><td>Modelo:</td><td>${r.modelo}</td></tr>
+    <tr><td>Color:</td><td>${r.color||'-'}</td></tr>
+    <tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1.5px;">${r.imei||'-'}</td></tr>
+  </table></div>
+  <div class="seccion"><h3>Detalle de Reparación</h3><table>
+    <tr><td>Problema:</td><td>${r.descripcion}</td></tr>
+    <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
+    <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
+  </table></div>
+  <div class="acceso"><h3>🔒 Datos de Acceso al Dispositivo</h3><table>
+    <tr><td>Código / Patrón:</td><td style="font-size:16px;font-weight:700;">${r.codigo||'—'}</td></tr>
+    <tr><td>iCloud (Apple ID):</td><td>${r.icloud||'—'}</td></tr>
+    <tr><td>Contraseña iCloud:</td><td style="font-size:16px;font-weight:700;">${r.icloudPass||'—'}</td></tr>
+  </table></div>
+  <div class="warn">⚠ CONFIDENCIAL — Solo para uso interno del técnico. No entregar al cliente.</div>
+  <div class="footer">Aruba Apple — Comprobante técnico generado el ${new Date().toLocaleDateString('es-AR')}</div>
 </body></html>`);
   w.document.close();
-  w.focus();
-  w.print();
   cerrarModalComprobante();
 }
 
@@ -5139,7 +5189,7 @@ function renderReparaciones(){
       <td data-label="Estado"><span class="badge ${estadoBadgeReparacion(r.estado)}">${r.estado}</span></td>
       <td data-label="Acciones"><div class="actions">
         ${pagoBtn}
-        <button class="btn ghost small" onclick="generarComprobanteReparacion('${r.id}')">📄 Comprobante</button>
+        <button class="btn ghost small" onclick="mostrarModalComprobante(reparaciones.find(x=>x.id==='${r.id}'))">📄 Comprobante</button>
         <button class="btn ghost small" onclick="avanzarEstadoReparacion('${r.id}')">${r.estado==='a reparar'?'Pasar a en reparación':r.estado==='en reparación'?'Marcar reparado':'Reabrir'}</button>
         <button class="btn danger small" onclick="borrarReparacion('${r.id}')">Borrar</button>
       </div></td>`;
