@@ -2922,7 +2922,7 @@ function imprimirFactura(id){
 
       <div style="margin-top:12px; font-size:13px;">
         Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
-        Forma de pago: Contado.
+        Forma de pago: ${v.medioPago ? (MEDIOS_PAGO_LABELS[v.medioPago]||v.medioPago) : 'Contado'}.
       </div>
 
       ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
@@ -3013,6 +3013,8 @@ function facturaConIVA(id){
         </table>
       </div>
       <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
+
+      ${v.medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[v.medioPago]||v.medioPago}.</div>` : ''}
 
       <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
         <div>CAE N°: _______________________</div>
@@ -4145,7 +4147,7 @@ function reciboCuotas(id){
 
       <div style="margin-top:12px; font-size:13px;">
         Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
-        Forma de pago: Financiado en ${cantCuotas} cuotas${anticipoVc>0?' + anticipo':''}.
+        Forma de pago: Financiado en ${cantCuotas} cuotas${anticipoVc>0?' + anticipo':''}${vc.medioPago ? ' — Medio de pago (anticipo): '+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago) : ''}.
       </div>
 
       ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
@@ -4259,6 +4261,8 @@ function facturaCuotasConIVA(id){
       </div>
       <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
 
+      ${vc.medioPago ? `<div style="margin-top:12px; font-size:13px;">Medio de pago (anticipo): ${MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago}.</div>` : ''}
+
       <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
         <div>CAE N°: _______________________</div>
         <div>Vto. CAE: ___ / ___ / ______</div>
@@ -4359,6 +4363,7 @@ function imprimirComprobanteCuotas(id){
 
   <div class="seccion"><h3>Plan de Financiación</h3><table>
     <tr><td>Cuotas:</td><td><b>${vc.cantCuotas} x USD $${fmt(valorCuota)}</b></td><td style="padding-left:24px;">Frecuencia:</td><td>${vc.frecuencia||'-'}</td>${anticipo > 0 ? `<td style="padding-left:24px;">Anticipo:</td><td><b>USD $${fmt(anticipo)}</b></td>` : ''}</tr>
+    ${vc.medioPago ? `<tr><td>Medio de pago (anticipo):</td><td colspan="5"><b>${MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago}</b></td></tr>` : ''}
   </table></div>
 
   <div class="seccion"><h3>Cronograma de Cuotas</h3>
@@ -4571,7 +4576,7 @@ function generarContratoCuotas(id){
         ${filas}
       </table>
 
-      <p style="margin-top:8px;"><b>Medio y moneda de pago:</b> Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
+      <p style="margin-top:8px;"><b>Medio y moneda de pago:</b>${vc.medioPago ? ' Medio de pago del anticipo: <b>'+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago)+'</b>.' : ''} Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
 
       <p><b>CUARTA: MORA E INTERESES MORATORIOS.</b> La falta de pago de cualquiera de las cuotas a su correspondiente vencimiento constituirá al COMPRADOR en mora de pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna. Transcurrido un período de gracia de tres (3) días corridos desde el vencimiento, se aplicará un interés punitorio del ${tasaPunitoriaVC(cant)}% mensual sobre el monto de la cuota adeudada hasta el día de su efectivo pago.</p>
 
@@ -4667,7 +4672,7 @@ function generarPagareCuotas(id){
         ${vc.gpsVendidos.map(gv => `<p style="margin:2px 0;">• ${gv.modelo||'GPS'}: U$S ${fmt(Number(gv.precioVenta)||0)}</p>`).join('')}
         <p style="margin:4px 0 0; font-size:12px; color:#555;">El valor del GPS se encuentra incluido dentro del monto total del presente pagaré.</p>
       </div>` : ''}
-      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''}${(vc.gpsVendidos && vc.gpsVendidos.length) ? ' · GPS: '+vc.gpsVendidos.map(gv=>gv.modelo||'GPS').join(', ') : ''} — ${vc.cantCuotas} cuotas.</p>
+      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''}${(vc.gpsVendidos && vc.gpsVendidos.length) ? ' · GPS: '+vc.gpsVendidos.map(gv=>gv.modelo||'GPS').join(', ') : ''} — ${vc.cantCuotas} cuotas${vc.medioPago?' · Medio de pago anticipo: '+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago):''}.</p>
     </div>`;
   abrirDocumentoEditable('Pagaré' + (deudorNombre ? ' — ' + deudorNombre : ''), cuerpoPagare);
 }
@@ -5625,6 +5630,7 @@ function imprimirComprobanteCliente(id){
     <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
     <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
     <tr><td>Pago:</td><td>${r.pagado?'✅ Pagado':'⏳ Pendiente de pago'}</td></tr>
+    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${MEDIOS_PAGO_LABELS[r.medioPago]||r.medioPago}</b></td></tr>` : ''}
   </table></div>
   <div class="monto-box">
     <div class="label">Costo estimado de reparación</div>
@@ -5674,6 +5680,7 @@ function imprimirComprobanteTecnico(id){
     <tr><td>Problema:</td><td>${r.descripcion}</td></tr>
     <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
     <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
+    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${MEDIOS_PAGO_LABELS[r.medioPago]||r.medioPago}</b></td></tr>` : ''}
   </table></div>
   <div class="acceso"><h3>🔒 Datos de Acceso al Dispositivo</h3><table>
     <tr><td>Código / Patrón:</td><td style="font-size:16px;font-weight:700;">${r.codigo||'—'}</td></tr>
