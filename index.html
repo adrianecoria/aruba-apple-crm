@@ -3825,7 +3825,9 @@ function renderVentasCuotas(){
   },0);
   document.getElementById('vcVentasTotales').textContent = '$ ' + fmt(ventaTotal);
   document.getElementById('vcGananciaTotales').textContent = '$ ' + fmt(gananciaTotal);
-  document.getElementById('vcRecuperoCompra').textContent = '$ ' + fmt(recuperoCompra);
+  const totalCompras = vcConfirmadas.reduce((s,v)=>s+(Number(v.precioCompra)||0),0);
+  const faltaRecuperar = totalCompras - recuperoCompra;
+  document.getElementById('vcRecuperoCompra').innerHTML = '$ ' + fmt(recuperoCompra) + ' <span style="font-size:13px;opacity:0.7;">(= $' + fmt(faltaRecuperar) + ')</span>';
   document.getElementById('vcGananciaActualNeta').textContent = '$ ' + fmt(gananciaActualNeta);
   renderDashCuotasActivas();
 }
