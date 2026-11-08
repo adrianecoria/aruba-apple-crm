@@ -3955,13 +3955,23 @@ async function revertirReservaMensaje(nro){
     `¿Volver la venta Nº ${nro} al estado "Reservado"?`);
   if(ok) await setEstadoEquipoReserva(equipoId, 'reservado');
 }
+async function cancelarReservaMensaje(nro){
+  if(!esAdmin()) return;
+  const equipoId = equipoIdDeReserva(nro);
+  const ok = await actualizarReservaMensaje(nro, { estado:'cancelado' },
+    `¿Cancelar la venta Nº ${nro}? El equipo volverá a estar disponible.`);
+  if(ok){
+    await setEstadoEquipoReserva(equipoId, 'disponible');
+    registrarActividad(`Venta por Mensajes Nº ${nro} cancelada — equipo vuelve a disponible.`);
+  }
+}
 async function borrarReservaMensaje(nro){
   if(!esAdmin()) return;
   const equipoId = equipoIdDeReserva(nro);
   const ok = await actualizarReservaMensaje(nro, null,
     `¿Borrar la venta por Mensajes Nº ${nro} del historial? Esta acción no se puede deshacer.`);
   if(ok){
-    await setEstadoEquipoReserva(equipoId, 'disponible'); // el equipo vuelve a quedar disponible
+    await setEstadoEquipoReserva(equipoId, 'disponible');
     registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
   }
 }
@@ -4007,14 +4017,19 @@ function renderVentas(){
   filtradas.forEach(v=>{
     const tr = document.createElement('tr');
     if(v.kind==='reserva'){
-      const badge = v.estado==='vendido' ? '<span class="badge vendido">Vendido</span>' : '<span class="badge reservado">Reservado</span>';
-      const accEstado = v.estado==='reservado'
-        ? `<button class="btn small" onclick="marcarReservaEntregada('${v.nro}')">Entregar (Vendido)</button>`
-        : `<button class="btn ghost small" onclick="revertirReservaMensaje('${v.nro}')">Volver a reservado</button>`;
-      const docsBtns = v.estado==='vendido'
-        ? `<button class="btn ghost small" onclick="reciboReservaMensajeVendida('${v.nro}')">🧾 Recibo</button>
-           <button class="btn ghost small" onclick="facturaReservaMensajeVendida('${v.nro}')">📄 Factura</button>`
-        : '';
+      const badge = v.estado==='vendido' ? '<span class="badge vendido">Vendido</span>'
+        : v.estado==='cancelado' ? '<span class="badge" style="color:var(--red);background:rgba(255,84,112,0.12);">Cancelado</span>'
+        : '<span class="badge reservado">Reservado</span>';
+      let accEstado = '';
+      let docsBtns = '';
+      if(v.estado==='reservado'){
+        accEstado = `<button class="btn small" onclick="marcarReservaEntregada('${v.nro}')">Entregar (Vendido)</button>
+          <button class="btn ghost small solo-admin" onclick="cancelarReservaMensaje('${v.nro}')">❌ Cancelar</button>`;
+      } else if(v.estado==='vendido'){
+        accEstado = `<button class="btn ghost small solo-admin" onclick="cancelarReservaMensaje('${v.nro}')">❌ Cancelar</button>`;
+        docsBtns = `<button class="btn ghost small" onclick="reciboReservaMensajeVendida('${v.nro}')">🧾 Recibo</button>
+           <button class="btn ghost small" onclick="facturaReservaMensajeVendida('${v.nro}')">📄 Factura</button>`;
+      }
       tr.innerHTML = `
         <td data-label="Fecha">${v.fecha||'-'}</td>
         <td data-label="Nro. de Venta"><b>${v.nro}</b></td>
