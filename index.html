@@ -3600,11 +3600,20 @@ function borrarVenta(id){
     const a = accesorios.find(x=>x.id===itemId);
     if(a){ a.estado = 'disponible'; syncGuardar('stock_accesorios', accesorios); renderAccesorios(); }
   }
+  // Ajustar comisión del vendedor si tenía uno asignado
+  if(v.vendedorId){
+    const comision = comisionVenta(v);
+    if(comision !== 0){
+      pagosVendedor.push({ id: uid(), vendedorId: v.vendedorId, monto: -comision, fecha: hoyISO(), metodo: 'ajuste_cancelacion', nota: `Ajuste por anulación: ${v.modelo}` });
+      syncGuardar('pagos_vendedor', pagosVendedor);
+    }
+  }
   ventas = ventas.filter(x=>x.id!==id);
   syncGuardar('ventas', ventas);
   registrarActividad(`Venta anulada: ${v.modelo} — $${fmt(v.precioVenta)}`);
   cargarSelectEquiposVenta();
   renderVentas();
+  if(document.getElementById('usuariosBody')) renderUsuarios();
 }
 
 /* ---------- VENTAS CERRADAS DESDE MENSAJES (reservas) ---------- */
@@ -3957,22 +3966,42 @@ async function revertirReservaMensaje(nro){
 }
 async function cancelarReservaMensaje(nro){
   if(!esAdmin()) return;
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
   const equipoId = equipoIdDeReserva(nro);
+  // Si la venta estaba entregada (vendido), ajustar comisión del vendedor
+  if(r && r.estado==='vendido' && r.vendedor_id){
+    const u = usuarios.find(x=>x.id===r.vendedor_id);
+    if(u){
+      pagosVendedor.push({ id: uid(), vendedorId: r.vendedor_id, monto: -COMISION_MENSAJE_VENTA, fecha: hoyISO(), metodo: 'ajuste_cancelacion', nota: `Ajuste por cancelación Mensajes Nº ${nro}` });
+      syncGuardar('pagos_vendedor', pagosVendedor);
+    }
+  }
   const ok = await actualizarReservaMensaje(nro, { estado:'cancelado' },
     `¿Cancelar la venta Nº ${nro}? El equipo volverá a estar disponible.`);
   if(ok){
     await setEstadoEquipoReserva(equipoId, 'disponible');
     registrarActividad(`Venta por Mensajes Nº ${nro} cancelada — equipo vuelve a disponible.`);
+    if(document.getElementById('usuariosBody')) renderUsuarios();
   }
 }
 async function borrarReservaMensaje(nro){
   if(!esAdmin()) return;
+  const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
   const equipoId = equipoIdDeReserva(nro);
+  // Si la venta estaba entregada (vendido), ajustar comisión del vendedor
+  if(r && r.estado==='vendido' && r.vendedor_id){
+    const u = usuarios.find(x=>x.id===r.vendedor_id);
+    if(u){
+      pagosVendedor.push({ id: uid(), vendedorId: r.vendedor_id, monto: -COMISION_MENSAJE_VENTA, fecha: hoyISO(), metodo: 'ajuste_cancelacion', nota: `Ajuste por borrado Mensajes Nº ${nro}` });
+      syncGuardar('pagos_vendedor', pagosVendedor);
+    }
+  }
   const ok = await actualizarReservaMensaje(nro, null,
     `¿Borrar la venta por Mensajes Nº ${nro} del historial? Esta acción no se puede deshacer.`);
   if(ok){
     await setEstadoEquipoReserva(equipoId, 'disponible');
     registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
+    if(document.getElementById('usuariosBody')) renderUsuarios();
   }
 }
 
