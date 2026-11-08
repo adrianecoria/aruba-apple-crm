@@ -7385,6 +7385,21 @@ function confirmarPagoVendedor(id, metodo){
   }
 }
 
+function resetearAjusteVendedor(id){
+  if(!esAdmin()) return;
+  const u = usuarios.find(x=>x.id===id);
+  if(!u) return;
+  const neta = gananciaNetaVendedor(id);
+  if(neta >= 0){ alert(`${u.nombre} no tiene saldo negativo.`); return; }
+  if(!confirm(`¿Resetear la ganancia de ${u.nombre} ${u.apellido} a $0?\n\nSaldo actual: USD $${fmt(neta)}\n\nEsto eliminará los ajustes por cancelaciones.`)) return;
+  // Agregar un pago compensatorio que lleve la ganancia neta a $0
+  pagosVendedor.push({ id: uid(), vendedorId: id, monto: neta, fecha: hoyISO(), metodo: 'reseteo', nota: `Reseteo de saldo negativo` });
+  syncGuardar('pagos_vendedor', pagosVendedor);
+  registrarActividad(`Reseteo de saldo de ${u.nombre} ${u.apellido}: de USD $${fmt(neta)} a $0`);
+  renderUsuarios();
+  alert(`✅ Ganancia de ${u.nombre} ${u.apellido} reseteada a $0.`);
+}
+
 function generarComprobantePago(u, monto, metodo){
   const ahora = new Date();
   const fechaHora = ahora.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -7543,6 +7558,7 @@ function renderUsuarios(){
       <td data-label="Ganancia generada" class="ganancia">$${fmt(ganancia)} <span style="color:var(--txt3); font-weight:500;">(≈ $${fmt(ganancia*(parseFloat(ls_get('dolar_blue',1555))||1555))} ARS)</span></td>
       <td data-label="Acciones" class="solo-admin"><div class="actions">
         <button class="btn amber small" onclick="pagarVendedor('${u.id}')">Pagar</button>
+        ${ganancia<0?`<button class="btn small" style="background:var(--red);color:#fff;" onclick="resetearAjusteVendedor('${u.id}')">🔄 Resetear</button>`:''}
         <button class="btn ghost small" onclick="editarUsuario('${u.id}')">Editar</button>
         <button class="btn danger small" onclick="borrarUsuario('${u.id}')">Borrar</button>
       </div></td>`;
