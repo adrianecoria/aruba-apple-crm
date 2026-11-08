@@ -177,6 +177,70 @@ select option{background:#1a1220;}
 .stock-row.zero .count{color:var(--txt3);}
 .stock-total{margin-top:14px; padding-top:14px; border-top:1px solid var(--card-b); display:flex; justify-content:space-between; align-items:center;}
 .stock-total .num{font-size:22px; font-weight:800;}
+
+/* ── STOCK VISUAL DASHBOARD ── */
+.stock-metrics{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px;}
+@media(max-width:700px){.stock-metrics{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:420px){.stock-metrics{grid-template-columns:repeat(2,1fr);}}
+.stock-metric{border-radius:14px; padding:14px 16px; text-align:center; position:relative; overflow:hidden;}
+.stock-metric::before{content:''; position:absolute; top:0; left:0; right:0; bottom:0; opacity:0.12; border-radius:14px;}
+.sm-total{border:1.5px solid var(--pink2);} .sm-total::before{background:var(--pink2);}
+.sm-disp{border:1.5px solid var(--green);} .sm-disp::before{background:var(--green);}
+.sm-res{border:1.5px solid var(--amber);} .sm-res::before{background:var(--amber);}
+.sm-vend{border:1.5px solid var(--txt3);} .sm-vend::before{background:var(--txt3);}
+.sm-valor{border:1.5px solid #60a5fa;} .sm-valor::before{background:#60a5fa;}
+.stock-metric .sm-icon{font-size:20px; margin-bottom:4px;}
+.stock-metric .sm-num{font-size:26px; font-weight:800; font-family:'Manrope'; position:relative;}
+.sm-total .sm-num{color:var(--pink2);} .sm-disp .sm-num{color:var(--green);}
+.sm-res .sm-num{color:var(--amber);} .sm-vend .sm-num{color:var(--txt3);}
+.sm-valor .sm-num{color:#60a5fa; font-size:20px;}
+.stock-metric .sm-label{font-size:11px; color:var(--txt2); margin-top:2px; position:relative; text-transform:uppercase; letter-spacing:0.5px;}
+.stock-sort-bar{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+.stock-sort-bar span{font-size:12px; color:var(--txt3); margin-right:4px;}
+.sort-pill{font-size:12px; padding:5px 14px; border-radius:20px; border:1px solid var(--card-b); background:transparent; color:var(--txt2); cursor:pointer; transition:all .2s;}
+.sort-pill:hover{border-color:var(--pink2); color:var(--pink2);}
+.sort-pill.active{background:linear-gradient(135deg,var(--grad1),var(--grad2)); color:#fff; border-color:transparent; font-weight:600;}
+.stock-modelo-group{margin-bottom:16px; border:1px solid var(--card-b); border-radius:14px; overflow:hidden; background:var(--card);}
+.stock-modelo-header{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; transition:background .2s; user-select:none;}
+.stock-modelo-header:hover{background:rgba(255,255,255,0.04);}
+.smh-left{display:flex; align-items:center; gap:10px;}
+.smh-modelo{font-size:15px; font-weight:700; font-family:'Manrope';}
+.smh-count{font-size:12px; color:var(--txt2);}
+.smh-badges{display:flex; gap:6px;}
+.smh-badge{font-size:10.5px; padding:2px 8px; border-radius:10px; font-weight:600;}
+.smh-badge.d{color:var(--green); background:rgba(78,224,138,0.12);}
+.smh-badge.r{color:var(--amber); background:rgba(255,207,92,0.12);}
+.smh-badge.v{color:var(--txt3); background:rgba(255,255,255,0.06);}
+.smh-arrow{font-size:14px; color:var(--txt3); transition:transform .3s;}
+.smh-arrow.open{transform:rotate(180deg);}
+.stock-modelo-body{display:none; padding:4px 8px 8px;}
+.stock-modelo-body.open{display:block;}
+.stock-cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px;}
+@media(max-width:420px){.stock-cards-grid{grid-template-columns:1fr;}}
+.stock-equipo-card{background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; transition:all .2s; position:relative;}
+.stock-equipo-card:hover{border-color:rgba(255,255,255,0.18); background:rgba(255,255,255,0.07);}
+.sec-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;}
+.sec-color-dot{width:14px; height:14px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.2); flex-shrink:0;}
+.sec-estado{margin-left:auto;}
+.sec-info{display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:12px; margin-bottom:8px;}
+.sec-info-label{color:var(--txt3);}
+.sec-info-val{color:var(--txt); font-weight:500; text-align:right;}
+.sec-bat{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.sec-bat-bar{flex:1; height:6px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden;}
+.sec-bat-fill{height:100%; border-radius:3px; transition:width .3s;}
+.sec-bat-txt{font-size:11px; font-weight:600; min-width:32px; text-align:right;}
+.sec-prices{display:flex; gap:8px; font-size:12px; flex-wrap:wrap; margin-bottom:8px;}
+.sec-price{padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.05);}
+.sec-price b{font-weight:600;}
+.sec-ganancia{color:var(--green); font-weight:600;}
+.sec-actions{display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);}
+.sec-actions .btn{font-size:11px; padding:3px 8px;}
+.sec-imei{font-size:10.5px; color:var(--txt3); font-family:monospace; letter-spacing:0.5px;}
+/* edit mode in card */
+.sec-edit-form{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+.sec-edit-form label{font-size:10.5px; color:var(--txt3);}
+.sec-edit-form input,.sec-edit-form select{font-size:12px; padding:4px 6px; border-radius:6px; border:1px solid var(--card-b); background:rgba(255,255,255,0.06); color:var(--txt);}
+.sec-edit-actions{grid-column:1/-1; display:flex; gap:6px; margin-top:4px;}
 .note{font-size:11.5px; color:var(--txt3); margin-top:10px; line-height:1.5;}
 
 /* ── TURNOS / ALMANAQUE CRM ── */
@@ -686,16 +750,25 @@ body.rol-usuario .solo-admin{display:none !important;}
       </div>
       <div class="card">
         <h2>Inventario de equipos</h2>
+        <div id="stockMetrics" class="stock-metrics"></div>
         <div class="search"><input id="buscarEquipo" placeholder="Buscar por modelo, color o IMEI..." oninput="renderEquipos()"></div>
-        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2); margin-bottom:14px;">
-          <input type="checkbox" id="mostrarVendidosEquipos" onchange="renderEquipos()" style="width:auto;"> Mostrar equipos ya vendidos
-        </label>
-        <div style="overflow-x:auto;"><table>
-          <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>Batería</th><th>IMEI</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
-          <tbody id="equiposBody"></tbody>
-        </table></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2);">
+            <input type="checkbox" id="mostrarVendidosEquipos" onchange="renderEquipos()" style="width:auto;"> Mostrar equipos ya vendidos
+          </label>
+          <div class="stock-sort-bar">
+            <span>Agrupar:</span>
+            <button class="sort-pill active" onclick="setStockGroup('modelo')">Modelo</button>
+            <button class="sort-pill" onclick="setStockGroup('color')">Color</button>
+            <button class="sort-pill" onclick="setStockGroup('bateria')">Batería</button>
+            <button class="sort-pill" onclick="setStockGroup('estado')">Estado</button>
+          </div>
+        </div>
+        <div id="equiposVisual"></div>
         <div class="empty" id="equiposEmpty" style="display:none;">Todavía no cargaste equipos.</div>
       </div>
+      <!-- hidden table for edit compatibility -->
+      <table style="display:none;"><tbody id="equiposBody"></tbody></table>
     </div>
 
     <div id="panelAccesorios" style="display:none;">
@@ -2090,47 +2163,53 @@ function borrarEquipo(id){
   syncGuardar('stock_equipos', equipos);
   renderEquipos();
 }
-function editarEquipo(id){
+// Legacy editarEquipo kept for compatibility
+function editarEquipo(id){ editarEquipoCard(id); }
+function editarEquipoCard(id){
   if(!esAdmin()) return;
   const e = equipos.find(x=>x.id===id);
-  const row = document.querySelector(`tr[data-id="${id}"]`);
-  row.innerHTML = `
-    <td data-label="Modelo"><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></td>
-    <td data-label="Proveedor"><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
-    <td data-label="Cliente"><select class="ed-cliente"><option value="">Sin especificar</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===e.clienteVendedorId?'selected':''}>${c.nombre} ${c.apellido}</option>`).join('')}</select></td>
-    <td data-label="Color"><input class="ed-color" value="${e.color}"></td>
-    <td data-label="Batería"><input class="ed-bateria" type="number" value="${e.bateria}"></td>
-    <td data-label="IMEI"><input class="ed-imei" value="${e.imei}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></td>
-    <td data-label="Compra" class="solo-admin"><input class="ed-compra" type="number" value="${e.compra}"></td>
-    <td data-label="Sugerido"><input class="ed-sugerido" type="number" value="${e.sugerido}"></td>
-    <td data-label="Venta"><input class="ed-venta" type="number" value="${e.venta}"></td>
-    <td data-label="Ganancia" class="solo-admin">—</td>
-    <td data-label="Estado"><select class="ed-estado">
+  if(!e) return;
+  const card = document.querySelector(`.stock-equipo-card[data-id="${id}"]`);
+  if(!card) return;
+  card.innerHTML = `<div class="sec-edit-form">
+    <div><label>Modelo</label><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div><label>Color</label><input class="ed-color" value="${e.color||''}"></div>
+    <div><label>Batería %</label><input class="ed-bateria" type="number" min="0" max="100" value="${e.bateria||''}"></div>
+    <div><label>IMEI</label><input class="ed-imei" value="${e.imei||''}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></div>
+    <div><label>Proveedor</label><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></div>
+    <div><label>Cliente</label><select class="ed-cliente"><option value="">Sin especificar</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===e.clienteVendedorId?'selected':''}>${c.nombre} ${c.apellido}</option>`).join('')}</select></div>
+    <div><label>Compra (USD)</label><input class="ed-compra" type="number" value="${e.compra||''}"></div>
+    <div><label>Sugerido (USD)</label><input class="ed-sugerido" type="number" value="${e.sugerido||''}"></div>
+    <div><label>Venta (USD)</label><input class="ed-venta" type="number" value="${e.venta||''}"></div>
+    <div><label>Estado</label><select class="ed-estado">
       <option value="disponible" ${e.estado==='disponible'?'selected':''}>Disponible</option>
       <option value="reservado" ${e.estado==='reservado'?'selected':''}>Reservado</option>
       <option value="vendido" ${e.estado==='vendido'?'selected':''}>Vendido</option>
-    </select></td>
-    <td data-label="Acciones"><div class="actions">
-      <button class="btn small" onclick="guardarEdicion('${id}')">Guardar</button>
+    </select></div>
+    <div class="sec-edit-actions">
+      <button class="btn small" onclick="guardarEdicionCard('${id}')">💾 Guardar</button>
       <button class="btn ghost small" onclick="renderEquipos()">Cancelar</button>
-    </div></td>`;
+    </div>
+  </div>`;
 }
-function guardarEdicion(id){
+function guardarEdicion(id){ guardarEdicionCard(id); }
+function guardarEdicionCard(id){
   if(!esAdmin()) return;
-  const row = document.querySelector(`tr[data-id="${id}"]`);
+  const card = document.querySelector(`.stock-equipo-card[data-id="${id}"]`);
+  if(!card) return;
   const e = equipos.find(x=>x.id===id);
-  e.modelo = row.querySelector('.ed-modelo').value;
-  e.proveedorId = row.querySelector('.ed-proveedor').value;
-  e.clienteVendedorId = row.querySelector('.ed-cliente').value;
-  e.color = row.querySelector('.ed-color').value.trim();
-  e.bateria = row.querySelector('.ed-bateria').value;
-  const imeiVal = row.querySelector('.ed-imei').value.trim();
+  e.modelo = card.querySelector('.ed-modelo').value;
+  e.proveedorId = card.querySelector('.ed-proveedor').value;
+  e.clienteVendedorId = card.querySelector('.ed-cliente').value;
+  e.color = card.querySelector('.ed-color').value.trim();
+  e.bateria = card.querySelector('.ed-bateria').value;
+  const imeiVal = card.querySelector('.ed-imei').value.trim();
   if(imeiVal.length !== 15 || !/^\d{15}$/.test(imeiVal)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
   e.imei = imeiVal;
-  e.compra = row.querySelector('.ed-compra').value;
-  e.sugerido = row.querySelector('.ed-sugerido').value;
-  e.venta = row.querySelector('.ed-venta').value;
-  e.estado = row.querySelector('.ed-estado').value;
+  e.compra = card.querySelector('.ed-compra').value;
+  e.sugerido = card.querySelector('.ed-sugerido').value;
+  e.venta = card.querySelector('.ed-venta').value;
+  e.estado = card.querySelector('.ed-estado').value;
   syncGuardar('stock_equipos', equipos);
   renderEquipos();
 }
@@ -2148,42 +2227,136 @@ function imprimirEtiqueta(id){
   try{ JsBarcode('#barcode-print', e.imei, {format:'CODE128', width:1.5, height:40, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
   setTimeout(()=> window.print(), 200);
 }
+let stockGroupBy = 'modelo';
+function setStockGroup(g){
+  stockGroupBy = g;
+  document.querySelectorAll('.sort-pill').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderEquipos();
+}
+function colorDot(color){
+  const c = (color||'').toLowerCase();
+  const map = {
+    'negro':'#1d1d1f','titanio negro':'#3b3b3d','midnight':'#1d1d1f','black':'#1d1d1f',
+    'blanco':'#f5f0eb','titanio blanco':'#f5f0eb','white':'#f5f0eb','starlight':'#f9f3ee',
+    'natural':'#c2b8a3','titanio natural':'#c2b8a3','gold':'#f4e8ce','dorado':'#f4e8ce',
+    'azul':'#4a4a6a','titanio azul':'#4a4a5a','blue':'#5b7eb5','titanio desierto':'#b8a58c',
+    'rojo':'#c41e3a','red':'#c41e3a','(product)red':'#c41e3a',
+    'rosa':'#f5c6d0','pink':'#f5c6d0','rosado':'#f5c6d0',
+    'verde':'#394c38','green':'#394c38','morado':'#635672','purple':'#635672',
+    'gris':'#86868b','space gray':'#535150','plata':'#e3e4e5','silver':'#e3e4e5',
+    'amarillo':'#f9e200','yellow':'#f9e200','coral':'#ff6f61','lavanda':'#d6cfe9',
+  };
+  for(const [k,v] of Object.entries(map)){ if(c.includes(k)) return v; }
+  return '#888';
+}
+function batColor(b){ const n=Number(b)||0; if(n>=80) return 'var(--green)'; if(n>=50) return 'var(--amber)'; return 'var(--red)'; }
 function renderEquipos(){
   const q = document.getElementById('buscarEquipo').value.toLowerCase();
   const mostrarVendidos = document.getElementById('mostrarVendidosEquipos').checked;
-  const body = document.getElementById('equiposBody');
-  body.innerHTML = '';
   const filtrados = equipos.filter(e => (mostrarVendidos || e.estado!=='vendido') && (!q || (e.modelo+e.color+e.imei).toLowerCase().includes(q)));
+  // Metrics
+  const todos = equipos;
+  const disp = todos.filter(e=>e.estado==='disponible');
+  const res = todos.filter(e=>e.estado==='reservado');
+  const vend = todos.filter(e=>e.estado==='vendido');
+  const valorStock = disp.concat(res).reduce((s,e)=>s+(Number(e.sugerido)||Number(e.compra)||0),0);
+  const mc = document.getElementById('stockMetrics');
+  if(mc) mc.innerHTML = `
+    <div class="stock-metric sm-total"><div class="sm-icon">📦</div><div class="sm-num">${todos.length}</div><div class="sm-label">Total</div></div>
+    <div class="stock-metric sm-disp"><div class="sm-icon">✅</div><div class="sm-num">${disp.length}</div><div class="sm-label">Disponibles</div></div>
+    <div class="stock-metric sm-res"><div class="sm-icon">⏳</div><div class="sm-num">${res.length}</div><div class="sm-label">Reservados</div></div>
+    <div class="stock-metric sm-vend"><div class="sm-icon">💰</div><div class="sm-num">${vend.length}</div><div class="sm-label">Vendidos</div></div>
+    <div class="stock-metric sm-valor solo-admin"><div class="sm-icon">💎</div><div class="sm-num">USD ${fmt(valorStock)}</div><div class="sm-label">Valor stock</div></div>`;
+  // Group
+  const cont = document.getElementById('equiposVisual');
+  if(!cont) return;
+  cont.innerHTML = '';
   document.getElementById('equiposEmpty').style.display = filtrados.length ? 'none' : 'block';
+  const groups = {};
   filtrados.forEach(e=>{
-    const g = ganancia(e.compra, e.venta, e.sugerido);
-    const tr = document.createElement('tr');
-    tr.setAttribute('data-id', e.id);
-    tr.innerHTML = `
-      <td data-label="Modelo">${e.modelo}</td>
-      <td data-label="Proveedor">${nombreProveedor(e.proveedorId)}</td>
-      <td data-label="Cliente">${nombreClienteStock(e.clienteVendedorId)}</td>
-      <td data-label="Color">${e.color||'-'}</td>
-      <td data-label="Batería">${e.bateria?e.bateria+'%':'-'}</td>
-      <td data-label="IMEI">${e.imei}</td>
-      <td data-label="Compra" class="solo-admin">$${fmt(e.compra)}</td>
-      <td data-label="Sugerido">$${fmt(e.sugerido)}</td>
-      <td data-label="Venta">${e.venta?'$'+fmt(e.venta):'-'}</td>
-      <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(g)}</td>
-      <td data-label="Estado"><span class="badge ${e.estado}">${e.estado}</span></td>
-      <td data-label="Acciones" class="solo-admin"><div class="actions">
-        <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">Etiqueta</button>
-        <button class="btn ghost small" onclick="editarEquipo('${e.id}')">Editar</button>
-        <button class="btn danger small" onclick="borrarEquipo('${e.id}')">Borrar</button>
-        ${e.clienteVendedorId ? `
-        <button class="btn ghost small" onclick="generarComprobanteCompraUsado('${e.id}')">📄 Comp. compra usado</button>
-        <button class="btn ghost small" onclick="generarReciboPago('${e.id}')">💵 Recibo de pago</button>
-        <button class="btn ghost small" onclick="generarPlanillaPermuta('${e.id}')">🔁 Planilla permuta</button>` : ''}
-      </div></td>`;
-    body.appendChild(tr);
+    let key;
+    if(stockGroupBy==='modelo') key = e.modelo||'Sin modelo';
+    else if(stockGroupBy==='color') key = e.color||'Sin color';
+    else if(stockGroupBy==='bateria'){
+      const b=Number(e.bateria)||0;
+      if(b>=90) key='90-100%'; else if(b>=80) key='80-89%'; else if(b>=50) key='50-79%'; else key='Menos de 50%';
+    } else if(stockGroupBy==='estado') key = e.estado||'disponible';
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(e);
+  });
+  // Sort group keys
+  let keys = Object.keys(groups);
+  if(stockGroupBy==='modelo') keys.sort((a,b)=>MODELOS.indexOf(a)-MODELOS.indexOf(b));
+  else if(stockGroupBy==='bateria') keys.sort((a,b)=>{ const o={'90-100%':0,'80-89%':1,'50-79%':2,'Menos de 50%':3}; return (o[a]||9)-(o[b]||9); });
+  else keys.sort();
+  keys.forEach(key=>{
+    const items = groups[key];
+    const dCount = items.filter(e=>e.estado==='disponible').length;
+    const rCount = items.filter(e=>e.estado==='reservado').length;
+    const vCount = items.filter(e=>e.estado==='vendido').length;
+    const grp = document.createElement('div');
+    grp.className = 'stock-modelo-group';
+    grp.innerHTML = `
+      <div class="stock-modelo-header" onclick="this.querySelector('.smh-arrow').classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
+        <div class="smh-left">
+          ${stockGroupBy==='color'?`<span class="sec-color-dot" style="background:${colorDot(key)};width:18px;height:18px;"></span>`:''}
+          <span class="smh-modelo">${key}</span>
+          <span class="smh-count">${items.length} equipo${items.length>1?'s':''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="smh-badges">
+            ${dCount?`<span class="smh-badge d">${dCount} disp</span>`:''}
+            ${rCount?`<span class="smh-badge r">${rCount} res</span>`:''}
+            ${vCount?`<span class="smh-badge v">${vCount} vend</span>`:''}
+          </div>
+          <span class="smh-arrow">▼</span>
+        </div>
+      </div>
+      <div class="stock-modelo-body">
+        <div class="stock-cards-grid">${items.map(e=>renderEquipoCard(e)).join('')}</div>
+      </div>`;
+    cont.appendChild(grp);
   });
   cargarSelectClienteStock();
   renderStockResumen();
+}
+function renderEquipoCard(e){
+  const g = ganancia(e.compra, e.venta, e.sugerido);
+  const bat = Number(e.bateria)||0;
+  const admin = esAdmin();
+  return `<div class="stock-equipo-card" data-id="${e.id}">
+    <div class="sec-top">
+      <span class="sec-color-dot" style="background:${colorDot(e.color)}" title="${e.color||'Sin color'}"></span>
+      <span style="font-size:13px;font-weight:600;margin-left:8px;flex:1;">${e.modelo}</span>
+      <span class="badge ${e.estado} sec-estado">${e.estado}</span>
+    </div>
+    <div class="sec-bat">
+      <div class="sec-bat-bar"><div class="sec-bat-fill" style="width:${bat}%;background:${batColor(bat)};"></div></div>
+      <span class="sec-bat-txt" style="color:${batColor(bat)}">${bat}%</span>
+    </div>
+    <div class="sec-info">
+      <span class="sec-info-label">Color</span><span class="sec-info-val">${e.color||'-'}</span>
+      <span class="sec-info-label">IMEI</span><span class="sec-info-val sec-imei">${e.imei||'-'}</span>
+      <span class="sec-info-label">Proveedor</span><span class="sec-info-val">${nombreProveedor(e.proveedorId)}</span>
+      ${e.clienteVendedorId?`<span class="sec-info-label">Cliente</span><span class="sec-info-val">${nombreClienteStock(e.clienteVendedorId)}</span>`:''}
+    </div>
+    <div class="sec-prices">
+      ${admin?`<span class="sec-price">Compra: <b>$${fmt(e.compra)}</b></span>`:''}
+      <span class="sec-price">Sugerido: <b>$${fmt(e.sugerido)}</b></span>
+      ${e.venta?`<span class="sec-price">Venta: <b>$${fmt(e.venta)}</b></span>`:''}
+      ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(g)}</b></span>`:''}
+    </div>
+    ${admin?`<div class="sec-actions">
+      <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">🏷 Etiqueta</button>
+      <button class="btn ghost small" onclick="editarEquipoCard('${e.id}')">✏️ Editar</button>
+      <button class="btn danger small" onclick="borrarEquipo('${e.id}')">🗑 Borrar</button>
+      ${e.clienteVendedorId?`
+      <button class="btn ghost small" onclick="generarComprobanteCompraUsado('${e.id}')">📄 Comp.</button>
+      <button class="btn ghost small" onclick="generarReciboPago('${e.id}')">💵 Recibo</button>
+      <button class="btn ghost small" onclick="generarPlanillaPermuta('${e.id}')">🔁 Permuta</button>`:''}
+    </div>`:''}
+  </div>`;
 }
 
 // Comprobante de compra de bienes usados a consumidor final (equipo comprado a un cliente)
