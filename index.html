@@ -358,6 +358,53 @@ select option{background:#1a1220;}
   font-weight:600;
   display:inline-block;
 }
+/* ── CARPETA VENDIDOS ── */
+.carpeta-vendidos-btn{
+  display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:12px;
+  border:1.5px solid var(--txt3); background:rgba(255,255,255,0.04); color:var(--txt2);
+  cursor:pointer; font-size:13px; font-weight:500; transition:all 0.3s;
+}
+.carpeta-vendidos-btn:hover{ border-color:var(--amber); color:var(--amber); background:rgba(255,207,92,0.06); }
+.carpeta-vendidos-btn.open{ border-color:var(--amber); color:var(--amber); background:rgba(255,207,92,0.08); }
+.carpeta-vendidos-btn .folder-icon{ font-size:18px; transition:transform 0.3s; }
+.carpeta-vendidos-btn.open .folder-icon{ transform:scale(1.1); }
+.carpeta-vendidos-count{
+  background:var(--txt3); color:#fff; font-size:11px; font-weight:700;
+  padding:1px 7px; border-radius:10px; min-width:18px; text-align:center;
+}
+.carpeta-vendidos-btn.open .carpeta-vendidos-count{ background:var(--amber); color:#000; }
+.carpeta-vendidos-panel{
+  display:none; margin-top:14px; border:1.5px solid rgba(116,106,124,0.35);
+  border-radius:16px; overflow:hidden; background:rgba(116,106,124,0.06);
+}
+.carpeta-vendidos-panel.open{ display:block; }
+.carpeta-vendidos-header{
+  display:flex; align-items:center; gap:10px; padding:14px 18px;
+  border-bottom:1px solid rgba(116,106,124,0.2); background:rgba(116,106,124,0.08);
+}
+.carpeta-vendidos-header .folder-big{ font-size:22px; }
+.carpeta-vendidos-header h3{ margin:0; font-size:15px; font-weight:600; color:var(--txt2); }
+.vendido-item{
+  display:flex; align-items:center; gap:14px; padding:12px 18px;
+  border-bottom:1px solid rgba(116,106,124,0.1); transition:background 0.2s;
+}
+.vendido-item:last-child{ border-bottom:none; }
+.vendido-item:hover{ background:rgba(116,106,124,0.08); }
+.vi-icon{ font-size:20px; flex-shrink:0; opacity:0.5; }
+.vi-info{ flex:1; min-width:0; }
+.vi-modelo{ font-size:13.5px; font-weight:600; color:var(--txt); }
+.vi-detail{ font-size:12px; color:var(--txt3); margin-top:2px; }
+.vi-detail span{ margin-right:12px; }
+.vi-cliente{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.vi-cliente-name{
+  font-size:12.5px; font-weight:600; color:var(--amber); background:rgba(255,207,92,0.1);
+  padding:3px 10px; border-radius:8px;
+}
+.vi-precio{ font-size:13px; font-weight:600; color:var(--txt2); flex-shrink:0; }
+@media(max-width:600px){
+  .vendido-item{ flex-wrap:wrap; gap:8px; }
+  .vi-cliente{ width:100%; }
+}
 
 .tabs{display:flex; gap:8px; margin-bottom:20px;}
 .tab{padding:9px 18px; border-radius:12px; border:1px solid var(--card-b); background:transparent; color:var(--txt2); font-size:13.5px; font-weight:600; cursor:pointer; font-family:'Inter';}
@@ -773,9 +820,11 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div id="stockMetrics" class="stock-metrics"></div>
         <div class="search"><input id="buscarEquipo" placeholder="Buscar por modelo, color o IMEI..." oninput="renderEquipos()"></div>
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
-          <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2);">
-            <input type="checkbox" id="mostrarVendidosEquipos" onchange="renderEquipos()" style="width:auto;"> Mostrar equipos ya vendidos
-          </label>
+          <button class="carpeta-vendidos-btn" id="btnCarpetaVendidos" onclick="toggleCarpetaVendidos()">
+            <span class="folder-icon" id="carpetaIcon">📁</span>
+            Equipos vendidos
+            <span class="carpeta-vendidos-count" id="carpetaVendidosCount">0</span>
+          </button>
           <div class="stock-sort-bar">
             <span>Agrupar:</span>
             <button class="sort-pill active" onclick="setStockGroup('modelo')">Modelo</button>
@@ -786,6 +835,14 @@ body.rol-usuario .solo-admin{display:none !important;}
         </div>
         <div id="equiposVisual"></div>
         <div class="empty" id="equiposEmpty" style="display:none;">Todavía no cargaste equipos.</div>
+        <div class="carpeta-vendidos-panel" id="carpetaVendidosPanel">
+          <div class="carpeta-vendidos-header">
+            <span class="folder-big">📂</span>
+            <h3>Equipos vendidos</h3>
+          </div>
+          <div id="carpetaVendidosBody"></div>
+          <div class="empty" id="carpetaVendidosEmpty" style="display:none; padding:18px;">No hay equipos vendidos todavía.</div>
+        </div>
       </div>
       <!-- hidden table for edit compatibility -->
       <table style="display:none;"><tbody id="equiposBody"></tbody></table>
@@ -813,14 +870,24 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="card">
         <h2>Inventario de accesorios</h2>
         <div class="search"><input id="buscarAcc" placeholder="Buscar por nombre o color..." oninput="renderAccesorios()"></div>
-        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2); margin-bottom:14px;">
-          <input type="checkbox" id="mostrarVendidosAcc" onchange="renderAccesorios()" style="width:auto;"> Mostrar accesorios ya vendidos
-        </label>
+        <button class="carpeta-vendidos-btn" id="btnCarpetaVendidosAcc" onclick="toggleCarpetaVendidosAcc()" style="margin-bottom:14px;">
+          <span class="folder-icon" id="carpetaIconAcc">📁</span>
+          Accesorios vendidos
+          <span class="carpeta-vendidos-count" id="carpetaVendidosAccCount">0</span>
+        </button>
         <div style="overflow-x:auto;"><table>
           <thead><tr><th>Nombre</th><th>Proveedor</th><th>Color</th><th class="solo-admin">Compra</th><th>Sugerido</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
           <tbody id="accBody"></tbody>
         </table></div>
         <div class="empty" id="accEmpty" style="display:none;">Todavía no cargaste accesorios.</div>
+        <div class="carpeta-vendidos-panel" id="carpetaVendidosAccPanel">
+          <div class="carpeta-vendidos-header">
+            <span class="folder-big">📂</span>
+            <h3>Accesorios vendidos</h3>
+          </div>
+          <div id="carpetaVendidosAccBody"></div>
+          <div class="empty" id="carpetaVendidosAccEmpty" style="display:none; padding:18px;">No hay accesorios vendidos todavía.</div>
+        </div>
       </div>
     </div>
 
@@ -844,14 +911,24 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="card">
         <h2>Inventario de GPS</h2>
         <div class="search"><input id="buscarGps" placeholder="Buscar por nombre..." oninput="renderGps()"></div>
-        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--txt2); margin-bottom:14px;">
-          <input type="checkbox" id="mostrarVendidosGps" onchange="renderGps()" style="width:auto;"> Mostrar GPS ya vendidos
-        </label>
+        <button class="carpeta-vendidos-btn" id="btnCarpetaVendidosGps" onclick="toggleCarpetaVendidosGps()" style="margin-bottom:14px;">
+          <span class="folder-icon" id="carpetaIconGps">📁</span>
+          GPS vendidos
+          <span class="carpeta-vendidos-count" id="carpetaVendidosGpsCount">0</span>
+        </button>
         <div style="overflow-x:auto;"><table>
           <thead><tr><th>Nombre</th><th>Proveedor</th><th class="solo-admin">Compra</th><th>Venta</th><th class="solo-admin">Ganancia</th><th>Estado</th><th class="solo-admin">Acciones</th></tr></thead>
           <tbody id="gpsBody"></tbody>
         </table></div>
         <div class="empty" id="gpsEmpty" style="display:none;">Todavía no cargaste GPS.</div>
+        <div class="carpeta-vendidos-panel" id="carpetaVendidosGpsPanel">
+          <div class="carpeta-vendidos-header">
+            <span class="folder-big">📂</span>
+            <h3>GPS vendidos</h3>
+          </div>
+          <div id="carpetaVendidosGpsBody"></div>
+          <div class="empty" id="carpetaVendidosGpsEmpty" style="display:none; padding:18px;">No hay GPS vendidos todavía.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2271,10 +2348,50 @@ function colorDot(color){
   return '#888';
 }
 function batColor(b){ const n=Number(b)||0; if(n>=80) return 'var(--green)'; if(n>=50) return 'var(--amber)'; return 'var(--red)'; }
+function toggleCarpetaVendidos(){
+  const btn = document.getElementById('btnCarpetaVendidos');
+  const panel = document.getElementById('carpetaVendidosPanel');
+  const icon = document.getElementById('carpetaIcon');
+  const isOpen = btn.classList.toggle('open');
+  panel.classList.toggle('open', isOpen);
+  icon.textContent = isOpen ? '📂' : '📁';
+  if(isOpen) renderCarpetaVendidos();
+}
+function renderCarpetaVendidos(){
+  const vendidos = equipos.filter(e=>e.estado==='vendido');
+  const body = document.getElementById('carpetaVendidosBody');
+  const empty = document.getElementById('carpetaVendidosEmpty');
+  body.innerHTML = '';
+  empty.style.display = vendidos.length ? 'none' : 'block';
+  vendidos.forEach(e=>{
+    const venta = ventas.find(v=>v.itemId===e.id && v.tipo==='equipo');
+    const clienteNombre = venta ? venta.cliente : (e.clienteVendedorId ? nombreClienteStock(e.clienteVendedorId) : '-');
+    const fechaVenta = venta ? venta.fecha : '-';
+    const precioVenta = e.venta || (venta ? venta.precioVenta : '');
+    const row = document.createElement('div');
+    row.className = 'vendido-item';
+    row.innerHTML = `
+      <span class="vi-icon">📱</span>
+      <div class="vi-info">
+        <div class="vi-modelo">${e.modelo} ${e.color?'— '+e.color:''}</div>
+        <div class="vi-detail">
+          <span>IMEI: ${e.imei||'-'}</span>
+          <span>📅 ${fechaVenta}</span>
+        </div>
+      </div>
+      <div class="vi-cliente">
+        <span>👤</span>
+        <span class="vi-cliente-name">${clienteNombre}</span>
+      </div>
+      <span class="vi-precio">USD $${fmt(precioVenta)}</span>`;
+    body.appendChild(row);
+  });
+  // Update count badge
+  document.getElementById('carpetaVendidosCount').textContent = vendidos.length;
+}
 function renderEquipos(){
   const q = document.getElementById('buscarEquipo').value.toLowerCase();
-  const mostrarVendidos = document.getElementById('mostrarVendidosEquipos').checked;
-  const filtrados = equipos.filter(e => (mostrarVendidos || e.estado!=='vendido') && (!q || (e.modelo+e.color+e.imei).toLowerCase().includes(q)));
+  const filtrados = equipos.filter(e => e.estado!=='vendido' && (!q || (e.modelo+e.color+e.imei).toLowerCase().includes(q)));
   // Metrics
   const todos = equipos;
   const disp = todos.filter(e=>e.estado==='disponible');
@@ -2340,6 +2457,12 @@ function renderEquipos(){
   });
   cargarSelectClienteStock();
   renderStockResumen();
+  // Actualizar badge de carpeta vendidos
+  const vendCount = equipos.filter(e=>e.estado==='vendido').length;
+  const countEl = document.getElementById('carpetaVendidosCount');
+  if(countEl) countEl.textContent = vendCount;
+  // Si la carpeta está abierta, re-renderizar
+  if(document.getElementById('carpetaVendidosPanel')?.classList.contains('open')) renderCarpetaVendidos();
 }
 function renderEquipoCard(e){
   const g = ganancia(e.compra, e.venta, e.sugerido);
@@ -2563,12 +2686,51 @@ function guardarEdicionAcc(id){
   syncGuardar('stock_accesorios', accesorios);
   renderAccesorios();
 }
+function toggleCarpetaVendidosAcc(){
+  const btn = document.getElementById('btnCarpetaVendidosAcc');
+  const panel = document.getElementById('carpetaVendidosAccPanel');
+  const icon = document.getElementById('carpetaIconAcc');
+  const isOpen = btn.classList.toggle('open');
+  panel.classList.toggle('open', isOpen);
+  icon.textContent = isOpen ? '📂' : '📁';
+  if(isOpen) renderCarpetaVendidosAcc();
+}
+function renderCarpetaVendidosAcc(){
+  const vendidos = accesorios.filter(a=>a.estado==='vendido');
+  const body = document.getElementById('carpetaVendidosAccBody');
+  const empty = document.getElementById('carpetaVendidosAccEmpty');
+  body.innerHTML = '';
+  empty.style.display = vendidos.length ? 'none' : 'block';
+  vendidos.forEach(a=>{
+    const venta = ventas.find(v=>v.itemId===a.id && v.tipo==='accesorio');
+    const clienteNombre = venta ? venta.cliente : '-';
+    const fechaVenta = venta ? venta.fecha : '-';
+    const precioVenta = a.venta || (venta ? venta.precioVenta : '');
+    const row = document.createElement('div');
+    row.className = 'vendido-item';
+    row.innerHTML = `
+      <span class="vi-icon">🎧</span>
+      <div class="vi-info">
+        <div class="vi-modelo">${a.nombre} ${a.color?'— '+a.color:''}</div>
+        <div class="vi-detail">
+          <span>Proveedor: ${nombreProveedor(a.proveedorId)}</span>
+          <span>📅 ${fechaVenta}</span>
+        </div>
+      </div>
+      <div class="vi-cliente">
+        <span>👤</span>
+        <span class="vi-cliente-name">${clienteNombre}</span>
+      </div>
+      <span class="vi-precio">USD $${fmt(precioVenta)}</span>`;
+    body.appendChild(row);
+  });
+  document.getElementById('carpetaVendidosAccCount').textContent = vendidos.length;
+}
 function renderAccesorios(){
   const q = document.getElementById('buscarAcc').value.toLowerCase();
-  const mostrarVendidos = document.getElementById('mostrarVendidosAcc').checked;
   const body = document.getElementById('accBody');
   body.innerHTML = '';
-  const filtrados = accesorios.filter(a => (mostrarVendidos || a.estado!=='vendido') && (!q || (a.nombre+a.color).toLowerCase().includes(q)));
+  const filtrados = accesorios.filter(a => a.estado!=='vendido' && (!q || (a.nombre+a.color).toLowerCase().includes(q)));
   document.getElementById('accEmpty').style.display = filtrados.length ? 'none' : 'block';
   filtrados.forEach(a=>{
     const g = ganancia(a.compra, a.venta, a.sugerido);
@@ -2589,6 +2751,11 @@ function renderAccesorios(){
       </div></td>`;
     body.appendChild(tr);
   });
+  // Actualizar badge carpeta
+  const vendCount = accesorios.filter(a=>a.estado==='vendido').length;
+  const countEl = document.getElementById('carpetaVendidosAccCount');
+  if(countEl) countEl.textContent = vendCount;
+  if(document.getElementById('carpetaVendidosAccPanel')?.classList.contains('open')) renderCarpetaVendidosAcc();
 }
 
 /* ---------- GPS ---------- */
@@ -2650,12 +2817,43 @@ function guardarEdicionGps(id){
   syncGuardar('stock_gps', gpsItems);
   renderGps();
 }
+function toggleCarpetaVendidosGps(){
+  const btn = document.getElementById('btnCarpetaVendidosGps');
+  const panel = document.getElementById('carpetaVendidosGpsPanel');
+  const icon = document.getElementById('carpetaIconGps');
+  const isOpen = btn.classList.toggle('open');
+  panel.classList.toggle('open', isOpen);
+  icon.textContent = isOpen ? '📂' : '📁';
+  if(isOpen) renderCarpetaVendidosGps();
+}
+function renderCarpetaVendidosGps(){
+  const vendidos = gpsItems.filter(g=>g.estado==='vendido');
+  const body = document.getElementById('carpetaVendidosGpsBody');
+  const empty = document.getElementById('carpetaVendidosGpsEmpty');
+  body.innerHTML = '';
+  empty.style.display = vendidos.length ? 'none' : 'block';
+  vendidos.forEach(g=>{
+    const precioVenta = g.venta || g.compra;
+    const row = document.createElement('div');
+    row.className = 'vendido-item';
+    row.innerHTML = `
+      <span class="vi-icon">📡</span>
+      <div class="vi-info">
+        <div class="vi-modelo">${g.nombre}</div>
+        <div class="vi-detail">
+          <span>Proveedor: ${nombreProveedor(g.proveedorId)}</span>
+        </div>
+      </div>
+      <span class="vi-precio">USD $${fmt(precioVenta)}</span>`;
+    body.appendChild(row);
+  });
+  document.getElementById('carpetaVendidosGpsCount').textContent = vendidos.length;
+}
 function renderGps(){
   const q = document.getElementById('buscarGps').value.toLowerCase();
-  const mostrarVendidos = document.getElementById('mostrarVendidosGps').checked;
   const body = document.getElementById('gpsBody');
   body.innerHTML = '';
-  const filtrados = gpsItems.filter(g => (mostrarVendidos || g.estado!=='vendido') && (!q || g.nombre.toLowerCase().includes(q)));
+  const filtrados = gpsItems.filter(g => g.estado!=='vendido' && (!q || g.nombre.toLowerCase().includes(q)));
   document.getElementById('gpsEmpty').style.display = filtrados.length ? 'none' : 'block';
   filtrados.forEach(g=>{
     const gan = ganancia(g.compra, g.venta, 0);
@@ -2674,6 +2872,11 @@ function renderGps(){
       </div></td>`;
     body.appendChild(tr);
   });
+  // Actualizar badge carpeta
+  const vendCount = gpsItems.filter(g=>g.estado==='vendido').length;
+  const countEl = document.getElementById('carpetaVendidosGpsCount');
+  if(countEl) countEl.textContent = vendCount;
+  if(document.getElementById('carpetaVendidosGpsPanel')?.classList.contains('open')) renderCarpetaVendidosGps();
 }
 
 /* ---------- VENTA ---------- */
