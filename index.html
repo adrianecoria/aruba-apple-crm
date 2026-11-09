@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="notranslate" translate="no">
 <head>
+<meta name="google" content="notranslate">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aruba Apple</title>
@@ -155,10 +156,11 @@ select option{background:#1a1220;}
 .glow-card{
   border:2px solid rgba(var(--glow-rgb), 0.55);
   animation:pulseGlow 2.6s ease-in-out infinite;
+  position:relative; z-index:0;
 }
 @keyframes pulseGlow{
-  0%,100%{ box-shadow:0 0 18px rgba(var(--glow-rgb),0.22); border-color:rgba(var(--glow-rgb),0.5); }
-  50%{ box-shadow:0 0 42px rgba(var(--glow-rgb),0.55), 0 0 12px rgba(var(--glow-rgb),0.4); border-color:rgba(var(--glow-rgb),0.95); }
+  0%,100%{ box-shadow:0 0 12px rgba(var(--glow-rgb),0.18); border-color:rgba(var(--glow-rgb),0.5); }
+  50%{ box-shadow:0 0 22px rgba(var(--glow-rgb),0.4), 0 0 8px rgba(var(--glow-rgb),0.3); border-color:rgba(var(--glow-rgb),0.95); }
 }
 .rank-row-glow td{
   background:rgba(var(--glow-rgb),0.07);
