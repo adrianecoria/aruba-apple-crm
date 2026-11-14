@@ -690,6 +690,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <a id="navSueldos" class="solo-admin" onclick="switchModule('sueldos')">Sueldos</a>
       <a id="navMiCuenta" class="solo-admin" onclick="switchModule('micuenta')">Mi cuenta</a>
       <a id="navActividad" class="solo-admin" onclick="switchModule('actividad')">Actividad</a>
+      <a id="navDiagnostico" class="solo-admin" onclick="switchModule('diagnostico')">📋 Diagnóstico</a>
     </div>
   </nav>
   <div class="sesion-info">
@@ -1612,6 +1613,240 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="note">Registra los eventos principales (ventas, pagos, altas) a medida que van pasando en este navegador — no es un log completo de cada clic.</div>
     </div>
   </div>
+
+  <div id="moduloDiagnostico" style="display:none;">
+    <header class="top"><h1>📋 Checkeo y Diagnóstico de iPhone</h1></header>
+
+    <!-- LISTADO DE DIAGNÓSTICOS -->
+    <div class="card" id="diagListCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h2>Diagnósticos realizados</h2>
+        <button class="btn" onclick="iniciarNuevoDiagnostico()">+ Nuevo Diagnóstico</button>
+      </div>
+      <input type="text" id="diagBuscar" placeholder="Buscar por IMEI, serial, modelo o cliente..." oninput="renderDiagnosticos()" style="margin:12px 0;width:100%;max-width:400px;">
+      <div id="diagListado"></div>
+      <div class="empty" id="diagEmpty" style="display:none;">No hay diagnósticos registrados aún.</div>
+    </div>
+
+    <!-- FORMULARIO NUEVO DIAGNÓSTICO -->
+    <div class="card" id="diagFormCard" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h2 id="diagFormTitle">Nuevo Diagnóstico</h2>
+        <button class="btn ghost" onclick="cancelarDiagnostico()">← Volver al listado</button>
+      </div>
+
+      <!-- WIZARD STEPS -->
+      <div id="diagWizard">
+        <div style="display:flex;gap:4px;margin:16px 0;flex-wrap:wrap;" id="diagSteps">
+          <span class="badge vendido" id="diagStep1btn" onclick="diagGoStep(1)" style="cursor:pointer;">1. Datos Iniciales</span>
+          <span class="badge reservado" id="diagStep2btn" onclick="diagGoStep(2)" style="cursor:pointer;">2. Estético / Batería</span>
+          <span class="badge" id="diagStep3btn" onclick="diagGoStep(3)" style="cursor:pointer;background:rgba(255,255,255,0.08);">3. Hardware</span>
+          <span class="badge" id="diagStep4btn" onclick="diagGoStep(4)" style="cursor:pointer;background:rgba(255,255,255,0.08);">4. Resultado</span>
+        </div>
+
+        <!-- STEP 1: Datos Iniciales y Verificación Legal -->
+        <div id="diagStep1" class="diagStep">
+          <h3 style="color:var(--green);margin-bottom:12px;">1. Datos Iniciales y Verificación Legal</h3>
+          <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+            <div>
+              <label>IMEI *</label>
+              <input type="text" id="diagIMEI" maxlength="15" placeholder="15 dígitos" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+              <small id="diagIMEIStatus" style="color:var(--txt3);"></small>
+            </div>
+            <div>
+              <label>Nro. de Serie</label>
+              <input type="text" id="diagSerial" maxlength="20" placeholder="Serial Apple">
+            </div>
+            <div>
+              <label>Modelo *</label>
+              <select id="diagModelo"><option value="">Seleccionar...</option></select>
+            </div>
+            <div>
+              <label>Capacidad</label>
+              <select id="diagCapacidad">
+                <option value="">Seleccionar...</option>
+                <option>64 GB</option><option>128 GB</option><option>256 GB</option><option>512 GB</option><option>1 TB</option>
+              </select>
+            </div>
+            <div>
+              <label>Color</label>
+              <input type="text" id="diagColor" placeholder="Ej: Negro, Azul...">
+            </div>
+            <div>
+              <label>Cliente</label>
+              <input type="text" id="diagCliente" placeholder="Nombre del cliente">
+            </div>
+          </div>
+
+          <div style="margin-top:16px;padding:12px;border-radius:10px;background:rgba(255,0,0,0.08);border:1px solid rgba(255,0,0,0.2);">
+            <h4 style="color:#e74c3c;margin-bottom:8px;">⚠️ Verificación Obligatoria</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;">
+              <div>
+                <label>iCloud / "Buscar mi iPhone"</label>
+                <select id="diagiCloud">
+                  <option value="">Seleccionar...</option>
+                  <option value="desactivado">✅ Desactivado</option>
+                  <option value="activado">🚫 ACTIVADO - NO PROCEDER</option>
+                </select>
+                <small id="diagiCloudWarn" style="display:none;color:#e74c3c;font-weight:600;">⛔ EQUIPO BLOQUEADO. No se puede continuar con el diagnóstico.</small>
+              </div>
+              <div>
+                <label>Bloqueo de Operador</label>
+                <select id="diagOperador">
+                  <option value="">Seleccionar...</option>
+                  <option value="liberado">✅ Liberado</option>
+                  <option value="bloqueado">⚠️ Bloqueado a operador</option>
+                </select>
+              </div>
+              <div>
+                <label>Estado IMEI (ENACOM)</label>
+                <select id="diagENACOM">
+                  <option value="">No verificado</option>
+                  <option value="habilitado">✅ Habilitado</option>
+                  <option value="inhibido">🚫 Inhibido/Robado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+            <button class="btn" onclick="diagGoStep(2)" id="diagStep1Next">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Estado Estético y Batería -->
+        <div id="diagStep2" class="diagStep" style="display:none;">
+          <h3 style="color:var(--amber);margin-bottom:12px;">2. Estado Estético y Batería</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+            <div>
+              <label>Salud de Batería (%)</label>
+              <input type="number" id="diagBateria" min="0" max="100" placeholder="Ej: 87" oninput="diagCheckBateria()">
+              <small id="diagBateriaWarn" style="display:none;"></small>
+            </div>
+            <div>
+              <label>Ciclos de Carga</label>
+              <input type="number" id="diagCiclos" min="0" placeholder="Ej: 320">
+            </div>
+            <div>
+              <label>Batería Original</label>
+              <select id="diagBateriaOrig">
+                <option value="si">✅ Original</option>
+                <option value="no">⚠️ Reemplazada</option>
+                <option value="desconocido">❓ Desconocido</option>
+              </select>
+            </div>
+          </div>
+
+          <h4 style="margin-top:16px;margin-bottom:8px;">Estado Estético</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+            <div>
+              <label>Pantalla</label>
+              <select id="diagEstPantalla">
+                <option value="perfecto">✨ Perfecto</option>
+                <option value="leve">🟡 Rayaduras leves</option>
+                <option value="moderado">🟠 Rayaduras moderadas</option>
+                <option value="roto">🔴 Rota/Fisurada</option>
+              </select>
+            </div>
+            <div>
+              <label>Parte Trasera</label>
+              <select id="diagEstTrasera">
+                <option value="perfecto">✨ Perfecto</option>
+                <option value="leve">🟡 Rayaduras leves</option>
+                <option value="moderado">🟠 Rayaduras moderadas</option>
+                <option value="roto">🔴 Rota/Fisurada</option>
+              </select>
+            </div>
+            <div>
+              <label>Marco/Chasis</label>
+              <select id="diagEstMarco">
+                <option value="perfecto">✨ Perfecto</option>
+                <option value="leve">🟡 Marcas leves</option>
+                <option value="moderado">🟠 Golpes visibles</option>
+                <option value="severo">🔴 Daño severo</option>
+              </select>
+            </div>
+            <div>
+              <label>Grado General</label>
+              <select id="diagGrado">
+                <option value="">Seleccionar...</option>
+                <option value="A">A - Como nuevo</option>
+                <option value="B">B - Muy bueno</option>
+                <option value="C">C - Bueno (uso normal)</option>
+                <option value="D">D - Regular</option>
+                <option value="E">E - Malo</option>
+              </select>
+            </div>
+          </div>
+
+          <h4 style="margin-top:16px;margin-bottom:8px;">Piezas Reemplazadas (alerta iOS)</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="diagPiezas">
+            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="pantalla"> Pantalla</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="bateria"> Batería</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="camara"> Cámara</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="altavoz"> Altavoz</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="otra"> Otra</label>
+          </div>
+
+          <div>
+            <label>Observaciones estéticas</label>
+            <textarea id="diagObsEstetica" rows="2" placeholder="Notas adicionales..."></textarea>
+          </div>
+
+          <div style="margin-top:12px;display:flex;justify-content:space-between;">
+            <button class="btn ghost" onclick="diagGoStep(1)">← Anterior</button>
+            <button class="btn" onclick="diagGoStep(3)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Checklist Hardware -->
+        <div id="diagStep3" class="diagStep" style="display:none;">
+          <h3 style="color:#00b4ff;margin-bottom:12px;">3. Checklist de Hardware y Funcionalidad</h3>
+          <div id="diagChecklist"></div>
+          <div>
+            <label>Observaciones hardware</label>
+            <textarea id="diagObsHardware" rows="2" placeholder="Notas adicionales..."></textarea>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;">
+            <button class="btn ghost" onclick="diagGoStep(2)">← Anterior</button>
+            <button class="btn" onclick="diagGoStep(4)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Resultado y Cierre -->
+        <div id="diagStep4" class="diagStep" style="display:none;">
+          <h3 style="color:var(--green);margin-bottom:12px;">4. Resultado y Cierre</h3>
+          <div id="diagResultado" style="padding:16px;border-radius:12px;background:rgba(255,255,255,0.04);margin-bottom:12px;"></div>
+          <div>
+            <label>Notas finales / Observaciones</label>
+            <textarea id="diagNotasFinal" rows="3" placeholder="Observaciones del técnico..."></textarea>
+          </div>
+          <div>
+            <label>Técnico responsable</label>
+            <input type="text" id="diagTecnico" placeholder="Nombre del técnico">
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn ghost" onclick="diagGoStep(3)">← Anterior</button>
+            <button class="btn" onclick="guardarDiagnostico()" id="diagBtnGuardar">💾 Guardar Diagnóstico</button>
+            <button class="btn ghost" onclick="diagGenerarPDF()" id="diagBtnPDF" style="display:none;">📄 Generar PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETALLE DIAGNÓSTICO -->
+    <div class="card" id="diagDetalleCard" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h2 id="diagDetalleTitulo">Detalle Diagnóstico</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn ghost" onclick="diagGenerarPDFDetalle()">📄 PDF</button>
+          <button class="btn ghost" onclick="diagVolverListado()">← Volver</button>
+        </div>
+      </div>
+      <div id="diagDetalleContenido"></div>
+    </div>
+  </div>
+
 </main>
 
 <div id="printArea"></div>
@@ -1642,7 +1877,7 @@ let sesionActual = ls_get('sesion_actual', null);
 
 function esAdmin(){ return !!(sesionActual && sesionActual.rol==='admin'); }
 
-const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','analisis','comercios','sueldos','micuenta','actividad','ventaCuotas'];
+const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','analisis','comercios','sueldos','micuenta','actividad','ventaCuotas','diagnostico'];
 
 async function intentarLogin(){
   const u = document.getElementById('loginUsuario').value.trim();
@@ -1711,6 +1946,7 @@ function switchModule(m){
   document.getElementById('moduloMiCuenta').style.display = m==='micuenta' ? 'block':'none';
   document.getElementById('moduloActividad').style.display = m==='actividad' ? 'block':'none';
   document.getElementById('moduloVentaCuotas').style.display = m==='ventaCuotas' ? 'block':'none';
+  document.getElementById('moduloDiagnostico').style.display = m==='diagnostico' ? 'block':'none';
   document.getElementById('navInicio').classList.toggle('active', m==='inicio');
   document.getElementById('navStock').classList.toggle('active', m==='stock');
   document.getElementById('navVenta').classList.toggle('active', m==='venta');
@@ -1727,6 +1963,7 @@ function switchModule(m){
   document.getElementById('navMiCuenta').classList.toggle('active', m==='micuenta');
   document.getElementById('navActividad').classList.toggle('active', m==='actividad');
   document.getElementById('navVentaCuotas').classList.toggle('active', m==='ventaCuotas');
+  document.getElementById('navDiagnostico').classList.toggle('active', m==='diagnostico');
   if(m==='inicio'){ renderStockResumen(); renderInicioVentaGanancia(); }
   if(m==='venta'){ cargarSelectEquiposVenta(); renderVentas(); }
   if(m==='ventaCuotas'){ cargarSelectVentaCuotas(); renderVentasCuotas(); verificarAlertasCuotas(); }
@@ -1738,6 +1975,7 @@ function switchModule(m){
   if(m==='marketing'){ renderMarketing(); }
   if(m==='analisis'){ renderAnalisis(); }
   if(m==='comercios'){ renderComercios(); }
+  if(m==='diagnostico'){ renderDiagnosticos(); }
   if(m==='usuarios'){ renderUsuarios(); }
   if(m==='sueldos'){ renderSueldos(); }
   if(m==='micuenta'){ renderMiCuenta(); }
@@ -2238,6 +2476,20 @@ function ganancia(compra, venta, sugerido){
   return (Number(base)||0) - (Number(compra)||0);
 }
 
+function pctRentabilidad(compra, venta, sugerido){
+  const c = Number(compra)||0;
+  const base = Number(venta)||Number(sugerido)||0;
+  if(c <= 0) return null;
+  return ((base - c) / c * 100);
+}
+
+function badgeRentabilidad(compra, venta, sugerido){
+  const pct = pctRentabilidad(compra, venta, sugerido);
+  if(pct === null) return '';
+  const color = pct >= 30 ? 'var(--green)' : pct >= 15 ? 'var(--amber)' : 'var(--red)';
+  return '<span class="sec-price" style="color:'+color+';font-weight:600;">Rent: <b>'+pct.toFixed(1)+'%</b></span>';
+}
+
 function agregarEquipo(){
   if(!esAdmin()) return;
   const cantidad = parseInt(document.getElementById('eCantidad').value) || 1;
@@ -2526,6 +2778,7 @@ function renderEquipoCard(e){
       <span class="sec-price precio-sugerido-glow">Sugerido: <b>$${fmt(e.sugerido)}</b></span>
       ${e.venta?`<span class="sec-price">Venta: <b>$${fmt(e.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(g)}</b></span>`:''}
+      ${admin?badgeRentabilidad(e.compra, e.venta, e.sugerido):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">🏷 Etiqueta</button>
@@ -2792,6 +3045,7 @@ function renderAccesorioCard(a){
       <span class="sec-price precio-sugerido-glow">Sugerido: <b>$${fmt(a.sugerido)}</b></span>
       ${a.venta?`<span class="sec-price">Venta: <b>$${fmt(a.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(g)}</b></span>`:''}
+      ${admin?badgeRentabilidad(a.compra, a.venta, a.sugerido):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="editarAccesorio('${a.id}')">✏️ Editar</button>
@@ -2989,6 +3243,7 @@ function renderGpsCard(g){
       ${admin?`<span class="sec-price">Compra: <b>$${fmt(g.compra)}</b></span>`:''}
       ${g.venta?`<span class="sec-price precio-sugerido-glow">Venta: <b>$${fmt(g.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(gan)}</b></span>`:''}
+      ${admin?badgeRentabilidad(g.compra, g.venta, 0):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="editarGps('${g.id}')">✏️ Editar</button>
@@ -4082,7 +4337,7 @@ function renderVentas(){
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">${v.precio!=null ? '$'+fmt(v.precio) : '—'}</td>
         <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
-        <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia) : '—'}</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia)+' <span style="font-size:11px;color:'+(v.precio&&v.ganancia!=null?((v.ganancia/Number(v.precio)*100)>=30?'var(--green)':((v.ganancia/Number(v.precio)*100)>=15?'var(--amber)':'var(--red)')):'#999')+'">'+(v.precio&&v.ganancia!=null?(v.ganancia/Number(v.precio)*100).toFixed(1)+'%':'')+'</span>' : '—'}</td>
         <td data-label="Estado">${badge}</td>
         <td data-label="Acciones"><div class="actions">
           ${accEstado}
@@ -4098,7 +4353,7 @@ function renderVentas(){
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">$${fmt(v.precio)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
-        <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)}</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)} <span style="font-size:11px;color:${((v.ganancia/((Number(v.precio)||1)))*100)>=30?'var(--green)':((v.ganancia/((Number(v.precio)||1)))*100)>=15?'var(--amber)':'var(--red)'}">${v.precio?(v.ganancia/(Number(v.precio))*100).toFixed(1)+'%':''}</span></td>
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
           <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
@@ -4917,7 +5172,7 @@ function renderVentasCuotas(){
         <td data-label="Cuota">$${fmt(valorCuota)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">$${fmt(gMensual)}</td>
-        <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)}</td>
+        <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)} <span style="font-size:11px;color:${gTotal>0?(gTotal/Number(vc.precioCompra)*100>=30?"var(--green)":gTotal/Number(vc.precioCompra)*100>=15?"var(--amber)":"var(--red)"):"#999"}">${(Number(vc.precioCompra)>0 ? (gTotal/Number(vc.precioCompra)*100).toFixed(1)+"%" : "")}</span></td>
         <td data-label="Acciones"><div class="actions">
           ${esFinalizdo
             ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
@@ -7860,6 +8115,542 @@ renderReparaciones();
   }
   document.getElementById('loginOverlay').style.display = 'flex';
 })();
+
+// ============================================
+// MÓDULO DIAGNÓSTICO DE iPHONE
+// ============================================
+const DIAG_CHECKLIST = [
+  { cat: 'Pantalla', items: ['Táctil funciona correctamente','True Tone activo','Brillo automático','Sin manchas/líneas/dead pixels'] },
+  { cat: 'Biometría', items: ['Face ID funciona','Touch ID funciona (si aplica)'] },
+  { cat: 'Cámaras', items: ['Cámara trasera (foto/video)','Cámara frontal (foto/video)','Flash LED','Estabilización óptica'] },
+  { cat: 'Audio', items: ['Auricular de llamada','Altavoz inferior','Micrófono principal','Micrófono secundario'] },
+  { cat: 'Conectividad', items: ['WiFi','Bluetooth','GPS/Ubicación','AirDrop','NFC'] },
+  { cat: 'Red Celular', items: ['Bandeja SIM / eSIM','Señal celular / Datos móviles','Llamadas de voz'] },
+  { cat: 'Sensores', items: ['Giroscopio/Acelerómetro','Sensor de proximidad','Brújula','Barómetro'] },
+  { cat: 'Botones', items: ['Botón de encendido','Volumen +','Volumen -','Silenciador/Acción'] },
+  { cat: 'Carga y Puertos', items: ['Lightning / USB-C (carga)','Lightning / USB-C (datos)','Carga inalámbrica MagSafe','Vibración (Taptic Engine)'] }
+];
+
+let diagEditId = null;
+
+function renderDiagChecklist(){
+  const el = document.getElementById('diagChecklist');
+  if(!el) return;
+  el.innerHTML = DIAG_CHECKLIST.map((sec,si) => `
+    <div style="margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.03);">
+      <h4 style="margin-bottom:8px;color:#00b4ff;">${sec.cat}</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px;">
+        ${sec.items.map((item,ii) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.04);">
+            <span style="flex:1;font-size:13px;">${item}</span>
+            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
+              <input type="radio" name="chk_${si}_${ii}" value="ok"> <span style="color:var(--green);font-size:12px;">OK</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
+              <input type="radio" name="chk_${si}_${ii}" value="fallo"> <span style="color:#e74c3c;font-size:12px;">Falló</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
+              <input type="radio" name="chk_${si}_${ii}" value="na"> <span style="color:var(--txt3);font-size:12px;">N/A</span>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function getChecklistResults(){
+  const results = [];
+  DIAG_CHECKLIST.forEach((sec,si) => {
+    const items = [];
+    sec.items.forEach((item,ii) => {
+      const sel = document.querySelector(`input[name="chk_${si}_${ii}"]:checked`);
+      items.push({ item, val: sel ? sel.value : 'pendiente' });
+    });
+    results.push({ cat: sec.cat, items });
+  });
+  return results;
+}
+
+function diagCheckBateria(){
+  const v = Number(document.getElementById('diagBateria').value);
+  const w = document.getElementById('diagBateriaWarn');
+  if(v && v < 80){
+    w.style.display='block';
+    w.style.color='#e74c3c';
+    w.textContent='⚠️ Batería por debajo del 80% — se recomienda reemplazo';
+  } else if(v && v < 90){
+    w.style.display='block';
+    w.style.color='var(--amber)';
+    w.textContent='🟡 Batería entre 80-90% — desgaste moderado';
+  } else {
+    w.style.display='none';
+  }
+}
+
+function diagGoStep(n){
+  // Validate step 1 iCloud lock
+  if(n > 1){
+    const icloud = document.getElementById('diagiCloud').value;
+    if(icloud === 'activado'){
+      document.getElementById('diagiCloudWarn').style.display = 'block';
+      mostrarToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
+      return;
+    }
+    document.getElementById('diagiCloudWarn').style.display = 'none';
+  }
+
+  for(let i=1;i<=4;i++){
+    const el = document.getElementById('diagStep'+i);
+    if(el) el.style.display = i===n ? 'block' : 'none';
+    const btn = document.getElementById('diagStep'+i+'btn');
+    if(btn){
+      btn.className = 'badge';
+      if(i === n) btn.classList.add('vendido');
+      else if(i < n) btn.classList.add('reservado');
+      else btn.style.background = 'rgba(255,255,255,0.08)';
+    }
+  }
+
+  if(n === 3) renderDiagChecklist();
+  if(n === 4) calcularVeredicto();
+}
+
+function calcularVeredicto(){
+  const el = document.getElementById('diagResultado');
+  const checklist = getChecklistResults();
+  const bateria = Number(document.getElementById('diagBateria').value) || 0;
+  const icloud = document.getElementById('diagiCloud').value;
+  const enacom = document.getElementById('diagENACOM').value;
+  const grado = document.getElementById('diagGrado').value;
+  const operador = document.getElementById('diagOperador').value;
+  const modelo = document.getElementById('diagModelo').value;
+
+  // Count failures
+  let totalItems = 0, fallos = 0, oks = 0, pendientes = 0;
+  const fallosList = [];
+  checklist.forEach(sec => {
+    sec.items.forEach(it => {
+      if(it.val !== 'na'){ totalItems++; }
+      if(it.val === 'fallo'){ fallos++; fallosList.push(`${sec.cat}: ${it.item}`); }
+      if(it.val === 'ok') oks++;
+      if(it.val === 'pendiente') pendientes++;
+    });
+  });
+
+  // Determine verdict
+  let veredicto = 'aprobado';
+  let color = 'var(--green)';
+  let icon = '✅';
+  let razon = [];
+
+  if(icloud === 'activado' || enacom === 'inhibido'){
+    veredicto = 'rechazado';
+    color = '#e74c3c';
+    icon = '🚫';
+    if(icloud === 'activado') razon.push('iCloud/Buscar mi iPhone activado');
+    if(enacom === 'inhibido') razon.push('IMEI inhibido/robado (ENACOM)');
+  } else if(fallos >= 3 || bateria < 70 || grado === 'E'){
+    veredicto = 'rechazado';
+    color = '#e74c3c';
+    icon = '🚫';
+    if(fallos >= 3) razon.push(fallos + ' componentes fallidos');
+    if(bateria < 70) razon.push('Batería crítica: ' + bateria + '%');
+    if(grado === 'E') razon.push('Grado estético E');
+  } else if(fallos > 0 || bateria < 80 || operador === 'bloqueado' || grado === 'D'){
+    veredicto = 'observaciones';
+    color = 'var(--amber)';
+    icon = '⚠️';
+    if(fallos > 0) razon.push(fallos + ' componente(s) con fallo');
+    if(bateria > 0 && bateria < 80) razon.push('Batería al ' + bateria + '%');
+    if(operador === 'bloqueado') razon.push('Bloqueado a operador');
+    if(grado === 'D') razon.push('Grado estético D');
+  }
+
+  const verdictText = veredicto === 'aprobado' ? 'APROBADO' :
+                       veredicto === 'observaciones' ? 'ACEPTADO CON OBSERVACIONES' : 'RECHAZADO';
+
+  el.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <div style="font-size:48px;">${icon}</div>
+      <h2 style="color:${color};font-size:24px;margin:8px 0;">${verdictText}</h2>
+      <p style="color:var(--txt2);">${modelo || 'iPhone'} ${document.getElementById('diagCapacidad').value || ''}</p>
+      ${razon.length ? '<div style="margin-top:8px;text-align:left;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.04);">'+razon.map(r=>'<div style="color:var(--txt2);font-size:13px;">• '+r+'</div>').join('')+'</div>' : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px;">
+      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--green);">${oks}</div>
+        <div style="font-size:11px;color:var(--txt3);">Componentes OK</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(231,76,60,0.08);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#e74c3c;">${fallos}</div>
+        <div style="font-size:11px;color:var(--txt3);">Fallos</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--txt2);">${bateria||'?'}%</div>
+        <div style="font-size:11px;color:var(--txt3);">Batería</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--txt2);">${grado||'?'}</div>
+        <div style="font-size:11px;color:var(--txt3);">Grado</div>
+      </div>
+    </div>
+    ${fallosList.length ? '<div style="margin-top:12px;"><h4 style="color:#e74c3c;margin-bottom:6px;">Componentes con fallo:</h4>'+fallosList.map(f=>'<div style="font-size:12px;color:var(--txt2);padding:2px 0;">❌ '+f+'</div>').join('')+'</div>' : ''}
+  `;
+}
+
+function iniciarNuevoDiagnostico(){
+  diagEditId = null;
+  document.getElementById('diagListCard').style.display = 'none';
+  document.getElementById('diagFormCard').style.display = 'block';
+  document.getElementById('diagDetalleCard').style.display = 'none';
+  document.getElementById('diagFormTitle').textContent = 'Nuevo Diagnóstico';
+
+  // Reset form
+  ['diagIMEI','diagSerial','diagColor','diagCliente','diagObsEstetica','diagObsHardware','diagNotasFinal','diagTecnico'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  ['diagModelo','diagCapacidad','diagiCloud','diagOperador','diagENACOM','diagGrado','diagBateriaOrig'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.selectedIndex = 0;
+  });
+  document.getElementById('diagBateria').value = '';
+  document.getElementById('diagCiclos').value = '';
+  document.getElementById('diagBateriaWarn').style.display = 'none';
+  document.getElementById('diagiCloudWarn').style.display = 'none';
+  document.getElementById('diagIMEIStatus').textContent = '';
+  document.getElementById('diagBtnPDF').style.display = 'none';
+
+  // Reset checkboxes
+  document.querySelectorAll('#diagPiezas input[type=checkbox]').forEach(c => c.checked = false);
+
+  // Populate model select
+  const sel = document.getElementById('diagModelo');
+  sel.innerHTML = '<option value="">Seleccionar...</option>';
+  if(typeof MODELOS !== 'undefined'){
+    MODELOS.forEach(m => {
+      sel.innerHTML += '<option value="'+m+'">'+m+'</option>';
+    });
+  }
+
+  diagGoStep(1);
+}
+
+function cancelarDiagnostico(){
+  document.getElementById('diagListCard').style.display = 'block';
+  document.getElementById('diagFormCard').style.display = 'none';
+  document.getElementById('diagDetalleCard').style.display = 'none';
+}
+
+function diagVolverListado(){
+  document.getElementById('diagListCard').style.display = 'block';
+  document.getElementById('diagFormCard').style.display = 'none';
+  document.getElementById('diagDetalleCard').style.display = 'none';
+  renderDiagnosticos();
+}
+
+async function guardarDiagnostico(){
+  const imei = document.getElementById('diagIMEI').value.trim();
+  const modelo = document.getElementById('diagModelo').value;
+  const icloud = document.getElementById('diagiCloud').value;
+
+  if(!imei || imei.length < 15){ mostrarToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
+  if(!modelo){ mostrarToast('Seleccioná un modelo','error'); return; }
+  if(icloud === 'activado'){ mostrarToast('⛔ No se puede guardar: iCloud activado','error'); return; }
+
+  const checklist = getChecklistResults();
+  let fallos = 0, oks = 0;
+  const fallosList = [];
+  checklist.forEach(sec => sec.items.forEach(it => {
+    if(it.val === 'fallo'){ fallos++; fallosList.push(sec.cat+': '+it.item); }
+    if(it.val === 'ok') oks++;
+  }));
+
+  const bateria = Number(document.getElementById('diagBateria').value) || 0;
+  const grado = document.getElementById('diagGrado').value;
+  const enacom = document.getElementById('diagENACOM').value;
+  const operador = document.getElementById('diagOperador').value;
+
+  let veredicto = 'aprobado';
+  if(icloud === 'activado' || enacom === 'inhibido' || fallos >= 3 || bateria < 70 || grado === 'E'){
+    veredicto = 'rechazado';
+  } else if(fallos > 0 || (bateria > 0 && bateria < 80) || operador === 'bloqueado' || grado === 'D'){
+    veredicto = 'observaciones';
+  }
+
+  const piezas = [];
+  document.querySelectorAll('#diagPiezas input[type=checkbox]:checked').forEach(c => piezas.push(c.value));
+
+  const diag = {
+    id: diagEditId || ('diag_' + Date.now()),
+    fecha: new Date().toLocaleDateString('es-AR'),
+    fechaISO: new Date().toISOString(),
+    imei, modelo,
+    serial: document.getElementById('diagSerial').value.trim(),
+    capacidad: document.getElementById('diagCapacidad').value,
+    color: document.getElementById('diagColor').value.trim(),
+    cliente: document.getElementById('diagCliente').value.trim(),
+    icloud, operador, enacom,
+    bateria, ciclos: Number(document.getElementById('diagCiclos').value) || 0,
+    bateriaOriginal: document.getElementById('diagBateriaOrig').value,
+    estetica: {
+      pantalla: document.getElementById('diagEstPantalla').value,
+      trasera: document.getElementById('diagEstTrasera').value,
+      marco: document.getElementById('diagEstMarco').value
+    },
+    grado, piezasReemplazadas: piezas,
+    obsEstetica: document.getElementById('diagObsEstetica').value.trim(),
+    checklist, obsHardware: document.getElementById('diagObsHardware').value.trim(),
+    veredicto, fallos, oks, fallosList,
+    notasFinal: document.getElementById('diagNotasFinal').value.trim(),
+    tecnico: document.getElementById('diagTecnico').value.trim(),
+    usuario: sesionActual ? sesionActual.usuario : ''
+  };
+
+  try {
+    const data = await cargarDatos();
+    if(!data.diagnosticos) data.diagnosticos = [];
+    const idx = data.diagnosticos.findIndex(d => d.id === diag.id);
+    if(idx >= 0) data.diagnosticos[idx] = diag;
+    else data.diagnosticos.unshift(diag);
+    await guardarClave('diagnosticos', data.diagnosticos);
+    mostrarToast('Diagnóstico guardado correctamente ✅');
+    registrarActividad('diagnostico', diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
+    document.getElementById('diagBtnPDF').style.display = 'inline-flex';
+  } catch(e){
+    mostrarToast('Error al guardar: ' + e.message, 'error');
+  }
+}
+
+async function renderDiagnosticos(){
+  const data = await cargarDatos();
+  const list = data.diagnosticos || [];
+  const buscar = (document.getElementById('diagBuscar')?.value || '').toLowerCase();
+  const filtered = buscar ? list.filter(d =>
+    (d.imei||'').toLowerCase().includes(buscar) ||
+    (d.serial||'').toLowerCase().includes(buscar) ||
+    (d.modelo||'').toLowerCase().includes(buscar) ||
+    (d.cliente||'').toLowerCase().includes(buscar)
+  ) : list;
+
+  const el = document.getElementById('diagListado');
+  const empty = document.getElementById('diagEmpty');
+  if(!filtered.length){
+    el.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  el.innerHTML = `<div style="overflow-x:auto;"><table class="tabla"><thead><tr>
+    <th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Batería</th><th>Grado</th><th>Veredicto</th><th>Acciones</th>
+  </tr></thead><tbody>
+  ${filtered.map(d => {
+    const vColor = d.veredicto==='aprobado'?'var(--green)':d.veredicto==='observaciones'?'var(--amber)':'#e74c3c';
+    const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'CON OBSERVACIONES':'RECHAZADO';
+    const vIcon = d.veredicto==='aprobado'?'✅':d.veredicto==='observaciones'?'⚠️':'🚫';
+    return `<tr>
+      <td data-label="Fecha">${d.fecha}</td>
+      <td data-label="Modelo">${d.modelo}</td>
+      <td data-label="IMEI" style="font-family:monospace;font-size:12px;">${d.imei}</td>
+      <td data-label="Cliente">${d.cliente||'—'}</td>
+      <td data-label="Batería"><span style="color:${d.bateria<80?'#e74c3c':d.bateria<90?'var(--amber)':'var(--green)'};">${d.bateria||'?'}%</span></td>
+      <td data-label="Grado"><span class="badge" style="background:rgba(255,255,255,0.08);">${d.grado||'—'}</span></td>
+      <td data-label="Veredicto"><span style="color:${vColor};font-weight:600;">${vIcon} ${vText}</span></td>
+      <td data-label="Acciones"><div class="actions">
+        <button class="btn ghost small" onclick="verDiagnostico('${d.id}')">👁 Ver</button>
+        <button class="btn ghost small" onclick="diagGenerarPDFById('${d.id}')">📄 PDF</button>
+        <button class="btn danger small" onclick="eliminarDiagnostico('${d.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table></div>`;
+}
+
+async function verDiagnostico(id){
+  const data = await cargarDatos();
+  const d = (data.diagnosticos||[]).find(x => x.id === id);
+  if(!d){ mostrarToast('Diagnóstico no encontrado','error'); return; }
+
+  document.getElementById('diagListCard').style.display = 'none';
+  document.getElementById('diagFormCard').style.display = 'none';
+  document.getElementById('diagDetalleCard').style.display = 'block';
+
+  const vColor = d.veredicto==='aprobado'?'var(--green)':d.veredicto==='observaciones'?'var(--amber)':'#e74c3c';
+  const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'CON OBSERVACIONES':'RECHAZADO';
+  const vIcon = d.veredicto==='aprobado'?'✅':d.veredicto==='observaciones'?'⚠️':'🚫';
+
+  document.getElementById('diagDetalleTitulo').textContent = d.modelo + ' — ' + d.fecha;
+
+  const el = document.getElementById('diagDetalleContenido');
+  el.innerHTML = `
+    <div style="text-align:center;padding:16px;margin-bottom:16px;border-radius:12px;background:rgba(255,255,255,0.03);">
+      <div style="font-size:36px;">${vIcon}</div>
+      <h3 style="color:${vColor};">${vText}</h3>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
+      <div><strong>IMEI:</strong> <span style="font-family:monospace;">${d.imei}</span></div>
+      <div><strong>Serial:</strong> ${d.serial||'—'}</div>
+      <div><strong>Modelo:</strong> ${d.modelo}</div>
+      <div><strong>Capacidad:</strong> ${d.capacidad||'—'}</div>
+      <div><strong>Color:</strong> ${d.color||'—'}</div>
+      <div><strong>Cliente:</strong> ${d.cliente||'—'}</div>
+      <div><strong>iCloud:</strong> ${d.icloud==='desactivado'?'✅ Desactivado':'🚫 Activado'}</div>
+      <div><strong>Operador:</strong> ${d.operador==='liberado'?'✅ Liberado':'⚠️ Bloqueado'}</div>
+      <div><strong>ENACOM:</strong> ${d.enacom==='habilitado'?'✅ Habilitado':d.enacom==='inhibido'?'🚫 Inhibido':'No verificado'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;">
+      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:${d.bateria<80?'#e74c3c':d.bateria<90?'var(--amber)':'var(--green)'};">${d.bateria||'?'}%</div>
+        <div style="font-size:11px;color:var(--txt3);">Batería (${d.ciclos||'?'} ciclos)</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
+        <div style="font-size:20px;font-weight:700;">${d.grado||'?'}</div>
+        <div style="font-size:11px;color:var(--txt3);">Grado Estético</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--green);">${d.oks||0}</div>
+        <div style="font-size:11px;color:var(--txt3);">OK</div>
+      </div>
+      <div style="padding:10px;border-radius:8px;background:rgba(231,76,60,0.08);text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#e74c3c;">${d.fallos||0}</div>
+        <div style="font-size:11px;color:var(--txt3);">Fallos</div>
+      </div>
+    </div>
+    ${d.checklist ? '<h4 style="margin-bottom:8px;">Checklist de Hardware</h4>' + d.checklist.map(sec => `
+      <div style="margin-bottom:8px;">
+        <strong style="color:#00b4ff;">${sec.cat}</strong>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px;margin-top:4px;">
+          ${sec.items.map(it => {
+            const ic = it.val==='ok'?'✅':it.val==='fallo'?'❌':it.val==='na'?'➖':'⬜';
+            const cl = it.val==='fallo'?'color:#e74c3c;':'';
+            return '<div style="font-size:12px;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,0.03);'+cl+'">'+ic+' '+it.item+'</div>';
+          }).join('')}
+        </div>
+      </div>
+    `).join('') : ''}
+    ${d.fallosList && d.fallosList.length ? '<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(231,76,60,0.06);"><h4 style="color:#e74c3c;">Fallos detectados:</h4>'+d.fallosList.map(f=>'<div style="font-size:12px;color:var(--txt2);">❌ '+f+'</div>').join('')+'</div>' : ''}
+    ${d.piezasReemplazadas && d.piezasReemplazadas.length ? '<div style="margin-top:8px;"><strong>Piezas reemplazadas:</strong> '+d.piezasReemplazadas.join(', ')+'</div>' : ''}
+    ${d.obsEstetica ? '<div style="margin-top:8px;"><strong>Obs. estéticas:</strong> '+d.obsEstetica+'</div>' : ''}
+    ${d.obsHardware ? '<div style="margin-top:8px;"><strong>Obs. hardware:</strong> '+d.obsHardware+'</div>' : ''}
+    ${d.notasFinal ? '<div style="margin-top:8px;"><strong>Notas finales:</strong> '+d.notasFinal+'</div>' : ''}
+    ${d.tecnico ? '<div style="margin-top:8px;"><strong>Técnico:</strong> '+d.tecnico+'</div>' : ''}
+    <div style="margin-top:8px;font-size:11px;color:var(--txt3);">Registrado por: ${d.usuario||'—'} | ${d.fecha}</div>
+  `;
+}
+
+async function eliminarDiagnostico(id){
+  if(!confirm('¿Eliminar este diagnóstico?')) return;
+  const data = await cargarDatos();
+  data.diagnosticos = (data.diagnosticos||[]).filter(d => d.id !== id);
+  await guardarClave('diagnosticos', data.diagnosticos);
+  mostrarToast('Diagnóstico eliminado');
+  renderDiagnosticos();
+}
+
+function diagGenerarPDF(){
+  const imei = document.getElementById('diagIMEI').value.trim();
+  const modelo = document.getElementById('diagModelo').value;
+  diagGenerarPDFData({
+    imei, modelo,
+    serial: document.getElementById('diagSerial').value.trim(),
+    capacidad: document.getElementById('diagCapacidad').value,
+    color: document.getElementById('diagColor').value.trim(),
+    cliente: document.getElementById('diagCliente').value.trim(),
+    icloud: document.getElementById('diagiCloud').value,
+    operador: document.getElementById('diagOperador').value,
+    enacom: document.getElementById('diagENACOM').value,
+    bateria: Number(document.getElementById('diagBateria').value) || 0,
+    ciclos: Number(document.getElementById('diagCiclos').value) || 0,
+    grado: document.getElementById('diagGrado').value,
+    checklist: getChecklistResults(),
+    notasFinal: document.getElementById('diagNotasFinal').value.trim(),
+    tecnico: document.getElementById('diagTecnico').value.trim(),
+    fecha: new Date().toLocaleDateString('es-AR')
+  });
+}
+
+async function diagGenerarPDFById(id){
+  const data = await cargarDatos();
+  const d = (data.diagnosticos||[]).find(x => x.id === id);
+  if(!d){ mostrarToast('No encontrado','error'); return; }
+  diagGenerarPDFData(d);
+}
+
+function diagGenerarPDFDetalle(){
+  const titulo = document.getElementById('diagDetalleTitulo').textContent;
+  const contenido = document.getElementById('diagDetalleContenido').innerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico - ${titulo}</title>
+    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;}
+    h2,h3,h4{margin:8px 0;}table{width:100%;border-collapse:collapse;margin:8px 0;}td,th{padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:12px;}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}@media print{body{padding:12px;}}</style>
+  </head><body>
+    <h2 style="text-align:center;">Checkeo y Diagnóstico de iPhone</h2>
+    <h3 style="text-align:center;color:#666;">${titulo}</h3>
+    <hr>
+    ${contenido}
+    <div style="margin-top:24px;text-align:center;font-size:11px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
+function diagGenerarPDFData(d){
+  const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'ACEPTADO CON OBSERVACIONES':'RECHAZADO';
+  const checklist = d.checklist || [];
+
+  let checklistHTML = '';
+  checklist.forEach(sec => {
+    checklistHTML += '<tr><td colspan="2" style="background:#f0f0f0;font-weight:600;">'+sec.cat+'</td></tr>';
+    sec.items.forEach(it => {
+      const ic = it.val==='ok'?'✅ OK':it.val==='fallo'?'❌ FALLO':it.val==='na'?'N/A':'⬜ Pendiente';
+      checklistHTML += '<tr><td>'+it.item+'</td><td style="text-align:center;'+(it.val==='fallo'?'color:red;font-weight:600;':'')+'">'+ic+'</td></tr>';
+    });
+  });
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico ${d.modelo} - ${d.imei}</title>
+    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;font-size:13px;}
+    h2{text-align:center;margin-bottom:4px;}table{width:100%;border-collapse:collapse;margin:12px 0;}td,th{padding:5px 8px;border:1px solid #ccc;text-align:left;}
+    .verdict{text-align:center;padding:16px;margin:12px 0;border:2px solid;border-radius:8px;}
+    @media print{body{padding:12px;}.no-print{display:none;}}</style>
+  </head><body>
+    <h2>Checkeo y Diagnóstico Completo de iPhone</h2>
+    <p style="text-align:center;color:#666;">Fecha: ${d.fecha} | Técnico: ${d.tecnico||'—'}</p>
+    <hr>
+    <h3>1. Datos del Equipo</h3>
+    <table>
+      <tr><td><strong>IMEI</strong></td><td style="font-family:monospace;">${d.imei}</td><td><strong>Serial</strong></td><td>${d.serial||'—'}</td></tr>
+      <tr><td><strong>Modelo</strong></td><td>${d.modelo}</td><td><strong>Capacidad</strong></td><td>${d.capacidad||'—'}</td></tr>
+      <tr><td><strong>Color</strong></td><td>${d.color||'—'}</td><td><strong>Cliente</strong></td><td>${d.cliente||'—'}</td></tr>
+      <tr><td><strong>iCloud</strong></td><td>${d.icloud==='desactivado'?'✅ Desactivado':'🚫 ACTIVADO'}</td><td><strong>Operador</strong></td><td>${d.operador==='liberado'?'✅ Liberado':'⚠️ Bloqueado'}</td></tr>
+      <tr><td><strong>ENACOM</strong></td><td colspan="3">${d.enacom==='habilitado'?'✅ Habilitado':d.enacom==='inhibido'?'🚫 Inhibido':'No verificado'}</td></tr>
+    </table>
+    <h3>2. Batería y Estado Estético</h3>
+    <table>
+      <tr><td><strong>Salud Batería</strong></td><td>${d.bateria||'?'}%</td><td><strong>Ciclos</strong></td><td>${d.ciclos||'?'}</td></tr>
+      <tr><td><strong>Grado General</strong></td><td colspan="3">${d.grado||'—'}</td></tr>
+    </table>
+    <h3>3. Checklist de Hardware</h3>
+    <table>${checklistHTML}</table>
+    <div class="verdict" style="border-color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">
+      <h2 style="margin:0;color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">${vText}</h2>
+    </div>
+    ${d.notasFinal?'<p><strong>Observaciones:</strong> '+d.notasFinal+'</p>':''}
+    <div style="margin-top:40px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Técnico</div></div>
+      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Cliente</div></div>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:10px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
+// End Diagnostico Module
+
 </script>
 </body>
 </html>
