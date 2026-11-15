@@ -8320,29 +8320,35 @@ function diagParsear3uTools(){
   // OCR: find capacity anywhere
   const capacityMatch = raw.match(/\b(\d{2,4})\s*(GB|TB)\b/i);
 
+  // 3uTools copy-paste produces multi-column tab-separated lines.
+  // Split each line into key-value pairs first.
+  const pairs = [];
   lines.forEach(line => {
-    // Handle lines with multiple colons (keep everything after first colon)
-    const sep = line.indexOf(':');
-    if(sep < 0){
-      // OCR might not detect colon — try tab or multiple spaces
-      const tabSep = line.search(/\t|  {2,}/);
-      if(tabSep < 0){
-        // Last resort: match known key words at start followed by a value
-        const kwMatch = line.match(/^(IMEI\d?|Serial\s*Number|Model\s*Name|Model\s*Identifier|Device\s*Model|Capacity|Battery\s*Life|Charge\s*Cycles?|Device\s*Name|Device\s*Color|ID\s*Lock|SIM\s*Lock|Carrier\s*Lock|Activation|Jailbreak|Find\s*My|iCloud)\s+(.+)/i);
-        if(!kwMatch) return;
-        var key = kwMatch[1].trim().toLowerCase();
-        var val = kwMatch[2].trim();
-      } else {
-        var key = line.substring(0, tabSep).trim().toLowerCase();
-        var val = line.substring(tabSep).trim();
+    // Split by tabs to handle multi-column layout
+    const parts = line.split('\t').map(p => p.trim()).filter(Boolean);
+    if(parts.length >= 2){
+      // Process pairs: [key, val, key, val, ...]
+      for(let i = 0; i < parts.length - 1; i += 2){
+        pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
       }
     } else {
-      var key = line.substring(0, sep).trim().toLowerCase();
-      var val = line.substring(sep + 1).trim();
+      // No tabs — try colon separator
+      const sep = line.indexOf(':');
+      if(sep > 0){
+        pairs.push({ key: line.substring(0, sep).trim().toLowerCase(), val: line.substring(sep+1).trim() });
+      } else {
+        // Try multiple spaces
+        const spaceSep = line.search(/  {2,}/);
+        if(spaceSep > 0){
+          pairs.push({ key: line.substring(0, spaceSep).trim().toLowerCase(), val: line.substring(spaceSep).trim() });
+        }
+      }
     }
+  });
 
+  pairs.forEach(({key, val}) => {
     // IMEI (IMEI1, IMEI, not IMEI2)
-    if((key.includes('imei') || key === 'imei1') && !key.includes('imei2')){
+    if((key.includes('imei') || key === 'imei1' || key === 'imei 1') && !key.includes('imei2') && !key.includes('imei 2')){
       const digits = val.replace(/\D/g,'');
       if(digits.length >= 15) found.imei = digits.substring(0, 15);
     }
@@ -8484,17 +8490,27 @@ function diagParsear3uTools(){
         sel.selectedIndex = i; count++; matched = true; break;
       }
     }
-    // Second: option value contained in found modelo
-    if(!matched) for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].value && modeloNorm.includes(sel.options[i].value.toLowerCase())){
-        sel.selectedIndex = i; count++; matched = true; break;
+    // Second: option value contained in found modelo — pick LONGEST match
+    if(!matched){
+      let bestIdx = -1, bestLen = 0;
+      for(let i = 0; i < sel.options.length; i++){
+        const ov = sel.options[i].value;
+        if(ov && modeloNorm.includes(ov.toLowerCase()) && ov.length > bestLen){
+          bestIdx = i; bestLen = ov.length;
+        }
       }
+      if(bestIdx >= 0){ sel.selectedIndex = bestIdx; count++; matched = true; }
     }
-    // Third: found modelo contained in option value
-    if(!matched) for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].value && sel.options[i].value.toLowerCase().includes(modeloNorm)){
-        sel.selectedIndex = i; count++; matched = true; break;
+    // Third: found modelo contained in option value — pick LONGEST match
+    if(!matched){
+      let bestIdx = -1, bestLen = 0;
+      for(let i = 0; i < sel.options.length; i++){
+        const ov = sel.options[i].value;
+        if(ov && ov.toLowerCase().includes(modeloNorm) && ov.length > bestLen){
+          bestIdx = i; bestLen = ov.length;
+        }
       }
+      if(bestIdx >= 0){ sel.selectedIndex = bestIdx; count++; matched = true; }
     }
     // Fourth: partial word match (e.g. "15 Pro Max" matches "iPhone 15 Pro Max")
     if(!matched){
