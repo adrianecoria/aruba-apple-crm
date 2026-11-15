@@ -8313,8 +8313,17 @@ function diagParsear3uTools(){
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   let found = {};
 
+  // Detect if this is "Device Raw Data" (internal plist/keys) — skip those lines
+  // Raw data has keys like kCTPostponementStatus, DeviceEnclosureColor, etc.
+  const isRawData = /\bkCT[A-Z]|DeviceEnclosureColor|DeviceBackingColor|DeviceCoverGlassColor/i.test(raw);
+  if(isRawData){
+    showToast('⚠️ Esos son datos crudos (Raw Data). Usá "Open in Notepad" en 3uTools para copiar los datos legibles.','error');
+    return 0;
+  }
+
   // Also try to find IMEI as a standalone 15-digit number in text (OCR fallback)
-  const imeiMatch = raw.match(/\b(\d{15})\b/);
+  // But only match numbers that start with known IMEI prefixes (3x)
+  const imeiMatch = raw.match(/\b(3[0-9]\d{13})\b/);
   // OCR: find "iPhone XX Pro Max" anywhere
   const iphoneMatch = raw.match(/iPhone\s*(SE|\d{1,2})\s*(mini|Plus|Pro\s*Max|Pro)?/i);
   // OCR: find battery percentage (near "battery" or "life" or "health" keywords)
