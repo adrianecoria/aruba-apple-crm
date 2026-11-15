@@ -8180,7 +8180,7 @@ const IPHONE_TAC = {
   '35571012':'iPhone 14','35571112':'iPhone 14','35579412':'iPhone 14 Plus','35579512':'iPhone 14 Plus',
   '35591712':'iPhone 14 Pro','35591812':'iPhone 14 Pro','35604512':'iPhone 14 Pro Max','35604612':'iPhone 14 Pro Max',
   '35648113':'iPhone 15','35648213':'iPhone 15','35674913':'iPhone 15 Plus','35674813':'iPhone 15 Plus',
-  '35684913':'iPhone 15 Pro','35684813':'iPhone 15 Pro','35699913':'iPhone 15 Pro Max','35699813':'iPhone 15 Pro Max',
+  '35684913':'iPhone 15 Pro','35684813':'iPhone 15 Pro','35699913':'iPhone 15 Pro Max','35699813':'iPhone 15 Pro Max','35437977':'iPhone 15 Pro Max',
   '35742714':'iPhone 16','35742614':'iPhone 16','35762714':'iPhone 16 Plus','35762614':'iPhone 16 Plus',
   '35772714':'iPhone 16 Pro','35772614':'iPhone 16 Pro','35788714':'iPhone 16 Pro Max','35788614':'iPhone 16 Pro Max',
   '35788814':'iPhone 16e'
@@ -8193,7 +8193,9 @@ function diagAutoDetectModelo(){
   if(imei.length < 8){ status.textContent = ''; return; }
 
   const tac = imei.substring(0, 8);
-  const modelo = IPHONE_TAC[tac];
+  let aprendidos = {};
+  try{ aprendidos = JSON.parse(localStorage.getItem('diag_tac_aprendidos')||'{}'); }catch(e){}
+  const modelo = IPHONE_TAC[tac] || aprendidos[tac];
 
   if(modelo){
     status.innerHTML = '✅ Detectado: <b>' + modelo + '</b>';
@@ -8211,6 +8213,9 @@ function diagAutoDetectModelo(){
         sel.selectedIndex = i; break;
       }
     }
+  } else if(document.getElementById('diagModelo').value){
+    // TAC desconocido pero ya hay modelo elegido (ej. cargado desde 3uTools): no mostrar advertencia
+    status.textContent = '';
   } else if(imei.length >= 8){
     status.innerHTML = 'TAC no reconocido — seleccioná el modelo manualmente';
     status.style.color = 'var(--amber)';
@@ -8379,7 +8384,7 @@ function diagParsear3uTools(){
     'Serial Number','Device Name','Capacity & Color','Capacity','Device Color','Release Date','Model Name','Model Identifier','Model Number',
     'Regulatory Model','Hardware Model','Product Type','Activation','Mfg. Date','Mfg Date','Jailbreak','Sales Type','Sales Region','ECID','UDID',
     'Firmware Version','Baseband Version','IMEI2','IMEI 2','IMEI1','IMEI 1','IMEI','MEID','ICCID','EID','Warranty Date','Battery Life','Battery Health',
-    'Charge Times','Charge Cycles','Apple ID Lock','ID Lock','iCloud','SIM Lock','Carrier Lock','Carrier','CPU Architecture','CPU','Hard Disk Type',
+    'Charge Times','Charge Cycles','Apple ID Lock','ID Lock','iCloud','SIM Lock Status','SIM Lock','SIMLock','Carrier Lock Status','Carrier Lock','Network Lock','Carrier','CPU Architecture','CPU','Hard Disk Type',
     'Disk Capacity','Wi-Fi Address','Bluetooth Address','Cellular Address','Five-Code Matching','Front Camera','Rear Camera','Touch ID','Face ID']
     .sort((a,b) => b.length - a.length);
   const labelRe = new RegExp('(?<![A-Za-z0-9])(' + LABELS_3U.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s*')).join('|') + ')(?![A-Za-z0-9])\\s*:?', 'gi');
@@ -8546,11 +8551,11 @@ function diagParsear3uTools(){
       // "Unknown" is intentionally left unmatched — don't set iCloud status
     }
     // SIM Lock / Carrier Lock
-    if(key.includes('sim lock') || key.includes('carrier lock') || key.includes('bloqueo')){
+    if(key.includes('sim lock') || key.includes('simlock') || key.includes('carrier lock') || key.includes('network lock') || key.includes('bloqueo')){
       const v = val.toLowerCase();
-      if(v.includes('unlock') || v.includes('no') || v.includes('liberado') || v === 'no testing'){
+      if(/unlock|liberado|libre|sin bloqueo|factory/.test(v) || /^(no|off|none)\b/.test(v)){
         found.operador = 'liberado';
-      } else if(v.includes('lock') || v.includes('yes') || v.includes('bloqueado')){
+      } else if(/lock|bloqueado/.test(v) || /^(yes|on)\b/.test(v)){
         found.operador = 'bloqueado';
       }
     }
@@ -8699,6 +8704,16 @@ function diagParsear3uTools(){
   if(found.operador){
     document.getElementById('diagOperador').value = found.operador; count++;
   }
+  // Aprender el TAC de este IMEI para reconocer el modelo la próxima vez, y refrescar el aviso
+  try{
+    const selM = document.getElementById('diagModelo');
+    if(found.imei && selM.value){
+      const ap = JSON.parse(localStorage.getItem('diag_tac_aprendidos')||'{}');
+      const tac = found.imei.substring(0,8);
+      if(!IPHONE_TAC[tac] && ap[tac] !== selM.value){ ap[tac] = selM.value; localStorage.setItem('diag_tac_aprendidos', JSON.stringify(ap)); }
+    }
+    if(found.imei) diagAutoDetectModelo();
+  }catch(e){ console.warn(e); }
   // Battery goes to step 2
   if(found.bateria){
     document.getElementById('diagBateria').value = found.bateria; count++;
