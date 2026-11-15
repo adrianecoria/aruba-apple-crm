@@ -819,6 +819,7 @@ body.rol-usuario .solo-admin{display:none !important;}
             </div>
           </div>
           <div class="field"><label>Precio venta (USD)</label><input id="eVenta" type="number" placeholder="0"></div>
+          <div class="field"><label>Fecha de ingreso</label><input id="eFechaIngreso" type="date"></div>
           <div class="field"><label>Estado</label><select id="eEstado"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></div>
           <div class="field"><label>Cantidad</label><input id="eCantidad" type="number" min="1" value="1" placeholder="1" style="width:70px;"></div>
           <div class="field"><button class="btn" onclick="agregarEquipo()" style="width:100%;">Agregar</button></div>
@@ -2519,6 +2520,8 @@ function switchTab(t){
 function initModelos(){
   const sel = document.getElementById('eModelo');
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+  const fi = document.getElementById('eFechaIngreso');
+  if(fi && !fi.value) fi.value = hoyISO();
   const cant = document.getElementById('aCantidad');
   for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cant.appendChild(o); }
   const cantGps = document.getElementById('gCantidad');
@@ -2556,22 +2559,33 @@ function agregarEquipo(){
     if(imei && (imei.length !== 15 || !/^\d{15}$/.test(imei))){ alert('Si ingresás IMEI debe tener 15 dígitos numéricos.'); return; }
     if(imei && equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
   }
+  const provId = document.getElementById('eProveedor').value;
+  const cliId = document.getElementById('eCliente').value;
+  let origenTipo = 'directo';
+  let origenId = '';
+  if(cliId){ origenTipo = 'cliente'; origenId = cliId; }
+  else if(provId){ origenTipo = 'proveedor'; origenId = provId; }
+  const fechaIng = document.getElementById('eFechaIngreso').value || hoyISO();
   const base = {
     modelo: document.getElementById('eModelo').value,
-    proveedorId: document.getElementById('eProveedor').value,
-    clienteVendedorId: document.getElementById('eCliente').value,
+    proveedorId: provId,
+    clienteVendedorId: cliId,
     color: document.getElementById('eColor').value.trim(),
     bateria: document.getElementById('eBateria').value,
     compra: document.getElementById('eCompra').value,
     sugerido: document.getElementById('eSugerido').value,
     venta: document.getElementById('eVenta').value,
-    estado: document.getElementById('eEstado').value
+    estado: document.getElementById('eEstado').value,
+    fechaIngreso: fechaIng,
+    origenTipo: origenTipo,
+    origenId: origenId
   };
   for(let i = 0; i < cantidad; i++){
     equipos.push(Object.assign({}, base, { id: uid(), imei: (cantidad === 1 ? imei : '') }));
   }
   syncGuardar('stock_equipos', equipos);
   ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eFechaIngreso').value = '';
   document.getElementById('eCliente').value = '';
   document.getElementById('eCantidad').value = '1';
   if(cantidad > 1) alert(`✅ Se cargaron ${cantidad} equipos. Recordá completar el IMEI de cada uno.`);
@@ -2617,6 +2631,7 @@ function editarEquipoCard(id){
     <div><label>Compra (USD)</label><input class="ed-compra" type="number" value="${e.compra||''}"></div>
     <div><label>Sugerido (USD)</label><input class="ed-sugerido" type="number" value="${e.sugerido||''}"></div>
     <div><label>Venta (USD)</label><input class="ed-venta" type="number" value="${e.venta||''}"></div>
+    <div><label>Fecha ingreso</label><input class="ed-fechaIngreso" type="date" value="${e.fechaIngreso||''}"></div>
     <div><label>Estado</label><select class="ed-estado">
       <option value="disponible" ${e.estado==='disponible'?'selected':''}>Disponible</option>
       <option value="reservado" ${e.estado==='reservado'?'selected':''}>Reservado</option>
@@ -2645,6 +2660,7 @@ function guardarEdicionCard(id){
   e.compra = card.querySelector('.ed-compra').value;
   e.sugerido = card.querySelector('.ed-sugerido').value;
   e.venta = card.querySelector('.ed-venta').value;
+  e.fechaIngreso = card.querySelector('.ed-fechaIngreso').value;
   e.estado = card.querySelector('.ed-estado').value;
   syncGuardar('stock_equipos', equipos);
   renderEquipos();
@@ -2716,7 +2732,9 @@ function renderCarpetaVendidos(){
         <div class="vi-modelo">${e.modelo} ${e.color?'— '+e.color:''}</div>
         <div class="vi-detail">
           <span>IMEI: ${e.imei||'-'}</span>
-          <span>📅 ${fechaVenta}</span>
+          <span>📅 Venta: ${fechaVenta}</span>
+          ${e.fechaIngreso?`<span>📥 Ingreso: ${e.fechaIngreso}</span>`:''}
+          ${e.fechaIngreso && fechaVenta && fechaVenta!=='-'?`<span>⏱ ${Math.floor((new Date(fechaVenta)-new Date(e.fechaIngreso))/(86400000))} días</span>`:''}
         </div>
       </div>
       <div class="vi-cliente">
@@ -2826,6 +2844,9 @@ function renderEquipoCard(e){
       <span class="sec-info-label">IMEI</span><span class="sec-info-val sec-imei">${e.imei||'-'}</span>
       <span class="sec-info-label">Proveedor</span><span class="sec-info-val">${nombreProveedor(e.proveedorId)}</span>
       ${e.clienteVendedorId?`<span class="sec-info-label">Cliente</span><span class="sec-info-val">${nombreClienteStock(e.clienteVendedorId)}</span>`:''}
+      ${e.fechaIngreso?`<span class="sec-info-label">Ingreso</span><span class="sec-info-val">${e.fechaIngreso}</span>`:''}
+      ${e.origenTipo?`<span class="sec-info-label">Origen</span><span class="sec-info-val">${e.origenTipo==='cliente'?'Cliente: '+nombreClienteStock(e.origenId):e.origenTipo==='proveedor'?'Proveedor: '+nombreProveedor(e.origenId):e.origenTipo==='consignacion'?'Consignación: '+nombreProveedor(e.origenId):e.origenTipo}</span>`:''}
+      ${e.fechaIngreso && e.estado!=='vendido'?`<span class="sec-info-label">Días en stock</span><span class="sec-info-val">${Math.floor((new Date()-new Date(e.fechaIngreso))/(86400000))}</span>`:''}
     </div>
     <div class="sec-prices">
       ${admin?`<span class="sec-price">Compra: <b>$${fmt(e.compra)}</b></span>`:''}
@@ -6612,9 +6633,11 @@ function agregarConsignacion(){
   const deuda = document.getElementById('csDeuda').value;
   const sugerido = (Number(deuda)||0) + 50;
 
+  const fechaConsig = document.getElementById('csFecha').value || hoyISO();
   const equipoNuevo = {
     id: uid(), modelo, proveedorId, color, bateria, imei,
-    compra: deuda, sugerido: sugerido, venta: '', estado: 'disponible'
+    compra: deuda, sugerido: sugerido, venta: '', estado: 'disponible',
+    fechaIngreso: fechaConsig, origenTipo: 'consignacion', origenId: proveedorId
   };
   equipos.push(equipoNuevo);
   syncGuardar('stock_equipos', equipos);
