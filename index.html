@@ -8246,10 +8246,42 @@ async function diagOCR3uTools(input){
       }
     });
 
+    // Optimize for 3uTools report layout
+    await worker.setParameters({
+      tessedit_pageseg_mode: '6',  // Uniform block of text
+      preserve_interword_spaces: '1'
+    });
+
     msgEl.textContent = 'Procesando imagen...';
     barEl.style.width = '20%';
 
-    const { data: { text } } = await worker.recognize(file);
+    // Pre-process: convert to higher contrast canvas for better OCR
+    const img = new Image();
+    const imgUrl = URL.createObjectURL(file);
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = imgUrl;
+    });
+    const canvas = document.createElement('canvas');
+    const scale = Math.max(2, 2000 / Math.max(img.width, img.height));
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext('2d');
+    // Draw scaled up
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // Convert to grayscale and boost contrast
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imageData.data;
+    for(let i = 0; i < d.length; i += 4){
+      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      const val = gray > 140 ? 255 : 0;  // Binarize for clarity
+      d[i] = d[i+1] = d[i+2] = val;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    URL.revokeObjectURL(imgUrl);
+
+    const { data: { text } } = await worker.recognize(canvas);
     await worker.terminate();
 
     barEl.style.width = '100%';
@@ -8339,8 +8371,15 @@ function diagParsear3uTools(){
       if(gb) found.capacidad = gb[1] + ' ' + gb[2].toUpperCase();
     }
     // Color (Device Color in report)
+    // 3uTools format: "Front Black, Rear White Titanium" → extract Rear color
     if(key.includes('color') || key.includes('colour')){
-      found.color = val;
+      const rearMatch = val.match(/rear\s+(.+)/i);
+      if(rearMatch){
+        found.color = rearMatch[1].replace(/,.*$/,'').trim();
+      } else {
+        // If no "Rear" prefix, strip "Front" prefix if present
+        found.color = val.replace(/^front\s+/i,'').replace(/,.*$/,'').trim();
+      }
     }
     // Battery Life / Battery Health
     if(key.includes('battery') && (key.includes('life') || key.includes('health')) || key.includes('salud de batería')){
@@ -8419,10 +8458,16 @@ function diagParsear3uTools(){
     if(cycleMatch) found.ciclos = cycleMatch[1];
   }
 
-  // Fallback: color from "White Titanium" etc
+  // Fallback: color — prefer "Rear" color if present
   if(!found.color){
-    const colorMatch = raw.match(/(White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)\s*(Titanium|Aluminum)?/i);
-    if(colorMatch) found.color = colorMatch[0].trim();
+    const rearColor = raw.match(/rear\s+((?:White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)\s*(?:Titanium|Aluminum)?)/i);
+    if(rearColor){
+      found.color = rearColor[1].trim();
+    } else {
+      const colorMatch = raw.match(/((?:White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)\s*(?:Titanium|Aluminum))/i)
+        || raw.match(/(White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)/i);
+      if(colorMatch) found.color = colorMatch[1].trim();
+    }
   }
 
   console.log('3uTools parser found:', found);
