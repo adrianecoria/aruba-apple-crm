@@ -20,6 +20,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{
   --bg:#0b0710; --card:rgba(255,255,255,0.075); --card-b:rgba(255,255,255,0.18);
@@ -1648,17 +1649,30 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div id="diagStep1" class="diagStep">
           <h3 style="color:var(--green);margin-bottom:12px;">1. Datos Iniciales y Verificación Legal</h3>
 
-          <!-- Pegar desde 3uTools -->
+          <!-- Carga rápida desde 3uTools -->
           <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.18);">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-              <div>
-                <strong style="color:#00b4ff;">📋 Carga rápida desde 3uTools</strong>
-                <div style="font-size:11px;color:var(--txt3);margin-top:2px;">Copiá los datos del equipo desde 3uTools y pegalos acá para autocompletar</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <strong style="color:#00b4ff;">📋 Carga rápida desde 3uTools</strong>
+              <div style="font-size:11px;color:var(--txt3);">Subí una captura o pegá texto del reporte</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label class="btn small" style="cursor:pointer;">
+                📷 Subir captura de 3uTools
+                <input type="file" id="diag3uToolsImg" accept="image/*" onchange="diagOCR3uTools(this)" style="display:none;">
+              </label>
+              <button class="btn ghost small" onclick="document.getElementById('diag3uToolsArea').style.display=document.getElementById('diag3uToolsArea').style.display==='none'?'block':'none'">📝 Pegar texto ▾</button>
+            </div>
+            <div id="diagOCRStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>
+                <span id="diagOCRMsg" style="font-size:13px;color:var(--txt2);">Procesando imagen...</span>
               </div>
-              <button class="btn ghost small" onclick="document.getElementById('diag3uToolsArea').style.display=document.getElementById('diag3uToolsArea').style.display==='none'?'block':'none'">Pegar datos ▾</button>
+              <div id="diagOCRProgress" style="margin-top:6px;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;">
+                <div id="diagOCRBar" style="height:100%;width:0%;background:var(--green);transition:width .3s;"></div>
+              </div>
             </div>
             <div id="diag3uToolsArea" style="display:none;margin-top:10px;">
-              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá el texto copiado de 3uTools (Device Info). Ejemplo:&#10;Device Name: iPhone de Juan&#10;Device Model: iPhone 15 Pro Max&#10;Model Number: MU2R3LL/A&#10;Serial Number: DNPF3K0XYZ&#10;IMEI: 354567890123456&#10;Capacity: 256GB&#10;Battery Health: 92%&#10;..." style="width:100%;font-size:12px;font-family:monospace;"></textarea>
+              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá el texto copiado de 3uTools (Device Report / Device Info). Ejemplo:&#10;Model Identifier: iPhone16,2&#10;Serial Number: DW3LD4C750&#10;IMEI1: 354379775927809&#10;Capacity: 256GB&#10;Battery Life: 79%&#10;Charge Cycles: 1019&#10;ID Lock: On&#10;SIM Lock: No&#10;..." style="width:100%;font-size:12px;font-family:monospace;"></textarea>
               <button class="btn small" onclick="diagParsear3uTools()" style="margin-top:6px;">🔍 Parsear y autocompletar</button>
             </div>
           </div>
@@ -8208,6 +8222,52 @@ function diagVerificarENACOM(){
   mostrarToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
 }
 
+// OCR desde captura de 3uTools
+async function diagOCR3uTools(input){
+  const file = input.files[0];
+  if(!file) return;
+  input.value = '';
+
+  const statusDiv = document.getElementById('diagOCRStatus');
+  const msgEl = document.getElementById('diagOCRMsg');
+  const barEl = document.getElementById('diagOCRBar');
+  statusDiv.style.display = 'block';
+  msgEl.textContent = 'Cargando motor OCR...';
+  barEl.style.width = '10%';
+
+  try {
+    const worker = await Tesseract.createWorker('eng', 1, {
+      logger: m => {
+        if(m.status === 'recognizing text'){
+          const pct = Math.round((m.progress||0)*100);
+          barEl.style.width = (10 + pct*0.85) + '%';
+          msgEl.textContent = 'Leyendo imagen... ' + pct + '%';
+        }
+      }
+    });
+
+    msgEl.textContent = 'Procesando imagen...';
+    barEl.style.width = '20%';
+
+    const { data: { text } } = await worker.recognize(file);
+    await worker.terminate();
+
+    barEl.style.width = '100%';
+    msgEl.textContent = 'Texto extraído ✅ Parseando datos...';
+
+    // Put recognized text in textarea and parse
+    document.getElementById('diag3uToolsInput').value = text;
+    diagParsear3uTools();
+
+    setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
+
+  } catch(e){
+    console.error('OCR error:', e);
+    statusDiv.style.display = 'none';
+    mostrarToast('Error al procesar la imagen: ' + e.message, 'error');
+  }
+}
+
 // Parser de datos de 3uTools
 function diagParsear3uTools(){
   const raw = document.getElementById('diag3uToolsInput').value.trim();
@@ -8216,54 +8276,108 @@ function diagParsear3uTools(){
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   let found = {};
 
-  lines.forEach(line => {
-    const sep = line.indexOf(':');
-    if(sep < 0) return;
-    const key = line.substring(0, sep).trim().toLowerCase();
-    const val = line.substring(sep + 1).trim();
+  // Also try to find IMEI as a standalone 15-digit number in text (OCR fallback)
+  const imeiMatch = raw.match(/\b(\d{15})\b/);
 
-    if(key.includes('imei') && !key.includes('2') && /\d{15}/.test(val.replace(/\D/g,''))){
-      found.imei = val.replace(/\D/g,'').substring(0, 15);
+  lines.forEach(line => {
+    // Handle lines with multiple colons (keep everything after first colon)
+    const sep = line.indexOf(':');
+    if(sep < 0){
+      // OCR might not detect colon — try tab or multiple spaces
+      const tabSep = line.search(/\t|  {2,}/);
+      if(tabSep < 0) return;
+      var key = line.substring(0, tabSep).trim().toLowerCase();
+      var val = line.substring(tabSep).trim();
+    } else {
+      var key = line.substring(0, sep).trim().toLowerCase();
+      var val = line.substring(sep + 1).trim();
     }
-    if(key.includes('serial') && val.length >= 8){
-      found.serial = val;
+
+    // IMEI (IMEI1, IMEI, not IMEI2)
+    if((key.includes('imei') || key === 'imei1') && !key.includes('imei2')){
+      const digits = val.replace(/\D/g,'');
+      if(digits.length >= 15) found.imei = digits.substring(0, 15);
     }
-    if(key.includes('model') && !key.includes('number') && !key.includes('region')){
+    // Serial Number (handle partially hidden like DW3***750)
+    if((key.includes('serial number') || key === 'serial' || key.includes('serial n')) && val.length >= 5){
+      found.serial = val.replace(/\*/g, '');
+    }
+    // Model Name / Model Identifier (3uTools Device Report format)
+    if(key.includes('model name') || key === 'model identifier' || key.includes('model id')){
       found.modelo = val;
     }
+    if(key.includes('device model') || (key.includes('model') && !key.includes('number') && !key.includes('region') && !key.includes('regulatory') && !found.modelo)){
+      found.modelo = val;
+    }
+    // Capacity
     if(key.includes('capacity') || key.includes('capacidad')){
       const gb = val.match(/(\d+)\s*(gb|tb)/i);
       if(gb) found.capacidad = gb[1] + ' ' + gb[2].toUpperCase();
     }
+    // Color (Device Color in report)
     if(key.includes('color') || key.includes('colour')){
       found.color = val;
     }
-    if((key.includes('battery') && key.includes('health')) || key.includes('salud de batería')){
+    // Battery Life / Battery Health
+    if(key.includes('battery') && (key.includes('life') || key.includes('health')) || key.includes('salud de batería')){
       const pct = val.match(/(\d+)/);
       if(pct) found.bateria = pct[1];
     }
-    if(key.includes('charge') && key.includes('cycle') || key.includes('ciclos')){
+    // Charge Cycles
+    if((key.includes('charge') && key.includes('cycle')) || key.includes('ciclos')){
       const n = val.match(/(\d+)/);
       if(n) found.ciclos = n[1];
     }
+    // Device Name → Cliente
     if(key.includes('device name') || key.includes('nombre del dispositivo')){
       found.cliente = val.replace(/^iPhone de\s*/i, '').replace(/^iPhone\s*/i, '');
     }
-    if(key.includes('find my') || key.includes('buscar mi')){
-      if(val.toLowerCase().includes('on') || val.toLowerCase().includes('activado') || val.toLowerCase().includes('yes')){
+    // ID Lock / iCloud / Find My (3uTools shows "ID Lock: On")
+    if(key.includes('id lock') || key.includes('icloud') || key.includes('find my') || key.includes('buscar mi')){
+      const v = val.toLowerCase();
+      if(v.includes('on') || v.includes('activado') || v.includes('activated') || v.includes('yes')){
         found.icloud = 'activado';
-      } else {
+      } else if(v.includes('off') || v.includes('desactivado') || v.includes('no')){
         found.icloud = 'desactivado';
       }
     }
+    // SIM Lock / Carrier Lock
     if(key.includes('sim lock') || key.includes('carrier lock') || key.includes('bloqueo')){
-      if(val.toLowerCase().includes('unlock') || val.toLowerCase().includes('no') || val.toLowerCase().includes('liberado')){
+      const v = val.toLowerCase();
+      if(v.includes('unlock') || v.includes('no') || v.includes('liberado') || v === 'no testing'){
         found.operador = 'liberado';
-      } else {
+      } else if(v.includes('lock') || v.includes('yes') || v.includes('bloqueado')){
         found.operador = 'bloqueado';
       }
     }
+    // Activation status
+    if(key.includes('activation')){
+      // Just informational, no field for this
+    }
+    // Jailbreak
+    if(key.includes('jailbreak')){
+      if(val.toLowerCase().includes('yes')) found.jailbreak = true;
+    }
   });
+
+  // OCR fallback: if IMEI not found via key:val, use regex match
+  if(!found.imei && imeiMatch) found.imei = imeiMatch[1];
+
+  // Try to extract model from "iPhone XX Pro Max" pattern anywhere in text
+  if(!found.modelo){
+    const modelMatch = raw.match(/iPhone\s*(SE|\d{1,2})\s*(mini|Plus|Pro\s*Max|Pro)?/i);
+    if(modelMatch) found.modelo = modelMatch[0].trim();
+  }
+  // Extract capacity from anywhere if not found
+  if(!found.capacidad){
+    const capMatch = raw.match(/\b(\d{2,4})\s*(GB|TB)\b/i);
+    if(capMatch) found.capacidad = capMatch[1] + ' ' + capMatch[2].toUpperCase();
+  }
+  // Extract battery % from anywhere if not found
+  if(!found.bateria){
+    const batMatch = raw.match(/(?:batter|batería)[^\d]*(\d{1,3})\s*%/i);
+    if(batMatch) found.bateria = batMatch[1];
+  }
 
   // Apply found values
   let count = 0;
