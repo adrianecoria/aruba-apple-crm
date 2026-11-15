@@ -8304,8 +8304,11 @@ async function diagOCR3uTools(input){
 
 // Parser de datos de 3uTools
 function diagParsear3uTools(){
-  const raw = document.getElementById('diag3uToolsInput').value.trim();
+  let raw = document.getElementById('diag3uToolsInput').value.trim();
   if(!raw){ showToast('Pegá los datos de 3uTools primero','error'); return 0; }
+
+  // Fix 3uTools mojibake: £¬ is a garbled comma (Chinese encoding issue)
+  raw = raw.replace(/£¬/g, ',');
 
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   let found = {};
@@ -8320,25 +8323,45 @@ function diagParsear3uTools(){
   // OCR: find capacity anywhere
   const capacityMatch = raw.match(/\b(\d{2,4})\s*(GB|TB)\b/i);
 
-  // 3uTools copy-paste produces multi-column tab-separated lines.
-  // Split each line into key-value pairs first.
+  // 3uTools copy-paste produces mixed formats:
+  // - Tab-separated table rows (4 cols: Test Item, Ex-factory, Read, Result)
+  // - Space-separated Device Info lines (key               value)
+  // - Some lines have spaces INSIDE a tab-column (Serial Number               DW3...  TAB  DW3...  TAB  Normal)
   const pairs = [];
   lines.forEach(line => {
     // Split by tabs to handle multi-column layout
     const parts = line.split('\t').map(p => p.trim()).filter(Boolean);
     if(parts.length >= 2){
+      // Each tab-part might ITSELF contain a space-separated key:val
       // Process pairs: [key, val, key, val, ...]
       for(let i = 0; i < parts.length - 1; i += 2){
-        pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
+        let k = parts[i], v = parts[i+1];
+        // If the "key" part contains wide spaces, it might be "Serial Number     DW3..." as one chunk
+        // Split it further by 3+ spaces
+        const innerSplit = k.search(/ {3,}/);
+        if(innerSplit > 0){
+          // The real key is before the spaces, and the real value is after them
+          // But we also have parts[i+1] — that's a duplicate (Read Value column). Use the inner value.
+          const innerKey = k.substring(0, innerSplit).trim();
+          const innerVal = k.substring(innerSplit).trim();
+          if(innerVal) {
+            pairs.push({ key: innerKey.toLowerCase(), val: innerVal });
+          } else {
+            pairs.push({ key: innerKey.toLowerCase(), val: v });
+          }
+        } else {
+          pairs.push({ key: k.toLowerCase(), val: v });
+        }
       }
+      // If odd number of parts (e.g. 3: key+val_mixed, dup, result), handle leftover
     } else {
       // No tabs — try colon separator
       const sep = line.indexOf(':');
       if(sep > 0){
         pairs.push({ key: line.substring(0, sep).trim().toLowerCase(), val: line.substring(sep+1).trim() });
       } else {
-        // Try multiple spaces
-        const spaceSep = line.search(/  {2,}/);
+        // Try multiple spaces (3+)
+        const spaceSep = line.search(/ {3,}/);
         if(spaceSep > 0){
           pairs.push({ key: line.substring(0, spaceSep).trim().toLowerCase(), val: line.substring(spaceSep).trim() });
         }
@@ -8395,12 +8418,14 @@ function diagParsear3uTools(){
     }
     // ID Lock / iCloud / Find My (3uTools shows "ID Lock: On")
     if(key.includes('id lock') || key.includes('icloud') || key.includes('find my') || key.includes('buscar mi')){
-      const v = val.toLowerCase();
-      if(v.includes('on') || v.includes('activado') || v.includes('activated') || v.includes('yes')){
+      const v = val.toLowerCase().trim();
+      // Use exact match or word-boundary to avoid "unknown" matching "on"
+      if(v === 'on' || v === 'yes' || v === 'activado' || v === 'activated' || v === 'sí'){
         found.icloud = 'activado';
-      } else if(v.includes('off') || v.includes('desactivado') || v.includes('no')){
+      } else if(v === 'off' || v === 'no' || v === 'desactivado' || v === 'deactivated'){
         found.icloud = 'desactivado';
       }
+      // "Unknown" is intentionally left unmatched — don't set iCloud status
     }
     // SIM Lock / Carrier Lock
     if(key.includes('sim lock') || key.includes('carrier lock') || key.includes('bloqueo')){
@@ -8454,6 +8479,13 @@ function diagParsear3uTools(){
   if(!found.ciclos){
     const cycleMatch = raw.match(/(?:cycle|ciclo)[s]?\s*[:\s]*(\d{1,5})/i);
     if(cycleMatch) found.ciclos = cycleMatch[1];
+  }
+
+  // Fallback: serial number — Apple serials are 10-12 alphanumeric chars
+  // Look for "Serial" keyword nearby or known Apple serial patterns (starts with letter, 10+ chars)
+  if(!found.serial){
+    const serialRegex = raw.match(/serial[^a-z0-9]{0,20}([A-Z0-9]{10,12})\b/i);
+    if(serialRegex) found.serial = serialRegex[1];
   }
 
   // Fallback: color — prefer "Rear" color if present
