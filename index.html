@@ -1647,10 +1647,26 @@ body.rol-usuario .solo-admin{display:none !important;}
         <!-- STEP 1: Datos Iniciales y Verificación Legal -->
         <div id="diagStep1" class="diagStep">
           <h3 style="color:var(--green);margin-bottom:12px;">1. Datos Iniciales y Verificación Legal</h3>
+
+          <!-- Pegar desde 3uTools -->
+          <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.18);">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div>
+                <strong style="color:#00b4ff;">📋 Carga rápida desde 3uTools</strong>
+                <div style="font-size:11px;color:var(--txt3);margin-top:2px;">Copiá los datos del equipo desde 3uTools y pegalos acá para autocompletar</div>
+              </div>
+              <button class="btn ghost small" onclick="document.getElementById('diag3uToolsArea').style.display=document.getElementById('diag3uToolsArea').style.display==='none'?'block':'none'">Pegar datos ▾</button>
+            </div>
+            <div id="diag3uToolsArea" style="display:none;margin-top:10px;">
+              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá el texto copiado de 3uTools (Device Info). Ejemplo:&#10;Device Name: iPhone de Juan&#10;Device Model: iPhone 15 Pro Max&#10;Model Number: MU2R3LL/A&#10;Serial Number: DNPF3K0XYZ&#10;IMEI: 354567890123456&#10;Capacity: 256GB&#10;Battery Health: 92%&#10;..." style="width:100%;font-size:12px;font-family:monospace;"></textarea>
+              <button class="btn small" onclick="diagParsear3uTools()" style="margin-top:6px;">🔍 Parsear y autocompletar</button>
+            </div>
+          </div>
+
           <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
             <div>
               <label>IMEI *</label>
-              <input type="text" id="diagIMEI" maxlength="15" placeholder="15 dígitos" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+              <input type="text" id="diagIMEI" maxlength="15" placeholder="15 dígitos" oninput="this.value=this.value.replace(/[^0-9]/g,'');diagAutoDetectModelo();">
               <small id="diagIMEIStatus" style="color:var(--txt3);"></small>
             </div>
             <div>
@@ -1705,6 +1721,7 @@ body.rol-usuario .solo-admin{display:none !important;}
                   <option value="habilitado">✅ Habilitado</option>
                   <option value="inhibido">🚫 Inhibido/Robado</option>
                 </select>
+                <button class="btn ghost small" onclick="diagVerificarENACOM()" style="margin-top:4px;" title="Abrir web de ENACOM para verificar IMEI">🔗 Verificar en ENACOM</button>
               </div>
             </div>
           </div>
@@ -8119,6 +8136,191 @@ renderReparaciones();
 // ============================================
 // MÓDULO DIAGNÓSTICO DE iPHONE
 // ============================================
+// TAC → Modelo iPhone (primeros 8 dígitos del IMEI)
+const IPHONE_TAC = {
+  '35391811':'iPhone 6','35## 6s mapping':'',
+  '35325509':'iPhone 6s','35325510':'iPhone 6s','35407710':'iPhone 6s Plus',
+  '35391110':'iPhone 7','35467010':'iPhone 7','35558810':'iPhone 7 Plus','35558910':'iPhone 7 Plus',
+  '35321810':'iPhone 8','35321910':'iPhone 8','35676810':'iPhone 8 Plus','35676910':'iPhone 8 Plus',
+  '35694709':'iPhone X','35694809':'iPhone X','35313410':'iPhone X',
+  '35383210':'iPhone XR','35383310':'iPhone XR',
+  '35388210':'iPhone XS','35388310':'iPhone XS','35397810':'iPhone XS Max','35397910':'iPhone XS Max',
+  '35334010':'iPhone 11','35334110':'iPhone 11','35395610':'iPhone 11 Pro','35395710':'iPhone 11 Pro',
+  '35395810':'iPhone 11 Pro Max','35395910':'iPhone 11 Pro Max',
+  '35412511':'iPhone SE (2nd)','35412611':'iPhone SE (2nd)',
+  '35341810':'iPhone 12 mini','35341910':'iPhone 12 mini',
+  '35349010':'iPhone 12','35349110':'iPhone 12',
+  '35383810':'iPhone 12 Pro','35383910':'iPhone 12 Pro',
+  '35407410':'iPhone 12 Pro Max','35407510':'iPhone 12 Pro Max',
+  '35424511':'iPhone 13 mini','35424611':'iPhone 13 mini',
+  '35427011':'iPhone 13','35427111':'iPhone 13',
+  '35476111':'iPhone 13 Pro','35476211':'iPhone 13 Pro',
+  '35513111':'iPhone 13 Pro Max','35513211':'iPhone 13 Pro Max',
+  '35538811':'iPhone SE (3rd)','35538911':'iPhone SE (3rd)',
+  '35571012':'iPhone 14','35571112':'iPhone 14','35579412':'iPhone 14 Plus','35579512':'iPhone 14 Plus',
+  '35591712':'iPhone 14 Pro','35591812':'iPhone 14 Pro','35604512':'iPhone 14 Pro Max','35604612':'iPhone 14 Pro Max',
+  '35648113':'iPhone 15','35648213':'iPhone 15','35674913':'iPhone 15 Plus','35674813':'iPhone 15 Plus',
+  '35684913':'iPhone 15 Pro','35684813':'iPhone 15 Pro','35699913':'iPhone 15 Pro Max','35699813':'iPhone 15 Pro Max',
+  '35742714':'iPhone 16','35742614':'iPhone 16','35762714':'iPhone 16 Plus','35762614':'iPhone 16 Plus',
+  '35772714':'iPhone 16 Pro','35772614':'iPhone 16 Pro','35788714':'iPhone 16 Pro Max','35788614':'iPhone 16 Pro Max',
+  '35788814':'iPhone 16e'
+};
+
+// Busca modelo por TAC (primeros 8 dígitos del IMEI)
+function diagAutoDetectModelo(){
+  const imei = document.getElementById('diagIMEI').value.trim();
+  const status = document.getElementById('diagIMEIStatus');
+  if(imei.length < 8){ status.textContent = ''; return; }
+
+  const tac = imei.substring(0, 8);
+  const modelo = IPHONE_TAC[tac];
+
+  if(modelo){
+    status.innerHTML = '✅ Detectado: <b>' + modelo + '</b>';
+    status.style.color = 'var(--green)';
+    // Auto-select in dropdown
+    const sel = document.getElementById('diagModelo');
+    for(let i = 0; i < sel.options.length; i++){
+      if(sel.options[i].value && modelo.toLowerCase().includes(sel.options[i].value.toLowerCase().replace('apple ','').replace('iphone ',''))){
+        sel.selectedIndex = i; break;
+      }
+    }
+    // Try exact match
+    for(let i = 0; i < sel.options.length; i++){
+      if(sel.options[i].value === modelo || sel.options[i].text === modelo){
+        sel.selectedIndex = i; break;
+      }
+    }
+  } else if(imei.length >= 8){
+    status.innerHTML = 'TAC no reconocido — seleccioná el modelo manualmente';
+    status.style.color = 'var(--amber)';
+  }
+}
+
+// Abrir ENACOM para verificar IMEI
+function diagVerificarENACOM(){
+  const imei = document.getElementById('diagIMEI').value.trim();
+  if(!imei || imei.length < 15){
+    mostrarToast('Ingresá un IMEI de 15 dígitos primero','error');
+    return;
+  }
+  window.open('https://enacom.gob.ar/imei', '_blank');
+  mostrarToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
+}
+
+// Parser de datos de 3uTools
+function diagParsear3uTools(){
+  const raw = document.getElementById('diag3uToolsInput').value.trim();
+  if(!raw){ mostrarToast('Pegá los datos de 3uTools primero','error'); return; }
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  let found = {};
+
+  lines.forEach(line => {
+    const sep = line.indexOf(':');
+    if(sep < 0) return;
+    const key = line.substring(0, sep).trim().toLowerCase();
+    const val = line.substring(sep + 1).trim();
+
+    if(key.includes('imei') && !key.includes('2') && /\d{15}/.test(val.replace(/\D/g,''))){
+      found.imei = val.replace(/\D/g,'').substring(0, 15);
+    }
+    if(key.includes('serial') && val.length >= 8){
+      found.serial = val;
+    }
+    if(key.includes('model') && !key.includes('number') && !key.includes('region')){
+      found.modelo = val;
+    }
+    if(key.includes('capacity') || key.includes('capacidad')){
+      const gb = val.match(/(\d+)\s*(gb|tb)/i);
+      if(gb) found.capacidad = gb[1] + ' ' + gb[2].toUpperCase();
+    }
+    if(key.includes('color') || key.includes('colour')){
+      found.color = val;
+    }
+    if((key.includes('battery') && key.includes('health')) || key.includes('salud de batería')){
+      const pct = val.match(/(\d+)/);
+      if(pct) found.bateria = pct[1];
+    }
+    if(key.includes('charge') && key.includes('cycle') || key.includes('ciclos')){
+      const n = val.match(/(\d+)/);
+      if(n) found.ciclos = n[1];
+    }
+    if(key.includes('device name') || key.includes('nombre del dispositivo')){
+      found.cliente = val.replace(/^iPhone de\s*/i, '').replace(/^iPhone\s*/i, '');
+    }
+    if(key.includes('find my') || key.includes('buscar mi')){
+      if(val.toLowerCase().includes('on') || val.toLowerCase().includes('activado') || val.toLowerCase().includes('yes')){
+        found.icloud = 'activado';
+      } else {
+        found.icloud = 'desactivado';
+      }
+    }
+    if(key.includes('sim lock') || key.includes('carrier lock') || key.includes('bloqueo')){
+      if(val.toLowerCase().includes('unlock') || val.toLowerCase().includes('no') || val.toLowerCase().includes('liberado')){
+        found.operador = 'liberado';
+      } else {
+        found.operador = 'bloqueado';
+      }
+    }
+  });
+
+  // Apply found values
+  let count = 0;
+  if(found.imei){
+    document.getElementById('diagIMEI').value = found.imei; count++;
+    diagAutoDetectModelo();
+  }
+  if(found.serial){
+    document.getElementById('diagSerial').value = found.serial; count++;
+  }
+  if(found.modelo){
+    // Try to match in select
+    const sel = document.getElementById('diagModelo');
+    const modeloLower = found.modelo.toLowerCase();
+    for(let i = 0; i < sel.options.length; i++){
+      if(sel.options[i].value && modeloLower.includes(sel.options[i].value.toLowerCase())){
+        sel.selectedIndex = i; count++; break;
+      }
+    }
+  }
+  if(found.capacidad){
+    const sel = document.getElementById('diagCapacidad');
+    for(let i = 0; i < sel.options.length; i++){
+      if(sel.options[i].text.replace(/\s/g,'').toLowerCase() === found.capacidad.replace(/\s/g,'').toLowerCase()){
+        sel.selectedIndex = i; count++; break;
+      }
+    }
+  }
+  if(found.color){
+    document.getElementById('diagColor').value = found.color; count++;
+  }
+  if(found.cliente){
+    document.getElementById('diagCliente').value = found.cliente; count++;
+  }
+  if(found.icloud){
+    const sel = document.getElementById('diagiCloud');
+    sel.value = found.icloud; count++;
+    if(found.icloud === 'activado'){
+      document.getElementById('diagiCloudWarn').style.display = 'block';
+    }
+  }
+  if(found.operador){
+    document.getElementById('diagOperador').value = found.operador; count++;
+  }
+  // Battery goes to step 2
+  if(found.bateria){
+    document.getElementById('diagBateria').value = found.bateria; count++;
+    diagCheckBateria();
+  }
+  if(found.ciclos){
+    document.getElementById('diagCiclos').value = found.ciclos; count++;
+  }
+
+  document.getElementById('diag3uToolsArea').style.display = 'none';
+  mostrarToast(`✅ 3uTools: ${count} campos autocompletados`);
+}
+
 const DIAG_CHECKLIST = [
   { cat: 'Pantalla', items: ['Táctil funciona correctamente','True Tone activo','Brillo automático','Sin manchas/líneas/dead pixels'] },
   { cat: 'Biometría', items: ['Face ID funciona','Touch ID funciona (si aplica)'] },
