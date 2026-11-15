@@ -1654,9 +1654,16 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <strong style="color:#00b4ff;">📋 Carga rápida desde 3uTools</strong>
             </div>
-            <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;">En 3uTools: <strong>Device Report</strong> → clic derecho en la tabla → <strong>Select All</strong> → <strong>Copy</strong> → pegar acá abajo</div>
+            <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;">
+              En 3uTools: <strong>Device Details</strong> → <strong>Open in Notepad</strong> → Ctrl+A → Ctrl+C → pegar acá.<br>
+              También podés <strong>copiar el screenshot</strong> (botón Screenshot) y pegarlo con Ctrl+V.
+            </div>
             <div id="diag3uToolsArea" style="margin-top:4px;">
-              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá el texto copiado de 3uTools (Device Report).&#10;&#10;Clic derecho en la tabla del Device Report → Select All → Copy&#10;&#10;Ejemplo:&#10;Model Name	iPhone 15 Pro Max&#10;IMEI1	354379775927809&#10;Serial Number	DW3LD4C750&#10;Capacity	256GB&#10;Battery Life	79%&#10;Charge Cycles	1019&#10;ID Lock	On&#10;SIM Lock	No testing" style="width:100%;font-size:12px;font-family:monospace;"></textarea>
+              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá texto o imagen de 3uTools (Ctrl+V)&#10;&#10;Opción 1: Device Details → Open in Notepad → Ctrl+A → Ctrl+C → pegar acá&#10;Opción 2: Device Details → Screenshot → pegar acá (Ctrl+V)&#10;Opción 3: Device Report → clic derecho → Select All → Copy → pegar acá" style="width:100%;font-size:12px;font-family:monospace;"></textarea>
+              <div id="diagPastedImgPreview" style="display:none;margin-top:6px;text-align:center;">
+                <img id="diagPastedImgEl" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:11px;color:var(--txt3);margin-top:4px;">📷 Imagen pegada — clic en "Parsear" para procesar con OCR</div>
+              </div>
               <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
                 <button class="btn small" onclick="diagParsear3uTools()">🔍 Parsear y autocompletar</button>
                 <label class="btn ghost small" style="cursor:pointer;">
@@ -8221,11 +8228,45 @@ function diagVerificarENACOM(){
   showToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
 }
 
-// OCR desde captura de 3uTools
+// Handle paste event on the textarea — detect clipboard images
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('diag3uToolsInput');
+  if(!ta) return;
+  ta.addEventListener('paste', (e) => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for(const item of items){
+      if(item.type.indexOf('image') !== -1){
+        e.preventDefault();
+        const blob = item.getAsFile();
+        // Show preview
+        const url = URL.createObjectURL(blob);
+        const preview = document.getElementById('diagPastedImgPreview');
+        const imgEl = document.getElementById('diagPastedImgEl');
+        imgEl.src = url;
+        preview.style.display = 'block';
+        ta.value = '';
+        // Store blob for OCR processing
+        window._diag3uToolsPastedBlob = blob;
+        showToast('📷 Imagen pegada. Hacé clic en "Parsear y autocompletar" para procesarla.');
+        return;
+      }
+    }
+    // If no image, it's text — clear any previous pasted image
+    window._diag3uToolsPastedBlob = null;
+    document.getElementById('diagPastedImgPreview').style.display = 'none';
+  });
+});
+
+// OCR desde captura de 3uTools (file input or pasted blob)
 async function diagOCR3uTools(input){
-  const file = input.files[0];
-  if(!file) return;
-  input.value = '';
+  let file;
+  if(input instanceof Blob){
+    file = input;
+  } else {
+    file = input.files[0];
+    if(!file) return;
+    input.value = '';
+  }
 
   const statusDiv = document.getElementById('diagOCRStatus');
   const msgEl = document.getElementById('diagOCRMsg');
@@ -8304,6 +8345,15 @@ async function diagOCR3uTools(input){
 
 // Parser de datos de 3uTools
 function diagParsear3uTools(){
+  // If there's a pasted image blob, run OCR on it instead
+  if(window._diag3uToolsPastedBlob){
+    const blob = window._diag3uToolsPastedBlob;
+    window._diag3uToolsPastedBlob = null;
+    document.getElementById('diagPastedImgPreview').style.display = 'none';
+    diagOCR3uTools(blob);
+    return 0;
+  }
+
   let raw = document.getElementById('diag3uToolsInput').value.trim();
   if(!raw){ showToast('Pegá los datos de 3uTools primero','error'); return 0; }
 
