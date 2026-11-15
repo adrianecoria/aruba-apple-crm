@@ -8323,37 +8323,49 @@ function diagParsear3uTools(){
   // OCR: find capacity anywhere
   const capacityMatch = raw.match(/\b(\d{2,4})\s*(GB|TB)\b/i);
 
-  // 3uTools copy-paste produces mixed formats:
-  // - Tab-separated table rows (4 cols: Test Item, Ex-factory, Read, Result)
-  // - Space-separated Device Info lines (key               value)
-  // - Some lines have spaces INSIDE a tab-column (Serial Number               DW3...  TAB  DW3...  TAB  Normal)
+  // 3uTools produces TWO formats when copying:
+  // A) Device Details ("Open in Notepad"): multi-column rows with tabs
+  //    e.g. "Device Name\tiPhone 15 Pro Max\tCapacity & Color\t256GB White Titanium\tRelease Date\t9/13/2023"
+  //    Each line has 6 tab-parts: key1, val1, key2, val2, key3, val3
+  // B) Device Report (Select All → Copy): mixed tabs and spaces
+  //    e.g. "Model Name\tiPhone 15 Pro Max\tiPhone 15 Pro Max\tNormal"
+  //    Has 4 cols: Test Item, Ex-factory Value, Read Value, Result
+  //    Device Info section uses spaces: "Battery Life\t79%"
+  //
+  // Strategy: split by tabs first. If parts are key-value-key-value pattern, use that.
+  // Otherwise treat as table row (take first two as key-val).
   const pairs = [];
   lines.forEach(line => {
-    // Split by tabs to handle multi-column layout
     const parts = line.split('\t').map(p => p.trim()).filter(Boolean);
-    if(parts.length >= 2){
-      // Each tab-part might ITSELF contain a space-separated key:val
-      // Process pairs: [key, val, key, val, ...]
+    if(parts.length >= 6){
+      // Device Details format: 3 key-val pairs per line
       for(let i = 0; i < parts.length - 1; i += 2){
-        let k = parts[i], v = parts[i+1];
-        // If the "key" part contains wide spaces, it might be "Serial Number     DW3..." as one chunk
-        // Split it further by 3+ spaces
-        const innerSplit = k.search(/ {3,}/);
-        if(innerSplit > 0){
-          // The real key is before the spaces, and the real value is after them
-          // But we also have parts[i+1] — that's a duplicate (Read Value column). Use the inner value.
-          const innerKey = k.substring(0, innerSplit).trim();
-          const innerVal = k.substring(innerSplit).trim();
-          if(innerVal) {
-            pairs.push({ key: innerKey.toLowerCase(), val: innerVal });
-          } else {
-            pairs.push({ key: innerKey.toLowerCase(), val: v });
-          }
-        } else {
-          pairs.push({ key: k.toLowerCase(), val: v });
-        }
+        pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
       }
-      // If odd number of parts (e.g. 3: key+val_mixed, dup, result), handle leftover
+    } else if(parts.length >= 4){
+      // Could be Device Details (2 pairs) or Device Report table (4 cols)
+      // Heuristic: if parts[2] looks like a known key name, treat as key-val pairs
+      const p2 = parts[2].toLowerCase();
+      const isKey = /^(model|device|serial|imei|capacity|color|battery|charge|sim|activation|jailbreak|sale|region|firmware|release|mfg|warranty|id lock|screen|cpu|baseband|bluetooth|cellular|wi-fi|lidar|infrared|dot|distance|ambient|cover|vibrator|partition|storage|hardware|wireless|call|protocol|esim|coprocessor|24-hour)/.test(p2);
+      if(isKey){
+        // Key-val pairs
+        for(let i = 0; i < parts.length - 1; i += 2){
+          pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
+        }
+      } else {
+        // Device Report table: col0=Test Item, col1=Ex-factory, col2=Read, col3=Result
+        pairs.push({ key: parts[0].toLowerCase(), val: parts[1] });
+      }
+    } else if(parts.length >= 2){
+      // Simple key-val pair (Device Info section)
+      let k = parts[0], v = parts[1];
+      // Check if key has inner spaces (mixed format: "Serial Number    DW3..." as one tab-chunk)
+      const innerSplit = k.search(/ {3,}/);
+      if(innerSplit > 0){
+        pairs.push({ key: k.substring(0, innerSplit).trim().toLowerCase(), val: k.substring(innerSplit).trim() });
+      } else {
+        pairs.push({ key: k.toLowerCase(), val: v });
+      }
     } else {
       // No tabs — try colon separator
       const sep = line.indexOf(':');
@@ -8375,25 +8387,42 @@ function diagParsear3uTools(){
       const digits = val.replace(/\D/g,'');
       if(digits.length >= 15) found.imei = digits.substring(0, 15);
     }
-    // Serial Number (handle partially hidden like DW3***750)
-    if((key.includes('serial number') || key === 'serial' || key.includes('serial n')) && val.length >= 5){
+    // Serial Number — but NOT "Screen Serial Number", "Logic Board SN", "Battery SN", "Wi-Fi Serial", "Baseband SN"
+    if((key.includes('serial number') || key === 'serial' || key.includes('serial n'))
+       && !key.includes('screen') && !key.includes('logic') && !key.includes('battery') && !key.includes('wi-fi')
+       && !key.includes('baseband') && !key.includes('board')
+       && val.length >= 5 && val.length <= 15){
       found.serial = val.replace(/\*/g, '');
     }
-    // Model Name / Model Identifier (3uTools Device Report format)
-    if(key.includes('model name') || key === 'model identifier' || key.includes('model id')){
+    // Model Name / Model Identifier (3uTools Device Report and Device Details)
+    if(key === 'model name' || key.includes('model name')){
       found.modelo = val;
     }
-    if(key.includes('device model') || (key.includes('model') && !key.includes('number') && !key.includes('region') && !key.includes('regulatory') && !found.modelo)){
+    // "Device Name" in Device Details also shows model (e.g. "iPhone 15 Pro Max")
+    // but only use if no Model Name found yet
+    if((key === 'device name' || key === 'model identifier' || key.includes('model id'))
+       && val.toLowerCase().includes('iphone') && !found.modelo){
       found.modelo = val;
     }
-    // Capacity
-    if(key.includes('capacity') || key.includes('capacidad')){
+    if(key.includes('device model') || (key.includes('model') && !key.includes('number') && !key.includes('region') && !key.includes('regulatory') && !key.includes('identifier') && !found.modelo)){
+      found.modelo = val;
+    }
+    // Capacity & Color combined (Device Details format: "256GB White Titanium")
+    if(key.includes('capacity') && key.includes('color')){
+      const capColor = val.match(/(\d+)\s*(GB|TB)\s+(.+)/i);
+      if(capColor){
+        found.capacidad = capColor[1] + ' ' + capColor[2].toUpperCase();
+        found.color = capColor[3].trim();
+      }
+    }
+    // Capacity alone
+    else if(key.includes('capacity') || key.includes('capacidad')){
       const gb = val.match(/(\d+)\s*(gb|tb)/i);
       if(gb) found.capacidad = gb[1] + ' ' + gb[2].toUpperCase();
     }
     // Color (Device Color in report)
     // 3uTools format: "Front Black, Rear White Titanium" → extract Rear color
-    if(key.includes('color') || key.includes('colour')){
+    if(!found.color && (key.includes('color') || key.includes('colour'))){
       const rearMatch = val.match(/rear\s+(.+)/i);
       if(rearMatch){
         found.color = rearMatch[1].replace(/,.*$/,'').trim();
@@ -8412,9 +8441,14 @@ function diagParsear3uTools(){
       const n = val.match(/(\d+)/);
       if(n) found.ciclos = n[1];
     }
-    // Device Name → Cliente
+    // Device Name → Cliente (only if value contains owner name, not just model)
+    // In Device Details "Device Name" is the model. If someone renames their iPhone
+    // to "iPhone de Juan", we extract "Juan". Otherwise skip.
     if(key.includes('device name') || key.includes('nombre del dispositivo')){
-      found.cliente = val.replace(/^iPhone de\s*/i, '').replace(/^iPhone\s*/i, '');
+      if(/iphone de\s+/i.test(val)){
+        found.cliente = val.replace(/^iPhone de\s*/i, '').trim();
+      }
+      // else: it's just the model name, skip for cliente
     }
     // ID Lock / iCloud / Find My (3uTools shows "ID Lock: On")
     if(key.includes('id lock') || key.includes('icloud') || key.includes('find my') || key.includes('buscar mi')){
