@@ -1710,7 +1710,24 @@ body.rol-usuario .solo-admin{display:none !important;}
             </div>
             <div>
               <label>Cliente</label>
-              <input type="text" id="diagCliente" placeholder="Nombre del cliente">
+              <input type="hidden" id="diagCliente">
+              <select id="diagClienteSel" onchange="diagClienteCambio()"></select>
+            </div>
+            <div>
+              <label>El cliente es</label>
+              <select id="diagClienteRol">
+                <option value="comprador">Comprador (le vendemos el equipo)</option>
+                <option value="vendedor">Vendedor (le compramos el equipo)</option>
+              </select>
+            </div>
+            <div id="diagClienteNuevoBox" style="display:none;grid-column:1/-1;padding:10px;border-radius:10px;background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.2);">
+              <div style="font-size:12px;font-weight:600;margin-bottom:6px;">➕ Nuevo cliente (se guarda en Clientes)</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input type="text" id="diagCliNombre" placeholder="Nombre" style="flex:1;min-width:140px;">
+                <input type="text" id="diagCliApellido" placeholder="Apellido" style="flex:1;min-width:140px;">
+                <input type="text" id="diagCliDni" placeholder="DNI" style="flex:1;min-width:120px;" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                <button type="button" class="btn" onclick="diagGuardarClienteNuevo()">Guardar cliente</button>
+              </div>
             </div>
           </div>
 
@@ -8691,9 +8708,6 @@ function diagParsear3uTools(){
   if(found.color){
     document.getElementById('diagColor').value = found.color; count++;
   }
-  if(found.cliente){
-    document.getElementById('diagCliente').value = found.cliente; count++;
-  }
   if(found.icloud){
     const sel = document.getElementById('diagiCloud');
     sel.value = found.icloud; count++;
@@ -8909,13 +8923,9 @@ function calcularVeredicto(){
   `;
 }
 
-function iniciarNuevoDiagnostico(){
+// Deja el formulario de diagnóstico completamente en blanco
+function diagLimpiarFormulario(){
   diagEditId = null;
-  document.getElementById('diagListCard').style.display = 'none';
-  document.getElementById('diagFormCard').style.display = 'block';
-  document.getElementById('diagDetalleCard').style.display = 'none';
-  document.getElementById('diagFormTitle').textContent = 'Nuevo Diagnóstico';
-
   // Reset form
   ['diagIMEI','diagSerial','diagColor','diagCliente','diagObsEstetica','diagObsHardware','diagNotasFinal','diagTecnico'].forEach(id => {
     const el = document.getElementById(id);
@@ -8944,13 +8954,75 @@ function iniciarNuevoDiagnostico(){
     });
   }
 
+  ['diagEstPantalla','diagEstTrasera','diagEstMarco','diagClienteRol'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.selectedIndex = 0;
+  });
+  document.querySelectorAll('#diagChecklist input[type=radio]').forEach(r => r.checked = false);
+  const ta = document.getElementById('diag3uToolsInput'); if(ta) ta.value = '';
+  window._diag3uToolsPastedBlob = null;
+  const pv = document.getElementById('diagPastedImgPreview'); if(pv) pv.style.display = 'none';
+  const res = document.getElementById('diagResultado'); if(res) res.innerHTML = '';
+  ['diagCliNombre','diagCliApellido','diagCliDni'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  diagCargarClientesSelect('');
+}
+
+// --- Cliente del diagnóstico (tomado del módulo Clientes) ---
+function diagCargarClientesSelect(selId){
+  const sel = document.getElementById('diagClienteSel');
+  if(!sel) return;
+  const esc = v => String(v||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const lista = (clientes||[]).slice().sort((a,b) => (a.apellido+' '+a.nombre).localeCompare(b.apellido+' '+b.nombre));
+  sel.innerHTML = '<option value="">Seleccionar cliente...</option>'
+    + '<option value="__nuevo__">➕ Agregar cliente nuevo...</option>'
+    + lista.map(c => '<option value="'+esc(c.id)+'">'+esc(c.apellido)+', '+esc(c.nombre)+(c.dni?' — DNI '+esc(c.dni):'')+'</option>').join('');
+  sel.value = selId || '';
+  diagClienteCambio();
+}
+function diagClienteCambio(){
+  const sel = document.getElementById('diagClienteSel');
+  const box = document.getElementById('diagClienteNuevoBox');
+  box.style.display = sel.value === '__nuevo__' ? 'block' : 'none';
+  const c = (clientes||[]).find(x => x.id === sel.value);
+  document.getElementById('diagCliente').value = c ? (c.nombre+' '+c.apellido).trim() : '';
+}
+function diagGuardarClienteNuevo(){
+  const nombre = document.getElementById('diagCliNombre').value.trim();
+  const apellido = document.getElementById('diagCliApellido').value.trim();
+  const dni = document.getElementById('diagCliDni').value.trim();
+  if(!nombre || !apellido || !dni){ showToast('Completá nombre, apellido y DNI del cliente'); return; }
+  const existe = clientes.find(c => c.dni && c.dni === dni);
+  if(existe){
+    showToast('Ya hay un cliente con ese DNI: ' + existe.nombre + ' ' + existe.apellido + '. Lo seleccioné.');
+    diagCargarClientesSelect(existe.id);
+    return;
+  }
+  const nuevo = { id: uid(), nombre, apellido, dni, telefono: '', direccion: '' };
+  clientes.push(nuevo);
+  syncGuardar('clientes', clientes);
+  registrarActividad('Nuevo cliente: ' + nombre + ' ' + apellido);
+  ['diagCliNombre','diagCliApellido','diagCliDni'].forEach(id => document.getElementById(id).value = '');
+  diagCargarClientesSelect(nuevo.id);
+  showToast('Cliente agregado ✅');
+}
+
+function iniciarNuevoDiagnostico(){
+  diagEditId = null;
+  document.getElementById('diagListCard').style.display = 'none';
+  document.getElementById('diagFormCard').style.display = 'block';
+  document.getElementById('diagDetalleCard').style.display = 'none';
+  document.getElementById('diagFormTitle').textContent = 'Nuevo Diagnóstico';
+
+  diagLimpiarFormulario();
   diagGoStep(1);
 }
 
 function cancelarDiagnostico(){
+  diagLimpiarFormulario();
+  diagGoStep(1);
   document.getElementById('diagListCard').style.display = 'block';
   document.getElementById('diagFormCard').style.display = 'none';
   document.getElementById('diagDetalleCard').style.display = 'none';
+  renderDiagnosticos();
 }
 
 function diagVolverListado(){
@@ -8984,6 +9056,7 @@ function diagLeerFormulario(){
   const imei = document.getElementById('diagIMEI').value.trim();
   const modelo = document.getElementById('diagModelo').value;
   const icloud = document.getElementById('diagiCloud').value;
+  const cliSel = (clientes||[]).find(x => x.id === document.getElementById('diagClienteSel').value);
   const checklist = getChecklistResults();
   let fallos = 0, oks = 0;
   const fallosList = [];
@@ -9016,6 +9089,9 @@ function diagLeerFormulario(){
     capacidad: document.getElementById('diagCapacidad').value,
     color: document.getElementById('diagColor').value.trim(),
     cliente: document.getElementById('diagCliente').value.trim(),
+    clienteId: (cliSel && cliSel.id) || '',
+    clienteDni: (cliSel && cliSel.dni) || '',
+    clienteRol: document.getElementById('diagClienteRol').value,
     icloud, operador, enacom,
     bateria, ciclos: Number(document.getElementById('diagCiclos').value) || 0,
     bateriaOriginal: document.getElementById('diagBateriaOrig').value,
@@ -9218,6 +9294,11 @@ function diagGenerarPDFData(d){
   const batOrig = d.bateriaOriginal ? e(d.bateriaOriginal) : '—';
   const piezas = (d.piezasReemplazadas && d.piezasReemplazadas.length) ? d.piezasReemplazadas.map(e).join(', ') : 'Ninguna declarada';
   const nro = d.id ? String(d.id).replace('diag_','') : '';
+  // Partes: el cliente es comprador o vendedor; la otra parte es el negocio
+  const cli = { nombre: d.cliente || '', dni: d.clienteDni || '' };
+  const negocio = { nombre: 'Aruba Apple' + (d.tecnico ? ' — ' + d.tecnico : ''), dni: '' };
+  const vend = d.clienteRol === 'vendedor' ? cli : negocio;
+  const comp = d.clienteRol === 'vendedor' ? negocio : cli;
 
   const win = window.open('','_blank');
   if(!win){ showToast('El navegador bloqueó la ventana del reporte. Permití las ventanas emergentes para este sitio.','error'); return; }
@@ -9241,11 +9322,17 @@ function diagGenerarPDFData(d){
     <h1>Reporte de Checkeo y Diagnóstico de iPhone</h1>
     <p style="text-align:center;color:#555;margin:2px 0 0;">Aruba Apple${nro?' · Reporte N° '+e(nro):''} · Fecha: ${e(d.fecha)} · Técnico: ${e(d.tecnico)||'—'}</p>
 
+    <h3>Partes</h3>
+    <table>
+      <tr><td class="l">Vendedor</td><td>${e(vend.nombre)||'—'}</td><td class="l">DNI</td><td>${e(vend.dni)||'—'}</td></tr>
+      <tr><td class="l">Comprador</td><td>${e(comp.nombre)||'—'}</td><td class="l">DNI</td><td>${e(comp.dni)||'—'}</td></tr>
+    </table>
+
     <h3>1. Datos del equipo y verificación legal</h3>
     <table>
       <tr><td class="l">Modelo</td><td>${e(d.modelo)}</td><td class="l">Capacidad</td><td>${e(d.capacidad)||'—'}</td></tr>
       <tr><td class="l">IMEI</td><td style="font-family:monospace;">${e(d.imei)}</td><td class="l">Nro. de serie</td><td style="font-family:monospace;">${e(d.serial)||'—'}</td></tr>
-      <tr><td class="l">Color</td><td>${e(d.color)||'—'}</td><td class="l">Cliente</td><td>${e(d.cliente)||'—'}</td></tr>
+      <tr><td class="l">Color</td><td colspan="3">${e(d.color)||'—'}</td></tr>
       <tr><td class="l">iCloud / Buscar</td><td>${icloudTxt}</td><td class="l">Operador</td><td>${operTxt}</td></tr>
       <tr><td class="l">IMEI (ENACOM)</td><td colspan="3">${enacomTxt}</td></tr>
     </table>
@@ -9271,8 +9358,8 @@ function diagGenerarPDFData(d){
     <div class="decl">Las partes firmantes declaran haber revisado el equipo identificado en este reporte y dejan constancia de que su estado, al día de la fecha, es el que aquí se detalla.</div>
 
     <div class="firmas">
-      <div class="firma"><div class="linea">Firma del Vendedor</div><div class="dato">Aclaración:</div><div class="dato">DNI:</div></div>
-      <div class="firma"><div class="linea">Firma del Comprador</div><div class="dato">Aclaración:</div><div class="dato">DNI:</div></div>
+      <div class="firma"><div class="linea">Firma del Vendedor</div><div class="dato">Aclaración: ${e(vend.nombre)}</div><div class="dato">DNI: ${e(vend.dni)}</div></div>
+      <div class="firma"><div class="linea">Firma del Comprador</div><div class="dato">Aclaración: ${e(comp.nombre)}</div><div class="dato">DNI: ${e(comp.dni)}</div></div>
     </div>
     <p style="text-align:center;margin-top:20px;font-size:10px;color:#888;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
   </body></html>`);
