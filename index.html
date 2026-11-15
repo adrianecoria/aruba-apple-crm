@@ -8366,10 +8366,32 @@ function diagParsear3uTools(){
   // Detect if this is "Device Raw Data" (internal plist/keys) — skip those lines
   // Raw data has keys like kCTPostponementStatus, DeviceEnclosureColor, etc.
   const isRawData = /\bkCT[A-Z]|DeviceEnclosureColor|DeviceBackingColor|DeviceCoverGlassColor/i.test(raw);
-  if(isRawData){
+  // Only reject if there is NO readable Device Details / Report data mixed in
+  const hasReadable = /(device name|model name|serial number|capacity\s*&\s*color|imei)/i.test(raw);
+  if(isRawData && !hasReadable){
     showToast('⚠️ Esos son datos crudos (Raw Data). Usá "Open in Notepad" en 3uTools para copiar los datos legibles.','error');
     return 0;
   }
+
+  // Known 3uTools labels — used to split "flat" text where columns are separated by single spaces
+  // (e.g. text extracted from a screenshot: "Device Name iPhone 15 Pro Max Capacity & Color 256GB White Titanium Release Date 9/13/2023")
+  const LABELS_3U = ['Screen Serial Number','Verify Serial Number','Mainboard Serial No','Logic Board SN','Battery SN','Baseband SN',
+    'Serial Number','Device Name','Capacity & Color','Capacity','Device Color','Release Date','Model Name','Model Identifier','Model Number',
+    'Regulatory Model','Hardware Model','Product Type','Activation','Mfg. Date','Mfg Date','Jailbreak','Sales Type','Sales Region','ECID','UDID',
+    'Firmware Version','Baseband Version','IMEI2','IMEI 2','IMEI1','IMEI 1','IMEI','MEID','ICCID','EID','Warranty Date','Battery Life','Battery Health',
+    'Charge Times','Charge Cycles','Apple ID Lock','ID Lock','iCloud','SIM Lock','Carrier Lock','Carrier','CPU Architecture','CPU','Hard Disk Type',
+    'Disk Capacity','Wi-Fi Address','Bluetooth Address','Cellular Address','Five-Code Matching','Front Camera','Rear Camera','Touch ID','Face ID']
+    .sort((a,b) => b.length - a.length);
+  const labelRe = new RegExp('(?<![A-Za-z0-9])(' + LABELS_3U.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s*')).join('|') + ')(?![A-Za-z0-9])\\s*:?', 'gi');
+  const splitByLabels = (line) => {
+    const out = []; const ms = [...line.matchAll(labelRe)];
+    ms.forEach((m, i) => {
+      const end = i + 1 < ms.length ? ms[i+1].index : line.length;
+      const val = line.substring(m.index + m[0].length, end).trim();
+      if(val) out.push({ key: m[1].replace(/\s+/g,' ').toLowerCase(), val });
+    });
+    return out;
+  };
 
   // Also try to find IMEI as a standalone 15-digit number in text (OCR fallback)
   // But only match numbers that start with known IMEI prefixes (3x)
@@ -8426,7 +8448,10 @@ function diagParsear3uTools(){
         pairs.push({ key: k.toLowerCase(), val: v });
       }
     } else {
-      // No tabs — try colon separator
+      // No tabs — first try splitting by known 3uTools labels (flat / OCR-like text)
+      const byLabel = splitByLabels(line);
+      if(byLabel.length){ byLabel.forEach(p => pairs.push(p)); return; }
+      // Otherwise try colon separator
       const sep = line.indexOf(':');
       if(sep > 0){
         pairs.push({ key: line.substring(0, sep).trim().toLowerCase(), val: line.substring(sep+1).trim() });
@@ -8496,7 +8521,7 @@ function diagParsear3uTools(){
       if(pct) found.bateria = pct[1];
     }
     // Charge Cycles
-    if((key.includes('charge') && key.includes('cycle')) || key.includes('ciclos')){
+    if((key.includes('charge') && (key.includes('cycle') || key.includes('times'))) || key.includes('ciclos')){
       const n = val.match(/(\d+)/);
       if(n) found.ciclos = n[1];
     }
