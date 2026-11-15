@@ -1865,7 +1865,7 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn ghost" onclick="diagGoStep(3)">← Anterior</button>
             <button class="btn" onclick="guardarDiagnostico()" id="diagBtnGuardar">💾 Guardar Diagnóstico</button>
-            <button class="btn ghost" onclick="diagGenerarPDF()" id="diagBtnPDF" style="display:none;">📄 Generar PDF</button>
+            <button class="btn ghost" onclick="diagGenerarPDF()" id="diagBtnPDF" style="display:none;">📄 Descargar reporte para firmar</button>
           </div>
         </div>
       </div>
@@ -1876,7 +1876,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <h2 id="diagDetalleTitulo">Detalle Diagnóstico</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn ghost" onclick="diagGenerarPDFDetalle()">📄 PDF</button>
+          <button class="btn ghost" onclick="diagGenerarPDFDetalle()">📄 Reporte para firmar</button>
           <button class="btn ghost" onclick="diagVolverListado()">← Volver</button>
         </div>
       </div>
@@ -8960,15 +8960,30 @@ function diagVolverListado(){
   renderDiagnosticos();
 }
 
-async function guardarDiagnostico(){
+// Datos de diagnósticos: guardado local + nube (tabla crm_datos, clave "diagnosticos")
+async function cargarDatos(){
+  let lista = ls_get('diagnosticos', []);
+  if(sbClient){
+    try{
+      const { data, error } = await sbClient.from('crm_datos').select('valor').eq('clave','diagnosticos').maybeSingle();
+      if(!error && data && Array.isArray(data.valor)){ lista = data.valor; ls_set('diagnosticos', lista); }
+    }catch(e){ console.warn('No se pudo leer diagnósticos de la nube', e); }
+  }
+  return { diagnosticos: Array.isArray(lista) ? lista : [] };
+}
+async function guardarClave(clave, valor){
+  ls_set(clave, valor);
+  if(!sbClient) return false;
+  const { error } = await sbClient.from('crm_datos').upsert({ clave, valor, actualizado_en: new Date().toISOString() });
+  if(error){ console.error('No se pudo sincronizar '+clave, error); return false; }
+  return true;
+}
+
+// Lee todo el formulario de diagnóstico y calcula el veredicto
+function diagLeerFormulario(){
   const imei = document.getElementById('diagIMEI').value.trim();
   const modelo = document.getElementById('diagModelo').value;
   const icloud = document.getElementById('diagiCloud').value;
-
-  if(!imei || imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
-  if(!modelo){ showToast('Seleccioná un modelo','error'); return; }
-  if(icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
-
   const checklist = getChecklistResults();
   let fallos = 0, oks = 0;
   const fallosList = [];
@@ -8992,7 +9007,7 @@ async function guardarDiagnostico(){
   const piezas = [];
   document.querySelectorAll('#diagPiezas input[type=checkbox]:checked').forEach(c => piezas.push(c.value));
 
-  const diag = {
+  return {
     id: diagEditId || ('diag_' + Date.now()),
     fecha: new Date().toLocaleDateString('es-AR'),
     fechaISO: new Date().toISOString(),
@@ -9017,16 +9032,23 @@ async function guardarDiagnostico(){
     tecnico: document.getElementById('diagTecnico').value.trim(),
     usuario: sesionActual ? sesionActual.usuario : ''
   };
+}
+
+async function guardarDiagnostico(){
+  const diag = diagLeerFormulario();
+  if(!diag.imei || diag.imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
+  if(!diag.modelo){ showToast('Seleccioná un modelo','error'); return; }
+  if(diag.icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
 
   try {
     const data = await cargarDatos();
-    if(!data.diagnosticos) data.diagnosticos = [];
     const idx = data.diagnosticos.findIndex(d => d.id === diag.id);
     if(idx >= 0) data.diagnosticos[idx] = diag;
     else data.diagnosticos.unshift(diag);
-    await guardarClave('diagnosticos', data.diagnosticos);
-    showToast('Diagnóstico guardado correctamente ✅');
-    registrarActividad('diagnostico', diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
+    const enNube = await guardarClave('diagnosticos', data.diagnosticos);
+    diagEditId = diag.id; // si vuelve a guardar, actualiza el mismo en vez de duplicar
+    showToast(enNube ? 'Diagnóstico guardado correctamente ✅' : '⚠️ Diagnóstico guardado solo en este dispositivo (sin conexión a la nube)');
+    registrarActividad('Diagnóstico: ' + diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
     document.getElementById('diagBtnPDF').style.display = 'inline-flex';
   } catch(e){
     showToast('Error al guardar: ' + e.message, 'error');
@@ -9082,6 +9104,7 @@ async function verDiagnostico(id){
   const data = await cargarDatos();
   const d = (data.diagnosticos||[]).find(x => x.id === id);
   if(!d){ showToast('Diagnóstico no encontrado','error'); return; }
+  window._diagDetalleId = id;
 
   document.getElementById('diagListCard').style.display = 'none';
   document.getElementById('diagFormCard').style.display = 'none';
@@ -9160,25 +9183,7 @@ async function eliminarDiagnostico(id){
 }
 
 function diagGenerarPDF(){
-  const imei = document.getElementById('diagIMEI').value.trim();
-  const modelo = document.getElementById('diagModelo').value;
-  diagGenerarPDFData({
-    imei, modelo,
-    serial: document.getElementById('diagSerial').value.trim(),
-    capacidad: document.getElementById('diagCapacidad').value,
-    color: document.getElementById('diagColor').value.trim(),
-    cliente: document.getElementById('diagCliente').value.trim(),
-    icloud: document.getElementById('diagiCloud').value,
-    operador: document.getElementById('diagOperador').value,
-    enacom: document.getElementById('diagENACOM').value,
-    bateria: Number(document.getElementById('diagBateria').value) || 0,
-    ciclos: Number(document.getElementById('diagCiclos').value) || 0,
-    grado: document.getElementById('diagGrado').value,
-    checklist: getChecklistResults(),
-    notasFinal: document.getElementById('diagNotasFinal').value.trim(),
-    tecnico: document.getElementById('diagTecnico').value.trim(),
-    fecha: new Date().toLocaleDateString('es-AR')
-  });
+  diagGenerarPDFData(diagLeerFormulario());
 }
 
 async function diagGenerarPDFById(id){
@@ -9189,74 +9194,90 @@ async function diagGenerarPDFById(id){
 }
 
 function diagGenerarPDFDetalle(){
-  const titulo = document.getElementById('diagDetalleTitulo').textContent;
-  const contenido = document.getElementById('diagDetalleContenido').innerHTML;
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico - ${titulo}</title>
-    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;}
-    h2,h3,h4{margin:8px 0;}table{width:100%;border-collapse:collapse;margin:8px 0;}td,th{padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:12px;}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}@media print{body{padding:12px;}}</style>
-  </head><body>
-    <h2 style="text-align:center;">Checkeo y Diagnóstico de iPhone</h2>
-    <h3 style="text-align:center;color:#666;">${titulo}</h3>
-    <hr>
-    ${contenido}
-    <div style="margin-top:24px;text-align:center;font-size:11px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</div>
-  </body></html>`);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
+  if(window._diagDetalleId) diagGenerarPDFById(window._diagDetalleId);
 }
 
 function diagGenerarPDFData(d){
+  const e = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'ACEPTADO CON OBSERVACIONES':'RECHAZADO';
+  const vCol = d.veredicto==='aprobado'?'#1a8f3c':d.veredicto==='observaciones'?'#c77700':'#c0392b';
   const checklist = d.checklist || [];
+  const est = d.estetica || {};
 
   let checklistHTML = '';
   checklist.forEach(sec => {
-    checklistHTML += '<tr><td colspan="2" style="background:#f0f0f0;font-weight:600;">'+sec.cat+'</td></tr>';
+    checklistHTML += '<tr><td colspan="2" class="cat">'+e(sec.cat)+'</td></tr>';
     sec.items.forEach(it => {
-      const ic = it.val==='ok'?'✅ OK':it.val==='fallo'?'❌ FALLO':it.val==='na'?'N/A':'⬜ Pendiente';
-      checklistHTML += '<tr><td>'+it.item+'</td><td style="text-align:center;'+(it.val==='fallo'?'color:red;font-weight:600;':'')+'">'+ic+'</td></tr>';
+      const ic = it.val==='ok'?'✔ OK':it.val==='fallo'?'✘ FALLO':it.val==='na'?'N/A':'Sin revisar';
+      checklistHTML += '<tr><td>'+e(it.item)+'</td><td style="text-align:center;width:110px;'+(it.val==='fallo'?'color:#c0392b;font-weight:700;':it.val==='ok'?'color:#1a8f3c;':'color:#888;')+'">'+ic+'</td></tr>';
     });
   });
+  const icloudTxt = d.icloud==='desactivado'?'✔ Desactivado':d.icloud==='activado'?'✘ ACTIVADO':'No verificado';
+  const operTxt = d.operador==='liberado'?'✔ Liberado':d.operador==='bloqueado'?'⚠ Bloqueado a operador':'No verificado';
+  const enacomTxt = d.enacom==='habilitado'?'✔ Habilitado':d.enacom==='inhibido'?'✘ Inhibido':'No verificado';
+  const batOrig = d.bateriaOriginal ? e(d.bateriaOriginal) : '—';
+  const piezas = (d.piezasReemplazadas && d.piezasReemplazadas.length) ? d.piezasReemplazadas.map(e).join(', ') : 'Ninguna declarada';
+  const nro = d.id ? String(d.id).replace('diag_','') : '';
 
   const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico ${d.modelo} - ${d.imei}</title>
-    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;font-size:13px;}
-    h2{text-align:center;margin-bottom:4px;}table{width:100%;border-collapse:collapse;margin:12px 0;}td,th{padding:5px 8px;border:1px solid #ccc;text-align:left;}
-    .verdict{text-align:center;padding:16px;margin:12px 0;border:2px solid;border-radius:8px;}
-    @media print{body{padding:12px;}.no-print{display:none;}}</style>
+  if(!win){ showToast('El navegador bloqueó la ventana del reporte. Permití las ventanas emergentes para este sitio.','error'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte diagnóstico ${e(d.modelo)} - ${e(d.imei)}</title>
+    <style>
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;font-size:12.5px;line-height:1.35;}
+    h1{font-size:20px;text-align:center;margin:0 0 2px;} h3{font-size:14px;margin:16px 0 4px;border-bottom:2px solid #222;padding-bottom:3px;}
+    table{width:100%;border-collapse:collapse;margin:6px 0;} td,th{padding:4px 8px;border:1px solid #bbb;text-align:left;vertical-align:top;}
+    td.l{font-weight:600;background:#f4f4f4;width:20%;} td.cat{background:#e6e6e6;font-weight:700;}
+    .verdict{text-align:center;padding:12px;margin:14px 0;border:2px solid ${vCol};border-radius:8px;color:${vCol};font-size:18px;font-weight:800;page-break-inside:avoid;}
+    .firmas{display:flex;justify-content:space-between;gap:40px;margin-top:20px;page-break-inside:avoid;}
+    .firma{flex:1;} .firma .linea{border-top:1px solid #222;margin-top:70px;padding-top:4px;text-align:center;font-weight:700;}
+    .firma .dato{margin-top:14px;border-bottom:1px dotted #666;padding-bottom:2px;color:#444;}
+    .decl{margin-top:16px;padding:8px 10px;border:1px solid #bbb;border-radius:6px;font-size:11.5px;page-break-inside:avoid;}
+    .btnp{display:block;margin:0 auto 16px;padding:10px 18px;font-size:14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
+    tr{page-break-inside:avoid;}
+    @media print{body{padding:0;}.no-print{display:none;}}
+    </style>
   </head><body>
-    <h2>Checkeo y Diagnóstico Completo de iPhone</h2>
-    <p style="text-align:center;color:#666;">Fecha: ${d.fecha} | Técnico: ${d.tecnico||'—'}</p>
-    <hr>
-    <h3>1. Datos del Equipo</h3>
+    <button class="btnp no-print" onclick="window.print()">🖨 Imprimir / Guardar como PDF</button>
+    <h1>Reporte de Checkeo y Diagnóstico de iPhone</h1>
+    <p style="text-align:center;color:#555;margin:2px 0 0;">Aruba Apple${nro?' · Reporte N° '+e(nro):''} · Fecha: ${e(d.fecha)} · Técnico: ${e(d.tecnico)||'—'}</p>
+
+    <h3>1. Datos del equipo y verificación legal</h3>
     <table>
-      <tr><td><strong>IMEI</strong></td><td style="font-family:monospace;">${d.imei}</td><td><strong>Serial</strong></td><td>${d.serial||'—'}</td></tr>
-      <tr><td><strong>Modelo</strong></td><td>${d.modelo}</td><td><strong>Capacidad</strong></td><td>${d.capacidad||'—'}</td></tr>
-      <tr><td><strong>Color</strong></td><td>${d.color||'—'}</td><td><strong>Cliente</strong></td><td>${d.cliente||'—'}</td></tr>
-      <tr><td><strong>iCloud</strong></td><td>${d.icloud==='desactivado'?'✅ Desactivado':'🚫 ACTIVADO'}</td><td><strong>Operador</strong></td><td>${d.operador==='liberado'?'✅ Liberado':'⚠️ Bloqueado'}</td></tr>
-      <tr><td><strong>ENACOM</strong></td><td colspan="3">${d.enacom==='habilitado'?'✅ Habilitado':d.enacom==='inhibido'?'🚫 Inhibido':'No verificado'}</td></tr>
+      <tr><td class="l">Modelo</td><td>${e(d.modelo)}</td><td class="l">Capacidad</td><td>${e(d.capacidad)||'—'}</td></tr>
+      <tr><td class="l">IMEI</td><td style="font-family:monospace;">${e(d.imei)}</td><td class="l">Nro. de serie</td><td style="font-family:monospace;">${e(d.serial)||'—'}</td></tr>
+      <tr><td class="l">Color</td><td>${e(d.color)||'—'}</td><td class="l">Cliente</td><td>${e(d.cliente)||'—'}</td></tr>
+      <tr><td class="l">iCloud / Buscar</td><td>${icloudTxt}</td><td class="l">Operador</td><td>${operTxt}</td></tr>
+      <tr><td class="l">IMEI (ENACOM)</td><td colspan="3">${enacomTxt}</td></tr>
     </table>
-    <h3>2. Batería y Estado Estético</h3>
+
+    <h3>2. Batería y estado estético</h3>
     <table>
-      <tr><td><strong>Salud Batería</strong></td><td>${d.bateria||'?'}%</td><td><strong>Ciclos</strong></td><td>${d.ciclos||'?'}</td></tr>
-      <tr><td><strong>Grado General</strong></td><td colspan="3">${d.grado||'—'}</td></tr>
+      <tr><td class="l">Salud de batería</td><td>${d.bateria? e(d.bateria)+'%':'—'}</td><td class="l">Ciclos de carga</td><td>${d.ciclos? e(d.ciclos):'—'}</td></tr>
+      <tr><td class="l">Batería original</td><td>${batOrig}</td><td class="l">Grado estético</td><td>${e(d.grado)||'—'}</td></tr>
+      <tr><td class="l">Pantalla</td><td>${e(est.pantalla)||'—'}</td><td class="l">Parte trasera</td><td>${e(est.trasera)||'—'}</td></tr>
+      <tr><td class="l">Marco</td><td>${e(est.marco)||'—'}</td><td class="l">Piezas reemplazadas</td><td>${piezas}</td></tr>
+      ${d.obsEstetica?'<tr><td class="l">Obs. estéticas</td><td colspan="3">'+e(d.obsEstetica)+'</td></tr>':''}
     </table>
-    <h3>3. Checklist de Hardware</h3>
-    <table>${checklistHTML}</table>
-    <div class="verdict" style="border-color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">
-      <h2 style="margin:0;color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">${vText}</h2>
+
+    <h3>3. Checklist de hardware${(d.oks!=null)?' — '+e(d.oks)+' OK / '+e(d.fallos||0)+' con fallo':''}</h3>
+    <table>${checklistHTML||'<tr><td>Sin checklist registrado</td></tr>'}</table>
+    ${d.obsHardware?'<p><strong>Observaciones de hardware:</strong> '+e(d.obsHardware)+'</p>':''}
+
+    <h3>4. Resultado</h3>
+    <div class="verdict">${vText}</div>
+    ${d.fallosList && d.fallosList.length ? '<p><strong>Fallos detectados:</strong> '+d.fallosList.map(e).join(' · ')+'</p>' : ''}
+    ${d.notasFinal?'<p><strong>Notas finales / observaciones:</strong> '+e(d.notasFinal)+'</p>':''}
+
+    <div class="decl">Las partes firmantes declaran haber revisado el equipo identificado en este reporte y dejan constancia de que su estado, al día de la fecha, es el que aquí se detalla.</div>
+
+    <div class="firmas">
+      <div class="firma"><div class="linea">Firma del Vendedor</div><div class="dato">Aclaración:</div><div class="dato">DNI:</div></div>
+      <div class="firma"><div class="linea">Firma del Comprador</div><div class="dato">Aclaración:</div><div class="dato">DNI:</div></div>
     </div>
-    ${d.notasFinal?'<p><strong>Observaciones:</strong> '+d.notasFinal+'</p>':''}
-    <div style="margin-top:40px;display:flex;justify-content:space-between;">
-      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Técnico</div></div>
-      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Cliente</div></div>
-    </div>
-    <p style="text-align:center;margin-top:24px;font-size:10px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
+    <p style="text-align:center;margin-top:20px;font-size:10px;color:#888;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
   </body></html>`);
   win.document.close();
-  setTimeout(() => win.print(), 500);
+  setTimeout(() => { try{ win.focus(); win.print(); }catch(err){} }, 500);
 }
 
 // End Diagnostico Module
