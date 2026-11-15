@@ -8812,7 +8812,42 @@ function diagCheckBateria(){
   }
 }
 
+// Devuelve el texto de lo que falta completar en un paso ('' si está completo)
+function diagValidarPaso(paso){
+  const val = id => (document.getElementById(id).value || '').trim();
+  const falta = [];
+  if(paso === 1){
+    if(val('diagIMEI').length !== 15) falta.push('IMEI (15 dígitos)');
+    if(!val('diagModelo')) falta.push('Modelo');
+    if(!val('diagCapacidad')) falta.push('Capacidad');
+    if(!val('diagColor')) falta.push('Color');
+    if(!val('diagCliente')) falta.push('Cliente');
+    if(!val('diagiCloud')) falta.push('iCloud');
+    if(!val('diagOperador')) falta.push('Bloqueo de operador');
+  } else if(paso === 2){
+    const b = Number(val('diagBateria'));
+    if(!val('diagBateria') || b < 1 || b > 100) falta.push('Salud de batería (1 a 100)');
+    if(!val('diagGrado')) falta.push('Grado general');
+  } else if(paso === 3){
+    let sin = 0;
+    DIAG_CHECKLIST.forEach((sec,si) => sec.items.forEach((item,ii) => {
+      if(!document.querySelector('input[name="chk_'+si+'_'+ii+'"]:checked')) sin++;
+    }));
+    if(sin) falta.push(sin + ' ítem' + (sin>1?'s':'') + ' del checklist sin marcar (OK, Falló o N/A)');
+  }
+  return falta.join(', ');
+}
+
 function diagGoStep(n){
+  // No se puede avanzar a un paso sin completar los anteriores
+  for(let p = 1; p < n; p++){
+    const falta = diagValidarPaso(p);
+    if(falta){
+      showToast('⚠️ Completá el paso ' + p + ' antes de seguir. Falta: ' + falta);
+      n = p;
+      break;
+    }
+  }
   // Validate step 1 iCloud lock
   if(n > 1){
     const icloud = document.getElementById('diagiCloud').value;
@@ -8836,7 +8871,8 @@ function diagGoStep(n){
     }
   }
 
-  if(n === 3) renderDiagChecklist();
+  // Solo dibujar el checklist si está vacío, para no borrar lo ya marcado
+  if(n === 3 && !document.querySelector('#diagChecklist input[type=radio]')) renderDiagChecklist();
   if(n === 4) calcularVeredicto();
 }
 
@@ -9115,6 +9151,11 @@ async function guardarDiagnostico(){
   if(!diag.imei || diag.imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
   if(!diag.modelo){ showToast('Seleccioná un modelo','error'); return; }
   if(diag.icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
+  for(let p = 1; p <= 3; p++){
+    const falta = diagValidarPaso(p);
+    if(falta){ showToast('⚠️ Falta completar el paso ' + p + ': ' + falta); diagGoStep(p); return; }
+  }
+  if(!diag.tecnico){ showToast('⚠️ Completá el técnico responsable'); return; }
 
   try {
     const data = await cargarDatos();
