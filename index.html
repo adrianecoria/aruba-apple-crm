@@ -8215,11 +8215,11 @@ function diagAutoDetectModelo(){
 function diagVerificarENACOM(){
   const imei = document.getElementById('diagIMEI').value.trim();
   if(!imei || imei.length < 15){
-    mostrarToast('Ingresá un IMEI de 15 dígitos primero','error');
+    showToast('Ingresá un IMEI de 15 dígitos primero','error');
     return;
   }
   window.open('https://enacom.gob.ar/imei', '_blank');
-  mostrarToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
+  showToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
 }
 
 // OCR desde captura de 3uTools
@@ -8274,14 +8274,14 @@ async function diagOCR3uTools(input){
   } catch(e){
     console.error('OCR error:', e);
     statusDiv.style.display = 'none';
-    mostrarToast('Error al procesar la imagen: ' + e.message, 'error');
+    showToast('Error al procesar la imagen: ' + e.message, 'error');
   }
 }
 
 // Parser de datos de 3uTools
 function diagParsear3uTools(){
   const raw = document.getElementById('diag3uToolsInput').value.trim();
-  if(!raw){ mostrarToast('Pegá los datos de 3uTools primero','error'); return 0; }
+  if(!raw){ showToast('Pegá los datos de 3uTools primero','error'); return 0; }
 
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   let found = {};
@@ -8506,7 +8506,7 @@ function diagParsear3uTools(){
   }
 
   if(count > 0){
-    mostrarToast(`✅ 3uTools: ${count} campos autocompletados`);
+    showToast(`✅ 3uTools: ${count} campos autocompletados`);
   }
   return count;
 }
@@ -8586,7 +8586,7 @@ function diagGoStep(n){
     const icloud = document.getElementById('diagiCloud').value;
     if(icloud === 'activado'){
       document.getElementById('diagiCloudWarn').style.display = 'block';
-      mostrarToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
+      showToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
       return;
     }
     document.getElementById('diagiCloudWarn').style.display = 'none';
@@ -8747,9 +8747,9 @@ async function guardarDiagnostico(){
   const modelo = document.getElementById('diagModelo').value;
   const icloud = document.getElementById('diagiCloud').value;
 
-  if(!imei || imei.length < 15){ mostrarToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
-  if(!modelo){ mostrarToast('Seleccioná un modelo','error'); return; }
-  if(icloud === 'activado'){ mostrarToast('⛔ No se puede guardar: iCloud activado','error'); return; }
+  if(!imei || imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
+  if(!modelo){ showToast('Seleccioná un modelo','error'); return; }
+  if(icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
 
   const checklist = getChecklistResults();
   let fallos = 0, oks = 0;
@@ -8807,11 +8807,11 @@ async function guardarDiagnostico(){
     if(idx >= 0) data.diagnosticos[idx] = diag;
     else data.diagnosticos.unshift(diag);
     await guardarClave('diagnosticos', data.diagnosticos);
-    mostrarToast('Diagnóstico guardado correctamente ✅');
+    showToast('Diagnóstico guardado correctamente ✅');
     registrarActividad('diagnostico', diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
     document.getElementById('diagBtnPDF').style.display = 'inline-flex';
   } catch(e){
-    mostrarToast('Error al guardar: ' + e.message, 'error');
+    showToast('Error al guardar: ' + e.message, 'error');
   }
 }
 
@@ -8863,7 +8863,7 @@ async function renderDiagnosticos(){
 async function verDiagnostico(id){
   const data = await cargarDatos();
   const d = (data.diagnosticos||[]).find(x => x.id === id);
-  if(!d){ mostrarToast('Diagnóstico no encontrado','error'); return; }
+  if(!d){ showToast('Diagnóstico no encontrado','error'); return; }
 
   document.getElementById('diagListCard').style.display = 'none';
   document.getElementById('diagFormCard').style.display = 'none';
@@ -8937,7 +8937,7 @@ async function eliminarDiagnostico(id){
   const data = await cargarDatos();
   data.diagnosticos = (data.diagnosticos||[]).filter(d => d.id !== id);
   await guardarClave('diagnosticos', data.diagnosticos);
-  mostrarToast('Diagnóstico eliminado');
+  showToast('Diagnóstico eliminado');
   renderDiagnosticos();
 }
 
@@ -8966,7 +8966,7 @@ function diagGenerarPDF(){
 async function diagGenerarPDFById(id){
   const data = await cargarDatos();
   const d = (data.diagnosticos||[]).find(x => x.id === id);
-  if(!d){ mostrarToast('No encontrado','error'); return; }
+  if(!d){ showToast('No encontrado','error'); return; }
   diagGenerarPDFData(d);
 }
 
