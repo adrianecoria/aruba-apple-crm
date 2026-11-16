@@ -629,6 +629,15 @@ body.rol-usuario .solo-admin{display:none !important;}
   #printArea .etiqueta-equipo .et-bateria{font-size:8pt; color:#555; margin-bottom:1.5mm;}
   #printArea .etiqueta-equipo .et-barcode svg{width:60mm !important; height:14mm !important;}
   #printArea .etiqueta-equipo .et-imei{font-size:7pt; color:#333; margin-top:0.5mm; letter-spacing:0.5px;}
+  #printArea .etiqueta-venta{display:flex !important; flex-direction:column; align-items:center; justify-content:center;
+    width:80mm; height:50mm; padding:3mm; box-sizing:border-box; text-align:center; font-family:'Inter',sans-serif;}
+  #printArea .etiqueta-venta .ev-brand{font-size:8pt; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:1mm; color:#333;}
+  #printArea .etiqueta-venta .ev-nro{font-size:13pt; font-weight:900; margin-bottom:1mm; letter-spacing:0.5px;}
+  #printArea .etiqueta-venta .ev-modelo{font-size:9pt; font-weight:600; margin-bottom:0.5mm;}
+  #printArea .etiqueta-venta .ev-color{font-size:8pt; color:#555; margin-bottom:0.5mm;}
+  #printArea .etiqueta-venta .ev-imei{font-size:7pt; color:#333; margin-bottom:1.5mm; letter-spacing:0.5px;}
+  #printArea .etiqueta-venta .ev-barcode svg{width:60mm !important; height:12mm !important;}
+  #printArea .etiqueta-venta .ev-fecha{font-size:7pt; color:#555; margin-top:0.5mm;}
   @page{size:80mm 50mm; margin:0;}
 }
 .scan-input-wrap{display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:10px 14px; border-radius:12px; background:rgba(78,224,138,0.08); border:1px solid rgba(78,224,138,0.25);}
@@ -806,10 +815,10 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="card card-destacada solo-admin">
         <h2>Agregar equipo</h2>
         <div class="form-row">
-          <div class="field"><label>Modelo</label><select id="eModelo"></select></div>
+          <div class="field"><label>Modelo</label><select id="eModelo" onchange="actualizarColoresModelo('eModelo','eColor')"></select></div>
           <div class="field"><label>Proveedor</label><select id="eProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
-          <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
+          <div class="field"><label>Color</label><select id="eColor" onchange="if(this.value==='__otro'){this.style.display='none';document.getElementById('eColorCustom').style.display='';document.getElementById('eColorCustom').focus();}"><option value="">Seleccionar color</option></select><input id="eColorCustom" style="display:none" placeholder="Escribí el color..."></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
           <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
           <div class="field" style="min-width:150px;">
@@ -1916,6 +1925,46 @@ const MODELOS = [
   "iPhone 17","iPhone 17 Air","iPhone 17 Pro","iPhone 17 Pro Max",
   "iPhone 18","iPhone 18 Pro","iPhone 18 Pro Max","iPhone 18 Fold"
 ];
+const COLORES_POR_MODELO = {
+  'iPhone 11':['Negro','Blanco','Verde','Amarillo','Morado','(PRODUCT)RED'],
+  'iPhone 12':['Negro','Blanco','Azul','Verde','(PRODUCT)RED','Morado'],
+  'iPhone 12 Pro':['Grafito','Plata','Dorado','Azul pacífico'],
+  'iPhone 12 Pro Max':['Grafito','Plata','Dorado','Azul pacífico'],
+  'iPhone 13':['Rosa','Azul','Medianoche','Starlight','(PRODUCT)RED','Verde'],
+  'iPhone 13 mini':['Rosa','Azul','Medianoche','Starlight','(PRODUCT)RED','Verde'],
+  'iPhone 13 Pro':['Grafito','Plata','Dorado','Azul sierra','Verde alpino'],
+  'iPhone 13 Pro Max':['Grafito','Plata','Dorado','Azul sierra','Verde alpino'],
+  'iPhone 14':['Medianoche','Starlight','(PRODUCT)RED','Azul','Morado','Amarillo'],
+  'iPhone 14 Plus':['Medianoche','Starlight','(PRODUCT)RED','Azul','Morado','Amarillo'],
+  'iPhone 14 Pro':['Negro espacial','Plata','Dorado','Morado oscuro'],
+  'iPhone 14 Pro Max':['Negro espacial','Plata','Dorado','Morado oscuro'],
+  'iPhone 15':['Negro','Azul','Verde','Amarillo','Rosa'],
+  'iPhone 15 Plus':['Negro','Azul','Verde','Amarillo','Rosa'],
+  'iPhone 15 Pro':['Titanio negro','Titanio blanco','Titanio natural','Titanio azul'],
+  'iPhone 15 Pro Max':['Titanio negro','Titanio blanco','Titanio natural','Titanio azul'],
+  'iPhone 16':['Negro','Blanco','Rosa','Teal','Ultramarino'],
+  'iPhone 16 Plus':['Negro','Blanco','Rosa','Teal','Ultramarino'],
+  'iPhone 16 Pro':['Titanio negro','Titanio blanco','Titanio natural','Titanio desierto'],
+  'iPhone 16 Pro Max':['Titanio negro','Titanio blanco','Titanio natural','Titanio desierto'],
+  'iPhone 17':['Negro','Blanco','Verde','Rosa','Azul'],
+  'iPhone 17 Air':['Negro','Starlight'],
+  'iPhone 17 Pro':['Titanio negro','Titanio blanco','Titanio natural','Titanio verde'],
+  'iPhone 17 Pro Max':['Titanio negro','Titanio blanco','Titanio natural','Titanio verde'],
+  'iPhone 18':['Negro','Blanco','Azul','Verde','Rosa'],
+  'iPhone 18 Pro':['Titanio negro','Titanio blanco','Titanio natural','Titanio azul'],
+  'iPhone 18 Pro Max':['Titanio negro','Titanio blanco','Titanio natural','Titanio azul'],
+  'iPhone 18 Fold':['Titanio negro','Titanio blanco','Titanio natural']
+};
+function actualizarColoresModelo(selectModeloId, selectColorId){
+  const modelo = document.getElementById(selectModeloId).value;
+  const sel = document.getElementById(selectColorId);
+  const actual = sel.value;
+  const colores = COLORES_POR_MODELO[modelo] || [];
+  sel.innerHTML = '<option value="">Seleccionar color</option>';
+  colores.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  sel.innerHTML += '<option value="__otro">Otro...</option>';
+  if(colores.includes(actual)) sel.value = actual;
+}
 
 function ls_get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
 function ls_set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -2522,6 +2571,7 @@ function initModelos(){
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
   const fi = document.getElementById('eFechaIngreso');
   if(fi && !fi.value) fi.value = hoyISO();
+  actualizarColoresModelo('eModelo','eColor');
   const cant = document.getElementById('aCantidad');
   for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cant.appendChild(o); }
   const cantGps = document.getElementById('gCantidad');
@@ -2570,7 +2620,7 @@ function agregarEquipo(){
     modelo: document.getElementById('eModelo').value,
     proveedorId: provId,
     clienteVendedorId: cliId,
-    color: document.getElementById('eColor').value.trim(),
+    color: (document.getElementById('eColor').value==='__otro' ? document.getElementById('eColorCustom').value.trim() : document.getElementById('eColor').value) || document.getElementById('eColorCustom').value.trim(),
     bateria: document.getElementById('eBateria').value,
     compra: document.getElementById('eCompra').value,
     sugerido: document.getElementById('eSugerido').value,
@@ -2584,7 +2634,8 @@ function agregarEquipo(){
     equipos.push(Object.assign({}, base, { id: uid(), imei: (cantidad === 1 ? imei : '') }));
   }
   syncGuardar('stock_equipos', equipos);
-  ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  ['eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eColor').value=''; document.getElementById('eColorCustom').value=''; document.getElementById('eColorCustom').style.display='none'; document.getElementById('eColor').style.display='';
   document.getElementById('eFechaIngreso').value = '';
   document.getElementById('eCliente').value = '';
   document.getElementById('eCantidad').value = '1';
@@ -2622,8 +2673,8 @@ function editarEquipoCard(id){
   const card = document.querySelector(`.stock-equipo-card[data-id="${id}"]`);
   if(!card) return;
   card.innerHTML = `<div class="sec-edit-form">
-    <div><label>Modelo</label><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
-    <div><label>Color</label><input class="ed-color" value="${e.color||''}"></div>
+    <div><label>Modelo</label><select class="ed-modelo" onchange="const c=this.closest('.sec-edit-form').querySelector('.ed-color');const cols=COLORES_POR_MODELO[this.value]||[];c.innerHTML='<option value=\\'\\'>Seleccionar</option>'+cols.map(x=>'<option>'+x+'</option>').join('')+'<option value=\\'__otro\\'>Otro...</option>';">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div><label>Color</label><select class="ed-color" onchange="if(this.value==='__otro'){this.style.display='none';const ci=this.nextElementSibling;ci.style.display='';ci.focus();}">${(()=>{const cols=COLORES_POR_MODELO[e.modelo]||[];const opts=['<option value="">Seleccionar</option>',...cols.map(c=>`<option ${c===e.color?'selected':''}>${c}</option>`),'<option value="__otro"'+(e.color&&!cols.includes(e.color)?' selected':'')+'>Otro...</option>'];return opts.join('');})()}</select><input class="ed-color-custom" style="display:${e.color&&!(COLORES_POR_MODELO[e.modelo]||[]).includes(e.color)?'':'none'}" value="${e.color&&!(COLORES_POR_MODELO[e.modelo]||[]).includes(e.color)?e.color:''}"></div>
     <div><label>Batería %</label><input class="ed-bateria" type="number" min="0" max="100" value="${e.bateria||''}"></div>
     <div><label>IMEI</label><input class="ed-imei" value="${e.imei||''}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></div>
     <div><label>Proveedor</label><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></div>
@@ -2652,7 +2703,9 @@ function guardarEdicionCard(id){
   e.modelo = card.querySelector('.ed-modelo').value;
   e.proveedorId = card.querySelector('.ed-proveedor').value;
   e.clienteVendedorId = card.querySelector('.ed-cliente').value;
-  e.color = card.querySelector('.ed-color').value.trim();
+  const edColorSel = card.querySelector('.ed-color').value;
+  const edColorCustom = card.querySelector('.ed-color-custom');
+  e.color = (edColorSel==='__otro' && edColorCustom ? edColorCustom.value.trim() : edColorSel) || (edColorCustom ? edColorCustom.value.trim() : '');
   e.bateria = card.querySelector('.ed-bateria').value;
   const imeiVal = card.querySelector('.ed-imei').value.trim();
   if(imeiVal.length !== 15 || !/^\d{15}$/.test(imeiVal)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
@@ -2677,6 +2730,22 @@ function imprimirEtiqueta(id){
       <div class="et-imei">IMEI: ${e.imei}</div>
     </div>`;
   try{ JsBarcode('#barcode-print', e.imei, {format:'CODE128', width:1.5, height:40, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
+  setTimeout(()=> window.print(), 200);
+}
+function imprimirEtiquetaVenta(nroVenta, modelo, color, imei, fecha){
+  const nroCorto = (nroVenta||'').slice(-8).toUpperCase();
+  document.getElementById('printArea').innerHTML = `
+    <div class="etiqueta-venta">
+      <div class="ev-brand">Aruba Apple</div>
+      <div class="ev-nro">Venta #${nroCorto}</div>
+      <div class="ev-modelo">${modelo||'-'}</div>
+      ${color?`<div class="ev-color">${color}</div>`:''}
+      <div class="ev-imei">IMEI: ${imei||'-'}</div>
+      <div class="ev-barcode"><svg id="barcode-venta"></svg></div>
+      <div class="ev-fecha">${fecha||''}</div>
+    </div>`;
+  const bc = imei && imei!=='—' && imei!=='-' ? imei : nroVenta;
+  try{ JsBarcode('#barcode-venta', bc, {format:'CODE128', width:1.5, height:35, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
   setTimeout(()=> window.print(), 200);
 }
 let stockGroupBy = 'modelo';
@@ -4417,6 +4486,7 @@ function renderVentas(){
         <td data-label="Acciones"><div class="actions">
           ${accEstado}
           ${docsBtns}
+          <button class="btn ghost small" onclick="imprimirEtiquetaVenta('${v.nro}','${(v.modelo||'').replace(/'/g,"\\'")}','${(v.color||'').replace(/'/g,"\\'")}','${v.imei||''}','${v.fecha||''}')">🏷 Etiqueta</button>
           <button class="btn danger small solo-admin" onclick="borrarReservaMensaje('${v.nro}')">Borrar</button>
         </div></td>`;
     } else {
@@ -4431,6 +4501,7 @@ function renderVentas(){
         <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)} <span style="font-size:11px;color:${((v.ganancia/((Number(v.precio)||1)))*100)>=30?'var(--green)':((v.ganancia/((Number(v.precio)||1)))*100)>=15?'var(--amber)':'var(--red)'}">${v.precio?(v.ganancia/(Number(v.precio))*100).toFixed(1)+'%':''}</span></td>
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
+          <button class="btn ghost small" onclick="imprimirEtiquetaVenta('${v.id}','${(v.modelo||'').replace(/'/g,"\\'")}','','${v.imei||''}','${v.fecha||''}')">🏷 Etiqueta</button>
           <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
           <button class="btn ghost small" onclick="facturaConIVA('${v.id}')">📄 Factura</button>
           <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
