@@ -1009,6 +1009,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab active" id="filHoyBtn" onclick="filtrarVentas('hoy')">Hoy</button>
         <button class="tab" id="filMesBtn" onclick="filtrarVentas('mes')">Este mes</button>
         <button class="tab" id="filTodasBtn" onclick="filtrarVentas('todas')">Todas</button>
+        <button class="btn ghost small solo-admin" onclick="cargarMensajesPrueba()" style="margin-left:auto;font-size:11px;">🧪 Mensajes de prueba</button>
       </div>
       <div style="overflow-x:auto;"><table>
         <thead><tr><th>Fecha</th><th>Nro. de Venta</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Medio de pago</th><th class="solo-admin">Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -4426,6 +4427,17 @@ async function borrarReservaMensaje(nro){
     registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
     if(document.getElementById('usuariosBody')) renderUsuarios();
   }
+}
+
+function cargarMensajesPrueba(){
+  if(!confirm('¿Cargar 2 mensajes de prueba (WhatsApp y Messenger)?')) return;
+  const hoy = hoyISO();
+  const m1 = { nro_venta:'MSG-'+uid(), fecha:hoy, modelo:'iPhone 16 Pro Max', color:'Desert Titanium', imei:'354876109234567', cliente:'Juan Pérez', precio:1899, compra:1500, agente:'Carlos (WhatsApp)', estado:'reservado', equipo_id:null, medioPago:'transferencia' };
+  const m2 = { nro_venta:'MSG-'+uid(), fecha:hoy, modelo:'iPhone 15', color:'Blue', imei:'359012478563210', cliente:'María López', precio:999, compra:750, agente:'Laura (Messenger)', estado:'reservado', equipo_id:null, medioPago:'efectivo' };
+  ventasMensajes.push(m1, m2);
+  syncGuardar('ventas_mensajes', ventasMensajes);
+  renderVentas();
+  showToast('Se cargaron 2 mensajes de prueba');
 }
 
 function renderVentas(){
