@@ -2999,6 +2999,8 @@ function generarComprobanteCompraUsado(id){
   const vendDom = c && c.direccion ? c.direccion : '________________________________';
   const vendTel = c && c.telefono ? c.telefono : '____________';
   const monto = Number(e.compra)||0;
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const montoARS = Math.round(monto * dolar);
   const nro = (e.id||'').slice(-8).toUpperCase();
   const cuerpo = `
     <div style="line-height:1.5; font-size:14px;">
@@ -3029,7 +3031,8 @@ function generarComprobanteCompraUsado(id){
 
       <div style="margin-top:14px;">
         <div style="font-weight:700; margin-bottom:4px;">MONTO ABONADO Y MEDIO DE PAGO</div>
-        <div>Monto abonado: <b>U$S ${fmt(monto)}</b> (${numALetrasVC(monto)} dólares estadounidenses).</div>
+        <div>Monto abonado: <b>$ ${fmt(montoARS)}</b> (${numALetrasVC(montoARS)} pesos argentinos).</div>
+        <div style="font-size:12px; color:#555;">Equivalente a U$S ${fmt(monto)} (cotización: $${fmt(dolar)})</div>
         <div>Medio de pago: _______________________________________ (transferencia bancaria / billetera virtual / efectivo).</div>
       </div>
 
@@ -4191,78 +4194,61 @@ function facturaConIVA(id){
 }
 
 function comprobanteCompraUsado(id){
-  const v = ventas.find(x=>x.id===id);
-  if(!v || !v.equipoTomado) return alert('Esta venta no tiene equipo tomado en parte de pago.');
-  const toma = v.equipoTomado;
-  const precioToma = Number(toma.tomaPrecio)||0;
-  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
-  const precioTomaARS = Math.round(precioToma * dolar);
-  const nro = (v.id||'').slice(-6).toUpperCase();
-  const cli = clientes.find(c=>c.id===v.clienteId);
-  const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (v.cliente||'Consumidor final');
-  const cliDni = cli && cli.dni ? cli.dni : '____________';
-  const cliTel = cli && cli.telefono ? cli.telefono : '-';
-  const cliDom = cli && cli.direccion ? cli.direccion : '____________________________';
+    const v = ventas.find(x=>x.id===id);
+    if(!v || !v.equipoTomado) return alert('Esta venta no tiene equipo tomado en parte de pago.');
+    const toma = v.equipoTomado;
+    const precioToma = Number(toma.tomaPrecio)||0;
+    const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+    const precioTomaARS = Math.round(precioToma * dolar);
+    const nro = (v.id||'').slice(-8).toUpperCase();
+    const cli = clientes.find(c=>c.id===v.clienteId);
+    const cliNombre = cli ? `${cli.nombre} ${cli.apellido}` : (v.cliente||'Consumidor final');
+    const cliDni = cli && cli.dni ? cli.dni : '____________';
+    const cliTel = cli && cli.telefono ? cli.telefono : '____________';
+    const cliDom = cli && cli.direccion ? cli.direccion : '________________________________';
 
-  const cuerpo = `
-    <div style="line-height:1.5;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <div>
-          <div style="font-size:22px; font-weight:800;">ARUBA APPLE</div>
-          <div style="font-size:13px; color:#444;">Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
+    const cuerpo = `
+      <div style="line-height:1.5; font-size:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+          <div><div style="font-size:22px; font-weight:800;">ARUBA APPLE</div><div style="font-size:13px; color:#444;">Comprobante de compra de bienes usados a consumidor final</div></div>
+          <div style="text-align:right;"><div>N° ${nro}</div><div>Fecha: ${v.fecha||hoyISO()}</div></div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:18px; font-weight:700;">COMPROBANTE DE COMPRA</div>
-          <div style="font-size:14px; font-weight:600;">EQUIPO USADO</div>
-          <div style="font-size:13px;">N° ${nro}</div>
-          <div style="font-size:13px;">Fecha: ${v.fecha||hoyISO()}</div>
+
+        <div style="margin-top:14px;">
+          <div style="font-weight:700; margin-bottom:4px;">DATOS DEL COMPRADOR (LA EMPRESA)</div>
+          <div>Razón Social: _______________________________</div>
+          <div>CUIT: __________________________ &nbsp;&nbsp; Representante: Adrian Emmanuel Coria (D.N.I. 37.161.283)</div>
+          <div>Domicilio: Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
         </div>
-      </div>
 
-      <div style="margin-top:14px;">
-        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL VENDEDOR (CLIENTE QUE ENTREGA EL EQUIPO)</div>
-        <div>Nombre y Apellido: ${cliNombre}</div>
-        <div>D.N.I.: ${cliDni} &nbsp;&nbsp; Teléfono: ${cliTel}</div>
-        <div>Domicilio: ${cliDom}</div>
-      </div>
+        <div style="margin-top:14px;">
+          <div style="font-weight:700; margin-bottom:4px;">DATOS DEL VENDEDOR (CONSUMIDOR FINAL)</div>
+          <div>Nombre y Apellido: ${cliNombre}</div>
+          <div>D.N.I. N°: ${cliDni} &nbsp;&nbsp; CUIT / CUIL: ____________________</div>
+          <div>Domicilio: ${cliDom} &nbsp;&nbsp; Teléfono: ${cliTel}</div>
+        </div>
 
-      <div style="margin-top:14px;">
-        <div style="font-weight:700; margin-bottom:4px;">DATOS DEL COMPRADOR</div>
-        <div>Razón Social: ARUBA APPLE</div>
-        <div>Domicilio Comercial: Almafuerte N° 1898, San Justo, La Matanza, Buenos Aires</div>
-        <div>CUIT: __________________________</div>
-      </div>
+        <div style="margin-top:14px;">
+          <div style="font-weight:700; margin-bottom:4px;">DETALLE DEL BIEN ADQUIRIDO</div>
+          <div>Marca: Apple &nbsp;&nbsp; Modelo: ${toma.tomaModelo||'____'} &nbsp;&nbsp; Color: ${toma.tomaColor||'____'}</div>
+          <div>N° de IMEI: ${toma.tomaImei||'________________'}</div>
+        </div>
 
-      <div style="margin-top:14px;">
-        <div style="font-weight:700; margin-bottom:4px;">DETALLE DEL EQUIPO ADQUIRIDO</div>
-        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
-          <tr>
-            <th style="text-align:left; border-bottom:1px solid #000; padding:4px 6px;">Descripción</th>
-            <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
-          </tr>
-          <tr>
-            <td style="padding:6px; border-bottom:1px solid #ddd;">Teléfono celular usado marca Apple<br>Modelo: ${toma.tomaModelo||'-'}<br>Color: ${toma.tomaColor||'-'}<br>IMEI: ${toma.tomaImei||'-'}</td>
-            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">$ ${fmt(precioTomaARS)}</td>
-          </tr>
-        </table>
-        <div style="text-align:right; font-size:20px; font-weight:800; margin-top:10px;">TOTAL ABONADO: $ ${fmt(precioTomaARS)}</div>
-        <div style="text-align:right; font-size:12px; color:#555;">Son pesos argentinos: ${numALetrasVC(precioTomaARS)}.</div>
-        <div style="text-align:right; font-size:11px; color:#888;">Equivalente a U$S ${fmt(precioToma)} (cotización: $${fmt(dolar)})</div>
-      </div>
+        <div style="margin-top:14px;">
+          <div style="font-weight:700; margin-bottom:4px;">MONTO ABONADO Y MEDIO DE PAGO</div>
+          <div>Monto abonado: <b>$ ${fmt(precioTomaARS)}</b> (${numALetrasVC(precioTomaARS)} pesos argentinos).</div>
+          <div style="font-size:12px; color:#555;">Equivalente a U$S ${fmt(precioToma)} (cotización: $${fmt(dolar)})</div>
+          <div>Medio de pago: _______________________________________ (transferencia bancaria / billetera virtual / efectivo).</div>
+        </div>
 
-      <div style="margin-top:14px; font-size:13px;">
-        <div>El vendedor del equipo usado declara ser el legítimo propietario del mismo y lo entrega en las condiciones de funcionamiento verificadas por el comprador.</div>
-        <div style="margin-top:4px;">El equipo fue verificado y aceptado por ARUBA APPLE para su posterior reventa como equipo usado.</div>
-      </div>
+        <p style="margin-top:14px;">El VENDEDOR declara bajo juramento ser el legítimo propietario del bien descripto, que el mismo es de procedencia lícita y que se encuentra libre de todo gravamen, prenda o impedimento, haciéndose responsable por cualquier reclamo de terceros. Con la firma del presente cede la propiedad del bien al COMPRADOR.</p>
 
-      <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
-        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración<br>(Vendedor del equipo usado)</div>
-        <div style="text-align:center; flex:1;">_______________________<br>Firma y aclaración<br>(ARUBA APPLE — Comprador)</div>
-      </div>
-      <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">Comprobante de compra de equipo usado — ARUBA APPLE</p>
-    </div>`;
-  abrirDocumentoEditable('Comprobante compra usado — ' + cliNombre, cuerpo);
-}
+        <div style="margin-top:48px;">
+          <div style="text-align:center; width:60%;">_______________________________<br>Firma del Vendedor<br>Aclaración: ${cliNombre}<br>D.N.I.: ${cliDni}</div>
+        </div>
+      </div>`;
+    abrirDocumentoEditable('Comprobante de compra de usado — ' + cliNombre, cuerpo);
+  }
 
 function borrarVenta(id){
   if(!esAdmin()) return;
@@ -4773,7 +4759,7 @@ function renderVentas(){
         <td data-label="Acciones"><div class="actions">
           <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
           <button class="btn ghost small" onclick="facturaConIVA('${v.id}')">📄 Factura</button>
-          ${v.equipoTomado?'<button class="btn ghost small" onclick="comprobanteCompraUsado(\''+v.id+'\')">📋 Compra usado</button>':''}
+          ${v.equipoTomado?'<button class="btn ghost small" onclick="comprobanteCompraUsado(\''+v.id+'\')">📋 Comp. compra usado</button>':''}
           <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
         </div></td>`;
     }
