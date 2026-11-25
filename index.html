@@ -1239,7 +1239,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="vcFilTodasBtn" onclick="filtrarVentasCuotas('todas')">Total</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Cuota</th><th>Medio de pago</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Anticipo</th><th>Cuota</th><th>Medio de pago</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
         <tbody id="vcHistBody"></tbody>
       </table></div>
       <div class="empty" id="vcHistEmpty" style="display:none;">No hay ventas en cuotas registradas en este período.</div>
@@ -5172,6 +5172,7 @@ function renderVentasCuotas(){
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Venta"><span class="badge" style="background:rgba(0,180,255,0.15);color:#00b4ff;">📋 Propuesta ${cuotasFin}c</span></td>
+        <td data-label="Anticipo">$${fmt(anticipoFin)}</td>
         <td data-label="Cuota">$${fmt(valorCuotaFin)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">-</td>
@@ -5196,6 +5197,7 @@ function renderVentasCuotas(){
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Venta"><span class="badge ${esFinalizdo?'vendido':'reservado'}">${fraccion}</span></td>
+        <td data-label="Anticipo">$${fmt(anticipoVc)}</td>
         <td data-label="Cuota">$${fmt(valorCuota)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">$${fmt(gMensual)}</td>
