@@ -985,29 +985,6 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div><label>Precio venta (USD)</label><input id="vPrecio" type="number" placeholder="0" oninput="calcularPrecioSugeridoToma()"></div>
           </div>
         </div>
-        <div class="field" style="min-width:260px;">
-          <label>Medio de pago</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <select id="vMedioPago1" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
-            <select id="vMoneda1" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('v',1)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
-          </div>
-          <div id="vMoneda1Info" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
-          <div style="margin-top:6px;">
-            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
-              <input type="checkbox" id="vPagoDividido" onchange="togglePagoDividido('v')"> Dividir en 2 medios de pago
-            </label>
-          </div>
-          <div id="vPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
-              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 1</label><input id="vMonto1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Venta()"></div>
-              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 1</label><select id="vMonedaDiv1" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
-              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
-              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 2</label><input id="vMonto2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
-              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 2</label><select id="vMonedaDiv2" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
-            </div>
-            <div id="vMonedaDivInfo" style="display:none;margin-top:6px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
-          </div>
-        </div>
         <div style="grid-column:1/-1;margin:8px 0;">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--txt1,#fff);">
             <input type="checkbox" id="vTomarEquipo" onchange="toggleTomarEquipo()">
@@ -1028,7 +1005,30 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div id="vtSaldoInfo" style="display:none;margin-top:10px;background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:8px;padding:10px;text-align:center;">
             <div style="font-size:11px;color:#aaa;">SALDO A PAGAR POR EL CLIENTE</div>
             <div id="vtSaldoMonto" style="font-size:22px;font-weight:800;color:#27ae60;">USD $0</div>
-            <div style="font-size:11px;color:var(--txt3,#888);">El medio de pago aplica solo a este saldo</div>
+            <div style="font-size:11px;color:var(--txt3,#888);">Elegí abajo el medio de pago para este saldo</div>
+          </div>
+        </div>
+        <div class="field" style="min-width:260px;">
+          <label>Medio de pago <span id="vMedioPagoSaldoLabel" style="font-size:11px;color:#27ae60;display:none;">(por el saldo restante)</span></label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vMedioPago1" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+            <select id="vMoneda1" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('v',1)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
+          </div>
+          <div id="vMoneda1Info" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
+          <div style="margin-top:6px;">
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <input type="checkbox" id="vPagoDividido" onchange="togglePagoDividido('v')"> Dividir en 2 medios de pago
+            </label>
+          </div>
+          <div id="vPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 1</label><input id="vMonto1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Venta()"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 1</label><select id="vMonedaDiv1" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 2</label><input id="vMonto2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 2</label><select id="vMonedaDiv2" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
+            </div>
+            <div id="vMonedaDivInfo" style="display:none;margin-top:6px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           </div>
         </div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
@@ -1885,6 +1885,11 @@ function actualizarMonedaLabel(prefix, idx){
     monedaSel = document.getElementById('vMoneda1');
     infoDiv = document.getElementById('vMoneda1Info');
     montoBase = Number(document.getElementById('vPrecio').value)||0;
+    const tomarChk = document.getElementById('vTomarEquipo');
+    if(tomarChk && tomarChk.checked){
+      const precioToma = Number(document.getElementById('vtPrecioToma').value)||0;
+      montoBase = Math.max(0, montoBase - precioToma);
+    }
   } else if(prefix==='vc' && idx===1){
     monedaSel = document.getElementById('vcMoneda1');
     infoDiv = document.getElementById('vcMoneda1Info');
@@ -3640,6 +3645,8 @@ function confirmarBonificacion(){
 function toggleTomarEquipo(){
   const checked = document.getElementById('vTomarEquipo').checked;
   document.getElementById('vTomarEquipoWrap').style.display = checked ? 'block' : 'none';
+  const saldoLabel = document.getElementById('vMedioPagoSaldoLabel');
+  if(saldoLabel) saldoLabel.style.display = checked ? 'inline' : 'none';
   if(checked){
     // Poblar select de modelos con los mismos modelos que usa el sistema
     const sel = document.getElementById('vtModelo');
@@ -3659,6 +3666,11 @@ function calcularPrecioSugeridoToma(){
   if(saldoInfo){
     saldoInfo.style.display = precioToma > 0 ? 'block' : 'none';
     document.getElementById('vtSaldoMonto').textContent = 'USD $' + Number(saldo).toLocaleString('es-AR',{maximumFractionDigits:0});
+  }
+  // Actualizar equivalencia ARS si está en ARS
+  const moneda1Sel = document.getElementById('vMoneda1');
+  if(moneda1Sel && moneda1Sel.value === 'ARS'){
+    actualizarMonedaLabel('v',1);
   }
   // Si pago dividido, actualizar monto 2 basado en saldo
   actualizarMontoDividido_v();
