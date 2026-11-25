@@ -4928,54 +4928,62 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
 }
 
 function pagarCuota(ventaId){
+  try{
   const vc = ventasCuotas.find(x=>x.id===ventaId);
-  if(!vc) return;
-  const siguiente = vc.cronograma.find(c=>!c.pagada);
-  if(!siguiente) return;
+  if(!vc){ alert('No se encontró la venta. Recargá la página e intentá de nuevo.'); return; }
+  const siguiente = vc.cronograma ? vc.cronograma.find(c=>!c.pagada) : null;
+  if(!siguiente){ alert('No hay cuotas pendientes de pago para este crédito.'); return; }
   const esUltima = siguiente.nro === vc.cantCuotas;
   const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const montoNum = Number(siguiente.monto)||0;
+
+  // Remover modal previo si existe
+  const prev = document.getElementById('modalPagarCuota');
+  if(prev) prev.remove();
 
   // Modal para elegir medio de pago ANTES de confirmar
   const overlay = document.createElement('div');
   overlay.id = 'modalPagarCuota';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = `<div style="background:var(--bg2,#1e1e2e);border-radius:16px;padding:28px 32px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.5);text-align:center;">
-    <div style="font-size:28px;margin-bottom:8px;">💳</div>
-    <h3 style="margin:0 0 4px;color:var(--txt1,#fff);font-size:18px;">Pagar cuota ${siguiente.nro}/${vc.cantCuotas}</h3>
-    <p style="color:var(--txt2,#aaa);font-size:13px;margin:0 0 14px;">${vc.modelo} — ${vc.cliente||'Consumidor final'}</p>
-    <div style="background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:10px;padding:10px;margin-bottom:14px;">
-      <div style="font-size:11px;color:#aaa;">MONTO DE LA CUOTA</div>
-      <div style="font-size:22px;font-weight:800;color:#27ae60;">USD $${fmt(siguiente.monto)}</div>
-      <div style="font-size:12px;color:var(--txt3,#888);">≈ ARS $${fmt(siguiente.monto * dolar)} (cotiz. $${fmt(dolar)})</div>
-    </div>
-    ${esUltima ? '<div style="background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.3);border-radius:8px;padding:8px;margin-bottom:12px;font-size:12px;color:#ffa500;font-weight:600;">⚠️ Esta es la ÚLTIMA cuota. Se finalizará el crédito.</div>' : ''}
-    <div style="text-align:left;margin-bottom:14px;">
-      <div style="display:flex;gap:10px;margin-bottom:8px;">
-        <div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Medio de pago</label>
-          <select id="pcMedioPago" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">
-            <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="cripto">Cripto</option>
-            <option value="cuenta_corriente">Cuenta Corriente</option>
-          </select>
-        </div>
-        <div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Moneda</label>
-          <select id="pcMoneda" onchange="document.getElementById('pcArsInfo').style.display=this.value==='ARS'?'block':'none'" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">
-            <option value="USD">USD (Dólares)</option>
-            <option value="ARS">ARS (Pesos)</option>
-          </select>
-        </div>
-      </div>
-      <div id="pcArsInfo" style="display:none;font-size:11px;color:var(--txt3,#888);background:rgba(59,130,246,0.08);border-radius:6px;padding:6px 8px;">
-        💱 Si paga en pesos: ARS $${fmt(siguiente.monto * dolar)} (cotiz. dólar blue: $${fmt(dolar)})
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn" onclick="confirmarPagoCuota('${ventaId}',${siguiente.nro})" style="background:#27ae60;flex:1;">✅ Confirmar pago</button>
-      <button class="btn ghost" onclick="document.getElementById('modalPagarCuota').remove()">Cancelar</button>
-    </div>
-  </div>`;
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+  const ultimaHTML = esUltima ? '<div style="background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.3);border-radius:8px;padding:8px;margin-bottom:12px;font-size:12px;color:#ffa500;font-weight:600;">&#9888;&#65039; Esta es la ÚLTIMA cuota. Se finalizará el crédito.</div>' : '';
+
+  overlay.innerHTML = '<div style="background:var(--bg2,#1e1e2e);border-radius:16px;padding:28px 32px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.5);text-align:center;">'
+    + '<div style="font-size:28px;margin-bottom:8px;">&#128179;</div>'
+    + '<h3 style="margin:0 0 4px;color:var(--txt1,#fff);font-size:18px;">Pagar cuota '+siguiente.nro+'/'+vc.cantCuotas+'</h3>'
+    + '<p style="color:var(--txt2,#aaa);font-size:13px;margin:0 0 14px;">'+(vc.modelo||'')+' — '+(vc.cliente||'Consumidor final')+'</p>'
+    + '<div style="background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:10px;padding:10px;margin-bottom:14px;">'
+    + '<div style="font-size:11px;color:#aaa;">MONTO DE LA CUOTA</div>'
+    + '<div style="font-size:22px;font-weight:800;color:#27ae60;">USD $'+fmt(montoNum)+'</div>'
+    + '<div style="font-size:12px;color:var(--txt3,#888);">&#8776; ARS $'+fmt(montoNum * dolar)+' (cotiz. $'+fmt(dolar)+')</div>'
+    + '</div>'
+    + ultimaHTML
+    + '<div style="text-align:left;margin-bottom:14px;">'
+    + '<div style="display:flex;gap:10px;margin-bottom:8px;">'
+    + '<div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Medio de pago</label>'
+    + '<select id="pcMedioPago" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">'
+    + '<option value="efectivo">Efectivo</option>'
+    + '<option value="transferencia">Transferencia</option>'
+    + '<option value="cripto">Cripto</option>'
+    + '<option value="cuenta_corriente">Cuenta Corriente</option>'
+    + '</select></div>'
+    + '<div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Moneda</label>'
+    + '<select id="pcMoneda" onchange="document.getElementById(\'pcArsInfo\').style.display=this.value===\'ARS\'?\'block\':\'none\'" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">'
+    + '<option value="USD">USD (Dólares)</option>'
+    + '<option value="ARS">ARS (Pesos)</option>'
+    + '</select></div>'
+    + '</div>'
+    + '<div id="pcArsInfo" style="display:none;font-size:11px;color:var(--txt3,#888);background:rgba(59,130,246,0.08);border-radius:6px;padding:6px 8px;">'
+    + '&#128177; Si paga en pesos: ARS $'+fmt(montoNum * dolar)+' (cotiz. dólar blue: $'+fmt(dolar)+')'
+    + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
+    + '<button class="btn" onclick="confirmarPagoCuota(\''+ventaId+'\','+siguiente.nro+')" style="background:#27ae60;flex:1;">&#9989; Confirmar pago</button>'
+    + '<button class="btn ghost" onclick="document.getElementById(\'modalPagarCuota\').remove()">Cancelar</button>'
+    + '</div>'
+    + '</div>';
   document.body.appendChild(overlay);
+  }catch(e){ alert('Error al abrir modal de pago: '+e.message); console.error('pagarCuota error:',e); }
 }
 
 function confirmarPagoCuota(ventaId, nroCuota){
