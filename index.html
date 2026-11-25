@@ -1770,7 +1770,11 @@ function obtenerMedioPago(prefix){
     const moneda1 = (document.getElementById(prefix+'MonedaDiv1')||{}).value||'USD';
     const moneda2 = (document.getElementById(prefix+'MonedaDiv2')||{}).value||'USD';
     if(medio1 && medio2 && monto1>0 && monto2>0){
-      const obj = { medio1, monto1, medio2, monto2, moneda1, moneda2 };
+      // Los montos ingresados son en USD (porque el precio total es USD)
+      // Si la moneda elegida es ARS, convertir a pesos
+      const montoFinal1 = moneda1==='ARS' ? monto1 * dolar : monto1;
+      const montoFinal2 = moneda2==='ARS' ? monto2 * dolar : monto2;
+      const obj = { medio1, monto1: montoFinal1, medio2, monto2: montoFinal2, moneda1, moneda2 };
       if(moneda1==='ARS'||moneda2==='ARS') obj.cotizacion = dolar;
       return obj;
     }
