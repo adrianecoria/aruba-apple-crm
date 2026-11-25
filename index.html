@@ -4932,21 +4932,74 @@ function pagarCuota(ventaId){
   if(!vc) return;
   const siguiente = vc.cronograma.find(c=>!c.pagada);
   if(!siguiente) return;
-
   const esUltima = siguiente.nro === vc.cantCuotas;
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
 
-  if(esUltima){
-    if(!confirm(`Esta es la ÚLTIMA cuota (${vc.cantCuotas}/${vc.cantCuotas}) del crédito de ${vc.modelo} para ${vc.cliente}.\n\nSe finalizará el crédito.\n\n¿Confirmar pago y finalización?`)) return;
-  }
+  // Modal para elegir medio de pago ANTES de confirmar
+  const overlay = document.createElement('div');
+  overlay.id = 'modalPagarCuota';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:var(--bg2,#1e1e2e);border-radius:16px;padding:28px 32px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.5);text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;">💳</div>
+    <h3 style="margin:0 0 4px;color:var(--txt1,#fff);font-size:18px;">Pagar cuota ${siguiente.nro}/${vc.cantCuotas}</h3>
+    <p style="color:var(--txt2,#aaa);font-size:13px;margin:0 0 14px;">${vc.modelo} — ${vc.cliente||'Consumidor final'}</p>
+    <div style="background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:10px;padding:10px;margin-bottom:14px;">
+      <div style="font-size:11px;color:#aaa;">MONTO DE LA CUOTA</div>
+      <div style="font-size:22px;font-weight:800;color:#27ae60;">USD $${fmt(siguiente.monto)}</div>
+      <div style="font-size:12px;color:var(--txt3,#888);">≈ ARS $${fmt(siguiente.monto * dolar)} (cotiz. $${fmt(dolar)})</div>
+    </div>
+    ${esUltima ? '<div style="background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.3);border-radius:8px;padding:8px;margin-bottom:12px;font-size:12px;color:#ffa500;font-weight:600;">⚠️ Esta es la ÚLTIMA cuota. Se finalizará el crédito.</div>' : ''}
+    <div style="text-align:left;margin-bottom:14px;">
+      <div style="display:flex;gap:10px;margin-bottom:8px;">
+        <div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Medio de pago</label>
+          <select id="pcMedioPago" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="cripto">Cripto</option>
+            <option value="cuenta_corriente">Cuenta Corriente</option>
+          </select>
+        </div>
+        <div style="flex:1;"><label style="font-size:11px;color:var(--txt3,#888);display:block;margin-bottom:3px;">Moneda</label>
+          <select id="pcMoneda" onchange="document.getElementById('pcArsInfo').style.display=this.value==='ARS'?'block':'none'" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg3,#2a2a3e);color:var(--txt1,#fff);font-size:13px;">
+            <option value="USD">USD (Dólares)</option>
+            <option value="ARS">ARS (Pesos)</option>
+          </select>
+        </div>
+      </div>
+      <div id="pcArsInfo" style="display:none;font-size:11px;color:var(--txt3,#888);background:rgba(59,130,246,0.08);border-radius:6px;padding:6px 8px;">
+        💱 Si paga en pesos: ARS $${fmt(siguiente.monto * dolar)} (cotiz. dólar blue: $${fmt(dolar)})
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" onclick="confirmarPagoCuota('${ventaId}',${siguiente.nro})" style="background:#27ae60;flex:1;">✅ Confirmar pago</button>
+      <button class="btn ghost" onclick="document.getElementById('modalPagarCuota').remove()">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function confirmarPagoCuota(ventaId, nroCuota){
+  const vc = ventasCuotas.find(x=>x.id===ventaId);
+  if(!vc) return;
+  const siguiente = vc.cronograma.find(c=>c.nro===nroCuota);
+  if(!siguiente || siguiente.pagada) return;
+
+  const medioPago = document.getElementById('pcMedioPago').value;
+  const moneda = document.getElementById('pcMoneda').value;
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const esUltima = nroCuota === vc.cantCuotas;
 
   siguiente.pagada = true;
   siguiente.fechaPago = hoyISO();
+  siguiente.medioPagoCuota = medioPago;
+  siguiente.monedaPagoCuota = moneda;
+  if(moneda==='ARS') siguiente.cotizacionPago = dolar;
+
   vc.cuotasPagadas = vc.cronograma.filter(c=>c.pagada).length;
 
   if(esUltima){
     vc.estado = 'finalizado';
     registrarActividad(`Crédito finalizado: ${vc.modelo} — ${vc.cantCuotas}/${vc.cantCuotas} cuotas pagadas por ${vc.cliente}`);
-    alert(`¡Crédito finalizado! ${vc.modelo} — Todas las cuotas fueron pagadas por ${vc.cliente}.`);
   } else {
     registrarActividad(`Cuota ${vc.cuotasPagadas}/${vc.cantCuotas} pagada: ${vc.modelo} — $${fmt(siguiente.monto)} por ${vc.cliente}`);
   }
@@ -4955,18 +5008,34 @@ function pagarCuota(ventaId){
   renderVentasCuotas();
   if(document.getElementById('movimientosBody')) renderCaja();
 
-  // Mostrar modal para imprimir comprobante de la cuota pagada
+  // Cerrar modal de pago y mostrar modal de confirmación
+  const mp = document.getElementById('modalPagarCuota');
+  if(mp) mp.remove();
   mostrarModalComprobanteCuota(vc, siguiente);
 }
 
 function mostrarModalComprobanteCuota(vc, cuota){
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const mpLabel = MEDIOS_PAGO_LABELS[cuota.medioPagoCuota]||cuota.medioPagoCuota||'—';
+  const monedaLabel = cuota.monedaPagoCuota==='ARS' ? 'Pesos Argentinos' : 'Dólares';
+  const cotiz = cuota.cotizacionPago || dolar;
+  const montoARS = cuota.monto * cotiz;
+
   const overlay = document.createElement('div');
   overlay.id = 'modalCuotaPagada';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = `<div style="background:var(--bg2,#1e1e2e);border-radius:16px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5);text-align:center;">
+  overlay.innerHTML = `<div style="background:var(--bg2,#1e1e2e);border-radius:16px;padding:28px 32px;max-width:420px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.5);text-align:center;">
     <div style="font-size:40px;margin-bottom:10px;">✅</div>
     <h3 style="margin:0 0 6px;color:var(--txt1,#fff);font-size:18px;">Cuota ${cuota.nro}/${vc.cantCuotas} pagada</h3>
-    <p style="color:var(--txt2,#aaa);font-size:14px;margin:0 0 18px;">${vc.modelo} — ${vc.cliente||'Consumidor final'}<br>Monto: <b>USD $${fmt(cuota.monto)}</b></p>
+    <p style="color:var(--txt2,#aaa);font-size:14px;margin:0 0 6px;">${vc.modelo} — ${vc.cliente||'Consumidor final'}</p>
+    <div style="background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:10px;padding:10px;margin:10px 0;">
+      <div style="font-size:20px;font-weight:800;color:#27ae60;">USD $${fmt(cuota.monto)}</div>
+      <div style="font-size:13px;color:var(--txt3,#888);">≈ ARS $${fmt(montoARS)}</div>
+    </div>
+    <div style="font-size:12px;color:var(--txt2,#ccc);margin-bottom:14px;">
+      <span style="padding:3px 8px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;">${mpLabel}</span>
+      <span style="margin-left:6px;padding:3px 8px;border-radius:6px;background:rgba(168,85,247,0.12);color:#a855f7;">${monedaLabel}</span>
+    </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn" onclick="imprimirComprobanteCuotaPagada('${vc.id}',${cuota.nro})" style="background:#007aff;">🖨️ Imprimir comprobante</button>
       <button class="btn" onclick="enviarWhatsAppCuotaPagada('${vc.id}',${cuota.nro})" style="background:#25d366;">📲 Enviar por WhatsApp</button>
@@ -5052,6 +5121,8 @@ function imprimirComprobanteCuotaPagada(ventaId, nroCuota){
     <tr><td>Vencimiento:</td><td>${cuota.vencimiento||'-'}</td></tr>
     <tr><td>Fecha de pago:</td><td><b>${cuota.fechaPago||hoyISO()}</b></td></tr>
     <tr><td>Frecuencia:</td><td>${vc.frecuencia||'-'}</td></tr>
+    <tr><td>Medio de pago:</td><td><b>${MEDIOS_PAGO_LABELS[cuota.medioPagoCuota]||cuota.medioPagoCuota||'—'}</b></td></tr>
+    <tr><td>Moneda de pago:</td><td><b>${cuota.monedaPagoCuota==='ARS'?'Pesos Argentinos':'Dólares Estadounidenses'}</b></td></tr>
     <tr><td>Cuotas pagadas:</td><td>${pagadas} de ${vc.cantCuotas}</td></tr>
     <tr><td>Saldo restante:</td><td>${restante > 0 ? 'USD $'+fmt(restante) : '<span style="color:#27ae60;font-weight:700;">CANCELADO</span>'}</td></tr>
   </table></div>
@@ -5059,7 +5130,9 @@ function imprimirComprobanteCuotaPagada(ventaId, nroCuota){
   <div class="monto">
     <div style="font-size:11px;color:#555;margin-bottom:4px;">MONTO ABONADO</div>
     <div class="usd">USD $${fmt(cuota.monto)}</div>
-    <div class="ars">≈ ARS $${fmt(cuota.monto * dolar)}</div>
+    <div class="ars">ARS $${fmt(cuota.monto * (cuota.cotizacionPago||dolar))}</div>
+    <div style="font-size:10px;color:#999;margin-top:4px;">Cotización dólar blue al momento del pago: $${fmt(cuota.cotizacionPago||dolar)}</div>
+    ${cuota.monedaPagoCuota==='ARS' ? '<div style="margin-top:4px;font-size:12px;color:#3b82f6;font-weight:600;">💱 Abonado en PESOS ARGENTINOS</div>' : '<div style="margin-top:4px;font-size:12px;color:#27ae60;font-weight:600;">💵 Abonado en DÓLARES</div>'}
   </div>
 
   <div class="firmas"><div>Firma del cliente</div><div>Firma del vendedor</div></div>
