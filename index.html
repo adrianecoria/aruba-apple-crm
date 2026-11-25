@@ -1008,6 +1008,24 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div id="vMonedaDivInfo" style="display:none;margin-top:6px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           </div>
         </div>
+        <div style="grid-column:1/-1;margin:8px 0;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--txt1,#fff);">
+            <input type="checkbox" id="vTomarEquipo" onchange="toggleTomarEquipo()">
+            🔄 Tomar equipo en parte de pago
+          </label>
+        </div>
+        <div id="vTomarEquipoWrap" style="display:none;grid-column:1/-1;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:14px;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:600;color:var(--blue,#3b82f6);margin-bottom:10px;">📱 Equipo a tomar</div>
+          <div class="form-row">
+            <div class="field"><label>Modelo</label><select id="vtModelo"></select></div>
+            <div class="field"><label>Color</label><input id="vtColor" placeholder="Ej: Negro"></div>
+            <div class="field"><label>Almacenamiento</label><select id="vtAlmacenamiento"><option value="64GB">64GB</option><option value="128GB">128GB</option><option value="256GB">256GB</option><option value="512GB">512GB</option><option value="1TB">1TB</option></select></div>
+            <div class="field"><label>Batería %</label><input id="vtBateria" type="number" min="0" max="100" placeholder="100"></div>
+            <div class="field"><label>IMEI</label><input id="vtImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
+            <div class="field"><label>Precio de toma (USD)</label><input id="vtPrecioToma" type="number" placeholder="0" oninput="calcularPrecioSugeridoToma()"></div>
+            <div class="field"><label>Precio sugerido auto (USD)</label><input id="vtSugeridoAuto" type="number" readonly style="opacity:0.7;"></div>
+          </div>
+        </div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
         <div class="field"><button class="btn amber" onclick="reservarItemVenta()" style="width:100%;">Reservar</button></div>
         <div class="field"><button class="btn" onclick="venderItemVenta()" style="width:100%;">Vender</button></div>
@@ -3614,6 +3632,22 @@ function confirmarBonificacion(){
 
 /* ===== FIN MODAL BONIFICACIÓN ===== */
 
+function toggleTomarEquipo(){
+  const checked = document.getElementById('vTomarEquipo').checked;
+  document.getElementById('vTomarEquipoWrap').style.display = checked ? 'block' : 'none';
+  if(checked){
+    // Poblar select de modelos con los mismos modelos que usa el sistema
+    const sel = document.getElementById('vtModelo');
+    const modelosSel = document.getElementById('eModelo');
+    sel.innerHTML = modelosSel.innerHTML;
+  }
+}
+
+function calcularPrecioSugeridoToma(){
+  const precio = parseFloat(document.getElementById('vtPrecioToma').value) || 0;
+  document.getElementById('vtSugeridoAuto').value = precio > 0 ? precio + 100 : '';
+}
+
 function venderItemVenta(){
   const tipo = document.getElementById('vTipo').value;
   const comercioId = document.getElementById('vComercio').value;
@@ -3669,7 +3703,8 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
     syncGuardar('stock_equipos', equipos);
     renderEquipos();
     marcarConsignacionVendida(e.id);
-    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined });
+    const tomaData = (document.getElementById('vTomarEquipo') && document.getElementById('vTomarEquipo').checked) ? { tomaModelo: document.getElementById('vtModelo').value + ' ' + (document.getElementById('vtAlmacenamiento').value||''), tomaColor: document.getElementById('vtColor').value.trim(), tomaImei: document.getElementById('vtImei').value.trim(), tomaPrecio: document.getElementById('vtPrecioToma').value } : null;
+    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined, equipoTomado: tomaData||undefined });
     registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${medioPago?' ('+formatMedioPagoTexto(medioPago)+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   } else {
     const id = document.getElementById('vAccesorio').value;
@@ -3711,6 +3746,51 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
   });
 
   syncGuardar('ventas', ventas);
+
+  // Tomar equipo en parte de pago: agregar al stock automáticamente
+  if(document.getElementById('vTomarEquipo') && document.getElementById('vTomarEquipo').checked){
+    const vtModelo = document.getElementById('vtModelo').value;
+    const vtColor = document.getElementById('vtColor').value.trim();
+    const vtAlmacenamiento = document.getElementById('vtAlmacenamiento').value;
+    const vtBateria = document.getElementById('vtBateria').value;
+    const vtImei = document.getElementById('vtImei').value.trim();
+    const vtPrecioToma = document.getElementById('vtPrecioToma').value;
+    const vtSugerido = parseFloat(vtPrecioToma||0) + 100;
+    if(vtModelo && vtImei && vtPrecioToma){
+      // Verificar IMEI no duplicado
+      if(!equipos.some(eq=>eq.imei===vtImei)){
+        const modeloTexto = vtModelo + (vtAlmacenamiento ? ' ' + vtAlmacenamiento : '');
+        equipos.push({
+          id: uid(),
+          modelo: modeloTexto,
+          proveedorId: '',
+          clienteVendedorId: clienteId,
+          color: vtColor,
+          bateria: vtBateria || '',
+          imei: vtImei,
+          compra: vtPrecioToma,
+          sugerido: String(vtSugerido),
+          venta: '',
+          estado: 'disponible',
+          origen: 'permuta'
+        });
+        syncGuardar('stock_equipos', equipos);
+        renderEquipos();
+        registrarActividad('Equipo tomado en permuta: ' + modeloTexto + ' (IMEI: ' + vtImei + ') — Precio toma: $' + fmt(vtPrecioToma) + ' — Precio sugerido: $' + fmt(vtSugerido) + ' — Cliente: ' + cliente);
+      } else {
+        alert('El IMEI ' + vtImei + ' ya existe en el stock. El equipo no se agregó.');
+      }
+    }
+    // Limpiar campos de toma
+    document.getElementById('vTomarEquipo').checked = false;
+    document.getElementById('vTomarEquipoWrap').style.display = 'none';
+    document.getElementById('vtColor').value = '';
+    document.getElementById('vtImei').value = '';
+    document.getElementById('vtPrecioToma').value = '';
+    document.getElementById('vtSugeridoAuto').value = '';
+    document.getElementById('vtBateria').value = '';
+  }
+
   document.getElementById('vPrecio').value='';
   resetMedioPago('v');
   cargarSelectEquiposVenta();
