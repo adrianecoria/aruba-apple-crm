@@ -1838,12 +1838,18 @@ function obtenerMedioPago(prefix){
   const monedaSel = document.getElementById(prefix==='v'?'vMoneda1':'vcMoneda1');
   const moneda = monedaSel? monedaSel.value : 'USD';
   if(moneda==='ARS' && medio){
-    // Para pago simple en ARS necesitamos el monto — se toma del precio total
-    let montoARS = 0;
-    if(prefix==='v') montoARS = Number(document.getElementById('vPrecio').value)||0;
-    else if(prefix==='vc') montoARS = Number(document.getElementById('vcAnticipo').value)||0;
-    // Convertir precio USD a ARS
-    montoARS = montoARS * dolar;
+    // Para pago simple en ARS necesitamos el monto — se toma del saldo (precio - toma)
+    let montoUSD = 0;
+    if(prefix==='v'){
+      montoUSD = Number(document.getElementById('vPrecio').value)||0;
+      const tomarChk = document.getElementById('vTomarEquipo');
+      if(tomarChk && tomarChk.checked){
+        const precioToma = Number(document.getElementById('vtPrecioToma').value)||0;
+        montoUSD = Math.max(0, montoUSD - precioToma);
+      }
+    } else if(prefix==='vc') montoUSD = Number(document.getElementById('vcAnticipo').value)||0;
+    // Convertir saldo USD a ARS
+    const montoARS = montoUSD * dolar;
     return { medio1: medio, monto1: montoARS, moneda1: 'ARS', cotizacion: dolar };
   }
   return medio || '';
