@@ -3595,11 +3595,14 @@ function venderItemVenta(){
   const fecha = document.getElementById('vFecha').value || hoyISO();
   const medioPago = obtenerMedioPago('v');
   if(!precio){ alert('Cargá el precio de venta.'); return; }
-  // Validar pago dividido
-  if(typeof medioPago === 'object' && medioPago.medio1){
-    const sumaPagos = (Number(medioPago.monto1)||0) + (Number(medioPago.monto2)||0);
-    if(Math.abs(sumaPagos - Number(precio)) > 0.01){
-      alert(`La suma de los montos de pago ($${fmt(sumaPagos)}) no coincide con el precio de venta ($${fmt(precio)}). Revisá los montos.`);
+  // Validar pago dividido (comparar todo en USD)
+  if(typeof medioPago === 'object' && medioPago.medio1 && medioPago.medio2){
+    const cotiz = medioPago.cotizacion || (parseFloat(ls_get('dolar_blue',1555))||1555);
+    const usd1 = medioPago.moneda1==='ARS' ? (Number(medioPago.monto1)||0)/cotiz : (Number(medioPago.monto1)||0);
+    const usd2 = medioPago.moneda2==='ARS' ? (Number(medioPago.monto2)||0)/cotiz : (Number(medioPago.monto2)||0);
+    const sumaUSD = usd1 + usd2;
+    if(Math.abs(sumaUSD - Number(precio)) > 1){
+      alert(`La suma de los montos de pago (≈U$D ${fmt(sumaUSD)}) no coincide con el precio de venta (U$D ${fmt(Number(precio))}). Revisá los montos.`);
       return;
     }
   }
@@ -4716,11 +4719,14 @@ function venderEnCuotas(){
   const fechaInicio = document.getElementById('vcFechaInicio').value || hoyISO();
   const medioPago = obtenerMedioPago('vc');
 
-  // Validar pago dividido del anticipo
+  // Validar pago dividido del anticipo (comparar todo en USD)
   if(medioPago && typeof medioPago === 'object' && medioPago.medio1 && medioPago.medio2){
-    const sumaPagos = (Number(medioPago.monto1)||0) + (Number(medioPago.monto2)||0);
-    if(anticipo > 0 && Math.abs(sumaPagos - anticipo) > 0.01){
-      alert(`La suma de los montos del pago dividido ($${fmt(sumaPagos)}) no coincide con el anticipo ($${fmt(anticipo)}).`);
+    const cotiz = medioPago.cotizacion || (parseFloat(ls_get('dolar_blue',1555))||1555);
+    const usd1 = medioPago.moneda1==='ARS' ? (Number(medioPago.monto1)||0)/cotiz : (Number(medioPago.monto1)||0);
+    const usd2 = medioPago.moneda2==='ARS' ? (Number(medioPago.monto2)||0)/cotiz : (Number(medioPago.monto2)||0);
+    const sumaUSD = usd1 + usd2;
+    if(anticipo > 0 && Math.abs(sumaUSD - anticipo) > 1){
+      alert(`La suma de los montos del pago dividido (≈U$D ${fmt(sumaUSD)}) no coincide con el anticipo (U$D ${fmt(anticipo)}).`);
       return;
     }
   }
