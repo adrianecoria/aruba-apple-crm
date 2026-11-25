@@ -982,7 +982,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field" style="min-width:150px;">
           <div style="display:flex; flex-direction:column; gap:8px;">
             <div><label>Precio sugerido (USD)</label><input id="vSugerido" type="number" placeholder="0" readonly style="opacity:0.7;"></div>
-            <div><label>Precio venta (USD)</label><input id="vPrecio" type="number" placeholder="0"></div>
+            <div><label>Precio venta (USD)</label><input id="vPrecio" type="number" placeholder="0" oninput="calcularPrecioSugeridoToma()"></div>
           </div>
         </div>
         <div class="field" style="min-width:260px;">
@@ -1024,6 +1024,11 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div class="field"><label>IMEI</label><input id="vtImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
             <div class="field"><label>Precio de toma (USD)</label><input id="vtPrecioToma" type="number" placeholder="0" oninput="calcularPrecioSugeridoToma()"></div>
             <div class="field"><label>Precio sugerido auto (USD)</label><input id="vtSugeridoAuto" type="number" readonly style="opacity:0.7;"></div>
+          </div>
+          <div id="vtSaldoInfo" style="display:none;margin-top:10px;background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.25);border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:11px;color:#aaa;">SALDO A PAGAR POR EL CLIENTE</div>
+            <div id="vtSaldoMonto" style="font-size:22px;font-weight:800;color:#27ae60;">USD $0</div>
+            <div style="font-size:11px;color:var(--txt3,#888);">El medio de pago aplica solo a este saldo</div>
           </div>
         </div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
@@ -3641,11 +3646,40 @@ function toggleTomarEquipo(){
     const modelosSel = document.getElementById('eModelo');
     sel.innerHTML = modelosSel.innerHTML;
   }
+  calcularPrecioSugeridoToma();
 }
 
 function calcularPrecioSugeridoToma(){
-  const precio = parseFloat(document.getElementById('vtPrecioToma').value) || 0;
-  document.getElementById('vtSugeridoAuto').value = precio > 0 ? precio + 100 : '';
+  const precioToma = parseFloat(document.getElementById('vtPrecioToma').value) || 0;
+  document.getElementById('vtSugeridoAuto').value = precioToma > 0 ? precioToma + 100 : '';
+  // Mostrar saldo a pagar
+  const precioVenta = parseFloat(document.getElementById('vPrecio').value) || 0;
+  const saldo = Math.max(0, precioVenta - precioToma);
+  const saldoInfo = document.getElementById('vtSaldoInfo');
+  if(saldoInfo){
+    saldoInfo.style.display = precioToma > 0 ? 'block' : 'none';
+    document.getElementById('vtSaldoMonto').textContent = 'USD $' + Number(saldo).toLocaleString('es-AR',{maximumFractionDigits:0});
+  }
+  // Si pago dividido, actualizar monto 2 basado en saldo
+  actualizarMontoDividido_v();
+}
+
+function actualizarMontoDividido_v(){
+  // Recalcular montos de pago dividido si está activo, basándose en saldo real
+  const chk = document.getElementById('vPagoDividido');
+  if(!chk || !chk.checked) return;
+  const precioVenta = parseFloat(document.getElementById('vPrecio').value) || 0;
+  const tomarCheck = document.getElementById('vTomarEquipo');
+  const precioToma = (tomarCheck && tomarCheck.checked) ? (parseFloat(document.getElementById('vtPrecioToma').value) || 0) : 0;
+  const saldoReal = Math.max(0, precioVenta - precioToma);
+  const m1 = parseFloat(document.getElementById('vMonto1').value) || 0;
+  // Convertir m1 a USD si es ARS
+  const moneda1 = document.getElementById('vMonedaDiv1') ? document.getElementById('vMonedaDiv1').value : 'USD';
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const m1usd = moneda1 === 'ARS' ? m1 / dolar : m1;
+  const resto = Math.max(0, saldoReal - m1usd);
+  const moneda2 = document.getElementById('vMonedaDiv2') ? document.getElementById('vMonedaDiv2').value : 'USD';
+  document.getElementById('vMonto2').value = moneda2 === 'ARS' ? Math.round(resto * dolar) : Math.round(resto);
 }
 
 function venderItemVenta(){
@@ -3656,6 +3690,10 @@ function venderItemVenta(){
   const clienteSel = clientes.find(c=>c.id===clienteId);
   const cliente = clienteSel ? `${clienteSel.nombre} ${clienteSel.apellido}` : 'Consumidor final';
   const precio = document.getElementById('vPrecio').value;
+  // Calcular saldo real descontando equipo tomado
+  const tomarEquipoCheck = document.getElementById('vTomarEquipo');
+  const precioTomaVal = (tomarEquipoCheck && tomarEquipoCheck.checked) ? (parseFloat(document.getElementById('vtPrecioToma').value) || 0) : 0;
+  const saldoAPagar = Math.max(0, parseFloat(precio||0) - precioTomaVal);
   const fecha = document.getElementById('vFecha').value || hoyISO();
   const medioPago = obtenerMedioPago('v');
   if(!precio){ alert('Cargá el precio de venta.'); return; }
@@ -3673,8 +3711,8 @@ function venderItemVenta(){
     const usd1 = medioPago.moneda1==='ARS' ? (Number(medioPago.monto1)||0)/cotiz : (Number(medioPago.monto1)||0);
     const usd2 = medioPago.moneda2==='ARS' ? (Number(medioPago.monto2)||0)/cotiz : (Number(medioPago.monto2)||0);
     const sumaUSD = usd1 + usd2;
-    if(Math.abs(sumaUSD - Number(precio)) > 1){
-      alert(`La suma de los montos de pago (≈U$D ${fmt(sumaUSD)}) no coincide con el precio de venta (U$D ${fmt(Number(precio))}). Revisá los montos.`);
+    if(Math.abs(sumaUSD - saldoAPagar) > 1){
+      alert(`La suma de los montos de pago (≈U$D ${fmt(sumaUSD)}) no coincide con el saldo a pagar (U$D ${fmt(saldoAPagar)}${precioTomaVal>0?', precio de venta menos equipo tomado':''}). Revisá los montos.`);
       return;
     }
   }
