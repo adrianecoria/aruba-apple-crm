@@ -3595,6 +3595,14 @@ function venderItemVenta(){
   const fecha = document.getElementById('vFecha').value || hoyISO();
   const medioPago = obtenerMedioPago('v');
   if(!precio){ alert('Cargá el precio de venta.'); return; }
+  // Validar que si pago dividido está marcado, ambos medios estén seleccionados
+  const chkDivV = document.getElementById('vPagoDividido');
+  if(chkDivV && chkDivV.checked){
+    const m1v = document.getElementById('vMedioPago1').value;
+    const m2v = document.getElementById('vMedioPago2').value;
+    if(!m1v){ alert('Seleccioná el primer medio de pago.'); return; }
+    if(!m2v){ alert('Seleccioná el segundo medio de pago para el pago dividido.'); return; }
+  }
   // Validar pago dividido (comparar todo en USD)
   if(typeof medioPago === 'object' && medioPago.medio1 && medioPago.medio2){
     const cotiz = medioPago.cotizacion || (parseFloat(ls_get('dolar_blue',1555))||1555);
@@ -4718,6 +4726,15 @@ function venderEnCuotas(){
   const fechaPago = document.getElementById('vcFechaPago').value || hoyISO();
   const fechaInicio = document.getElementById('vcFechaInicio').value || hoyISO();
   const medioPago = obtenerMedioPago('vc');
+
+  // Validar que si pago dividido está marcado, ambos medios estén seleccionados
+  const chkDivVc = document.getElementById('vcPagoDividido');
+  if(chkDivVc && chkDivVc.checked){
+    const m1vc = document.getElementById('vcMedioPago1').value;
+    const m2vc = document.getElementById('vcMedioPago2').value;
+    if(!m1vc){ alert('Seleccioná el primer medio de pago.'); return; }
+    if(!m2vc){ alert('Seleccioná el segundo medio de pago para el pago dividido.'); return; }
+  }
 
   // Validar pago dividido del anticipo (comparar todo en USD)
   if(medioPago && typeof medioPago === 'object' && medioPago.medio1 && medioPago.medio2){
