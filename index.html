@@ -1208,6 +1208,25 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Fecha inicio financiación</label><input id="vcFechaInicio" type="date" onchange="renderSimulacionCuotas()"></div>
       </div>
 
+      <!-- CODEUDOR -->
+      <div style="margin-top:10px;">
+        <label style="cursor:pointer; font-size:13px; color:var(--txt2); display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="vcCodeudorCheck" onchange="document.getElementById('vcCodeudorWrap').style.display=this.checked?'block':'none'"> Agregar codeudor
+        </label>
+      </div>
+      <div id="vcCodeudorWrap" style="display:none; margin-top:8px; padding:12px; background:rgba(168,85,247,0.06); border-radius:8px; border:1px solid rgba(168,85,247,0.18);">
+        <div style="font-size:12px; color:var(--purple,#a855f7); font-weight:600; margin-bottom:8px;">Datos del Codeudor</div>
+        <div class="form-row">
+          <div class="field"><label>Nombre</label><input id="vcCodeudorNombre" placeholder="Nombre"></div>
+          <div class="field"><label>Apellido</label><input id="vcCodeudorApellido" placeholder="Apellido"></div>
+          <div class="field"><label>DNI</label><input id="vcCodeudorDNI" placeholder="DNI"></div>
+        </div>
+        <div class="form-row">
+          <div class="field" style="flex:2;"><label>Domicilio</label><input id="vcCodeudorDomicilio" placeholder="Domicilio"></div>
+          <div class="field"><label>Teléfono</label><input id="vcCodeudorTelefono" placeholder="Teléfono"></div>
+        </div>
+      </div>
+
       <div id="vcSimulacion" style="display:none; margin-top:18px;">
         <h3 style="font-size:14px; color:var(--txt2); margin-bottom:10px;">Simulación de la financiación</h3>
         <div style="overflow-x:auto;"><table>
@@ -1239,7 +1258,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab" id="vcFilTodasBtn" onclick="filtrarVentasCuotas('todas')">Total</button>
       </div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Anticipo</th><th>Cuota</th><th>Medio de pago</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Codeudor</th><th>Venta</th><th>Anticipo</th><th>Cuota</th><th>Medio de pago</th><th class="solo-admin">Ganancia mensual</th><th class="solo-admin">Ganancia en cuotas</th><th>Acciones</th></tr></thead>
         <tbody id="vcHistBody"></tbody>
       </table></div>
       <div class="empty" id="vcHistEmpty" style="display:none;">No hay ventas en cuotas registradas en este período.</div>
@@ -1737,6 +1756,13 @@ function badgeMedioPago(mp){
   }
   if(mp.medio1) return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1}</span>`;
   return '<span style="color:var(--txt3);font-size:11px;">—</span>';
+}
+
+function formatCodeudor(c){
+  if(!c) return '<span style="color:var(--txt3);font-size:11px;">—</span>';
+  const nombre = `${c.nombre} ${c.apellido}`;
+  const detalles = [c.dni?`DNI: ${c.dni}`:'', c.telefono?`Tel: ${c.telefono}`:''].filter(Boolean).join(' · ');
+  return `<span style="font-size:11px;display:inline-block;line-height:1.4;padding:2px 6px;border-radius:6px;background:rgba(168,85,247,0.12);color:#a855f7;white-space:nowrap;">${nombre}${detalles?`<br><span style="font-size:9px;">${detalles}</span>`:''}</span>`;
 }
 
 /* ---------- FUNCIONES DOBLE MEDIO DE PAGO ---------- */
@@ -4831,6 +4857,18 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
     bonificados: bonificados.length ? bonificados : undefined
   };
 
+  // Codeudor
+  const chkCodeudor = document.getElementById('vcCodeudorCheck');
+  if(chkCodeudor && chkCodeudor.checked){
+    const cNom = document.getElementById('vcCodeudorNombre').value.trim();
+    const cApe = document.getElementById('vcCodeudorApellido').value.trim();
+    const cDNI = document.getElementById('vcCodeudorDNI').value.trim();
+    const cDom = document.getElementById('vcCodeudorDomicilio').value.trim();
+    const cTel = document.getElementById('vcCodeudorTelefono').value.trim();
+    if(!cNom || !cApe){ alert('Completá nombre y apellido del codeudor.'); return; }
+    registro.codeudor = { nombre: cNom, apellido: cApe, dni: cDNI, domicilio: cDom, telefono: cTel };
+  }
+
   ventasCuotas.push(registro);
   syncGuardar('ventas_cuotas', ventasCuotas);
 
@@ -4878,6 +4916,10 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
   document.getElementById('vcInteres').value = '';
   document.getElementById('vcCuotaValor').value = '';
   resetMedioPago('vc');
+  // Reset codeudor
+  const chkC = document.getElementById('vcCodeudorCheck');
+  if(chkC){ chkC.checked = false; document.getElementById('vcCodeudorWrap').style.display = 'none'; }
+  ['vcCodeudorNombre','vcCodeudorApellido','vcCodeudorDNI','vcCodeudorDomicilio','vcCodeudorTelefono'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('vcSimulacion').style.display = 'none';
   cargarSelectVentaCuotas();
   cargarSelectEquiposVenta();
@@ -5188,6 +5230,7 @@ function renderVentasCuotas(){
         <td data-label="Modelo">${vc.modelo||'-'}</td>
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
+        <td data-label="Codeudor">${formatCodeudor(vc.codeudor)}</td>
         <td data-label="Venta"><span class="badge" style="background:rgba(0,180,255,0.15);color:#00b4ff;">📋 Propuesta ${cuotasFin}c</span></td>
         <td data-label="Anticipo">$${fmt(anticipoFin)}</td>
         <td data-label="Cuota">$${fmt(valorCuotaFin)}</td>
@@ -5213,6 +5256,7 @@ function renderVentasCuotas(){
         <td data-label="Modelo">${vc.modelo}${bonifTextoCuotas?`<br><span style="font-size:11px;color:var(--amber);">${bonifTextoCuotas}</span>`:''}</td>
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
+        <td data-label="Codeudor">${formatCodeudor(vc.codeudor)}</td>
         <td data-label="Venta"><span class="badge ${esFinalizdo?'vendido':'reservado'}">${fraccion}</span></td>
         <td data-label="Anticipo">$${fmt(anticipoVc)}</td>
         <td data-label="Cuota">$${fmt(valorCuota)}</td>
@@ -5755,7 +5799,7 @@ function generarContratoCuotas(id){
 
       <p><b>POR OTRA PARTE (EL COMPRADOR):</b> ${compradorNombre}, D.N.I. Nº ${compradorDni}, domiciliado en ${compradorDom}, Teléfono Nº ${compradorTel}.</p>
 
-      <p><b>(En su caso) CODEUDOR SOLIDARIO Y GARANTE:</b> _________________________, D.N.I. Nº ____________, domiciliado en ________________________________, Teléfono Nº ____________.</p>
+      <p><b>(En su caso) CODEUDOR SOLIDARIO Y GARANTE:</b> ${vc.codeudor ? `${vc.codeudor.nombre} ${vc.codeudor.apellido}, D.N.I. Nº ${vc.codeudor.dni||'____________'}, domiciliado en ${vc.codeudor.domicilio||'________________________________'}, Teléfono Nº ${vc.codeudor.telefono||'____________'}` : '_________________________, D.N.I. Nº ____________, domiciliado en ________________________________, Teléfono Nº ____________'}.</p>
 
       <p>Las partes convienen celebrar el presente CONTRATO DE COMPRAVENTA A PLAZOS, el cual se regirá por las siguientes cláusulas:</p>
 
@@ -5876,9 +5920,9 @@ function generarPagareCuotas(id){
 
       <div style="border-top:1px solid #000; margin-top:18px; padding-top:10px;">
         <p style="font-weight:700; margin:0 0 6px;">AVAL / GARANTE SOLIDARIO (como avalista del librador por el importe total)</p>
-        <p style="margin:4px 0;">Nombre y Apellido: __________________________________________________</p>
-        <p style="margin:4px 0;">D.N.I. N°: ____________________ &nbsp;&nbsp; Teléfono: ____________________</p>
-        <p style="margin:4px 0;">Domicilio Real: _____________________________________________________</p>
+        <p style="margin:4px 0;">Nombre y Apellido: ${vc.codeudor ? L(vc.codeudor.nombre+' '+vc.codeudor.apellido, 50) : ''.padEnd(50,'_')}</p>
+        <p style="margin:4px 0;">D.N.I. N°: ${vc.codeudor ? L(vc.codeudor.dni, 20) : ''.padEnd(20,'_')} &nbsp;&nbsp; Teléfono: ${vc.codeudor ? L(vc.codeudor.telefono, 20) : ''.padEnd(20,'_')}</p>
+        <p style="margin:4px 0;">Domicilio Real: ${vc.codeudor ? L(vc.codeudor.domicilio, 50) : ''.padEnd(50,'_')}</p>
         <p style="margin:34px 0 0;">Firma del Avalista: _______________________________________</p>
       </div>
 
