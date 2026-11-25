@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" class="notranslate" translate="no">
+<html lang="es">
 <head>
-<meta name="google" content="notranslate">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aruba Apple</title>
@@ -20,7 +19,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{
   --bg:#0b0710; --card:rgba(255,255,255,0.075); --card-b:rgba(255,255,255,0.18);
@@ -157,11 +155,10 @@ select option{background:#1a1220;}
 .glow-card{
   border:2px solid rgba(var(--glow-rgb), 0.55);
   animation:pulseGlow 2.6s ease-in-out infinite;
-  position:relative; z-index:0;
 }
 @keyframes pulseGlow{
-  0%,100%{ box-shadow:0 0 12px rgba(var(--glow-rgb),0.18); border-color:rgba(var(--glow-rgb),0.5); }
-  50%{ box-shadow:0 0 22px rgba(var(--glow-rgb),0.4), 0 0 8px rgba(var(--glow-rgb),0.3); border-color:rgba(var(--glow-rgb),0.95); }
+  0%,100%{ box-shadow:0 0 18px rgba(var(--glow-rgb),0.22); border-color:rgba(var(--glow-rgb),0.5); }
+  50%{ box-shadow:0 0 42px rgba(var(--glow-rgb),0.55), 0 0 12px rgba(var(--glow-rgb),0.4); border-color:rgba(var(--glow-rgb),0.95); }
 }
 .rank-row-glow td{
   background:rgba(var(--glow-rgb),0.07);
@@ -629,15 +626,6 @@ body.rol-usuario .solo-admin{display:none !important;}
   #printArea .etiqueta-equipo .et-bateria{font-size:8pt; color:#555; margin-bottom:1.5mm;}
   #printArea .etiqueta-equipo .et-barcode svg{width:60mm !important; height:14mm !important;}
   #printArea .etiqueta-equipo .et-imei{font-size:7pt; color:#333; margin-top:0.5mm; letter-spacing:0.5px;}
-  #printArea .etiqueta-venta{display:flex !important; flex-direction:column; align-items:center; justify-content:center;
-    width:80mm; height:50mm; padding:3mm; box-sizing:border-box; text-align:center; font-family:'Inter',sans-serif;}
-  #printArea .etiqueta-venta .ev-brand{font-size:8pt; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:1mm; color:#333;}
-  #printArea .etiqueta-venta .ev-nro{font-size:13pt; font-weight:900; margin-bottom:1mm; letter-spacing:0.5px;}
-  #printArea .etiqueta-venta .ev-modelo{font-size:9pt; font-weight:600; margin-bottom:0.5mm;}
-  #printArea .etiqueta-venta .ev-color{font-size:8pt; color:#555; margin-bottom:0.5mm;}
-  #printArea .etiqueta-venta .ev-imei{font-size:7pt; color:#333; margin-bottom:1.5mm; letter-spacing:0.5px;}
-  #printArea .etiqueta-venta .ev-barcode svg{width:60mm !important; height:12mm !important;}
-  #printArea .etiqueta-venta .ev-fecha{font-size:7pt; color:#555; margin-top:0.5mm;}
   @page{size:80mm 50mm; margin:0;}
 }
 .scan-input-wrap{display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:10px 14px; border-radius:12px; background:rgba(78,224,138,0.08); border:1px solid rgba(78,224,138,0.25);}
@@ -681,7 +669,6 @@ body.rol-usuario .solo-admin{display:none !important;}
       <a id="navProveedores" class="solo-admin" onclick="switchModule('proveedores')">Proveedores</a>
       <a id="navConsignaciones" class="solo-admin" onclick="switchModule('consignaciones')">Consignaciones</a>
       <a id="navReparaciones" class="solo-admin" onclick="switchModule('reparaciones')">Reparaciones</a>
-      <a id="navDiagnostico" class="solo-admin" onclick="switchModule('diagnostico')">📋 Diagnóstico</a>
     </div>
     <div class="nav-group">
       <div class="nav-label">Marketing</div>
@@ -815,10 +802,10 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="card card-destacada solo-admin">
         <h2>Agregar equipo</h2>
         <div class="form-row">
-          <div class="field"><label>Modelo</label><select id="eModelo" onchange="actualizarColoresModelo('eModelo','eColor')"></select></div>
+          <div class="field"><label>Modelo</label><select id="eModelo"></select></div>
           <div class="field"><label>Proveedor</label><select id="eProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
-          <div class="field"><label>Color</label><select id="eColor" onchange="if(this.value==='__otro'){this.style.display='none';document.getElementById('eColorCustom').style.display='';document.getElementById('eColorCustom').focus();}"><option value="">Seleccionar color</option></select><input id="eColorCustom" style="display:none" placeholder="Escribí el color..."></div>
+          <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
           <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
           <div class="field" style="min-width:150px;">
@@ -828,7 +815,6 @@ body.rol-usuario .solo-admin{display:none !important;}
             </div>
           </div>
           <div class="field"><label>Precio venta (USD)</label><input id="eVenta" type="number" placeholder="0"></div>
-          <div class="field"><label>Fecha de ingreso</label><input id="eFechaIngreso" type="date"></div>
           <div class="field"><label>Estado</label><select id="eEstado"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></div>
           <div class="field"><label>Cantidad</label><input id="eCantidad" type="number" min="1" value="1" placeholder="1" style="width:70px;"></div>
           <div class="field"><button class="btn" onclick="agregarEquipo()" style="width:100%;">Agregar</button></div>
@@ -995,7 +981,22 @@ body.rol-usuario .solo-admin{display:none !important;}
             <div><label>Precio venta (USD)</label><input id="vPrecio" type="number" placeholder="0"></div>
           </div>
         </div>
-        <div class="field"><label>Medio de pago</label><select id="vMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
+        <div class="field" style="min-width:260px;">
+          <label>Medio de pago</label>
+          <select id="vMedioPago1"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+          <div style="margin-top:6px;">
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <input type="checkbox" id="vPagoDividido" onchange="togglePagoDividido('v')"> Dividir en 2 medios de pago
+            </label>
+          </div>
+          <div id="vPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 1 (USD)</label><input id="vMonto1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Venta()"></div>
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 2 (USD)</label><input id="vMonto2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+            </div>
+          </div>
+        </div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
         <div class="field"><button class="btn amber" onclick="reservarItemVenta()" style="width:100%;">Reservar</button></div>
         <div class="field"><button class="btn" onclick="venderItemVenta()" style="width:100%;">Vender</button></div>
@@ -1009,7 +1010,6 @@ body.rol-usuario .solo-admin{display:none !important;}
         <button class="tab active" id="filHoyBtn" onclick="filtrarVentas('hoy')">Hoy</button>
         <button class="tab" id="filMesBtn" onclick="filtrarVentas('mes')">Este mes</button>
         <button class="tab" id="filTodasBtn" onclick="filtrarVentas('todas')">Todas</button>
-        <button class="btn ghost small solo-admin" onclick="cargarMensajesPrueba()" style="margin-left:auto;font-size:11px;">🧪 Mensajes de prueba</button>
       </div>
       <div style="overflow-x:auto;"><table>
         <thead><tr><th>Fecha</th><th>Nro. de Venta</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Venta</th><th>Medio de pago</th><th class="solo-admin">Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -1173,7 +1173,22 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cantidad de cuotas</label><select id="vcCantCuotas" onchange="calcularSimulacionCuotas()"><option value="3">3 cuotas</option><option value="6">6 cuotas</option><option value="9">9 cuotas</option><option value="12">12 cuotas</option></select></div>
         <div class="field"><label>Interés a cobrar (%)</label><input id="vcInteres" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
         <div class="field"><label>Cuota deseada (USD)</label><input id="vcCuotaValor" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
-        <div class="field"><label>Medio de pago (anticipo)</label><select id="vcMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
+        <div class="field" style="min-width:260px;">
+          <label>Medio de pago (anticipo)</label>
+          <select id="vcMedioPago1"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+          <div style="margin-top:6px;">
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+              <input type="checkbox" id="vcPagoDividido" onchange="togglePagoDividido('vc')"> Dividir en 2 medios de pago
+            </label>
+          </div>
+          <div id="vcPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 1 (USD)</label><input id="vcMontoPago1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Cuotas()"></div>
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vcMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
+              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 2 (USD)</label><input id="vcMontoPago2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+            </div>
+          </div>
+        </div>
         <div class="field"><label>Fecha de pago</label><input id="vcFechaPago" type="date"></div>
         <div class="field"><label>Frecuencia de pago</label><select id="vcFrecuencia" onchange="renderSimulacionCuotas()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
         <div class="field"><label>Fecha inicio financiación</label><input id="vcFechaInicio" type="date" onchange="renderSimulacionCuotas()"></div>
@@ -1339,7 +1354,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
         <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
-        <div class="field"><label>Medio de pago</label><select id="csMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
+        <div class="field"><label>Medio de pago</label><select id="csMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select></div>
         <div class="field"><label>Fecha</label><input id="csFecha" type="date"></div>
         <div class="field"><button class="btn" onclick="agregarConsignacion()" style="width:100%;">Agregar</button></div>
       </div>
@@ -1409,7 +1424,7 @@ body.rol-usuario .solo-admin{display:none !important;}
         <!-- Fila 4: Descripción (2 cols) + Costo -->
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
-        <div class="field"><label>Medio de pago</label><select id="rMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option></select></div>
+        <div class="field"><label>Medio de pago</label><select id="rMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select></div>
         <!-- Fila 5: Fecha + Agregar (alineados a la derecha) -->
         <div style="grid-column:1/-1;display:flex;justify-content:flex-end;align-items:flex-end;gap:12px;margin-top:4px;">
           <div class="field" style="margin:0;min-width:160px;"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1625,359 +1640,92 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div class="note">Registra los eventos principales (ventas, pagos, altas) a medida que van pasando en este navegador — no es un log completo de cada clic.</div>
     </div>
   </div>
-
-  <div id="moduloDiagnostico" style="display:none;">
-    <header class="top"><h1>📋 Checkeo y Diagnóstico de iPhone</h1></header>
-
-    <!-- LISTADO DE DIAGNÓSTICOS -->
-    <div class="card" id="diagListCard">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <h2>Diagnósticos realizados</h2>
-        <button class="btn" onclick="iniciarNuevoDiagnostico()">+ Nuevo Diagnóstico</button>
-      </div>
-      <input type="text" id="diagBuscar" placeholder="Buscar por IMEI, serial, modelo o cliente..." oninput="renderDiagnosticos()" style="margin:12px 0;width:100%;max-width:400px;">
-      <div id="diagListado"></div>
-      <div class="empty" id="diagEmpty" style="display:none;">No hay diagnósticos registrados aún.</div>
-    </div>
-
-    <!-- FORMULARIO NUEVO DIAGNÓSTICO -->
-    <div class="card" id="diagFormCard" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <h2 id="diagFormTitle">Nuevo Diagnóstico</h2>
-        <button class="btn ghost" onclick="cancelarDiagnostico()">← Volver al listado</button>
-      </div>
-
-      <!-- WIZARD STEPS -->
-      <div id="diagWizard">
-        <div style="display:flex;gap:4px;margin:16px 0;flex-wrap:wrap;" id="diagSteps">
-          <span class="badge vendido" id="diagStep1btn" onclick="diagGoStep(1)" style="cursor:pointer;">1. Datos Iniciales</span>
-          <span class="badge reservado" id="diagStep2btn" onclick="diagGoStep(2)" style="cursor:pointer;">2. Estético / Batería</span>
-          <span class="badge" id="diagStep3btn" onclick="diagGoStep(3)" style="cursor:pointer;background:rgba(255,255,255,0.08);">3. Hardware</span>
-          <span class="badge" id="diagStep4btn" onclick="diagGoStep(4)" style="cursor:pointer;background:rgba(255,255,255,0.08);">4. Resultado</span>
-        </div>
-
-        <!-- STEP 1: Datos Iniciales y Verificación Legal -->
-        <div id="diagStep1" class="diagStep">
-          <h3 style="color:var(--green);margin-bottom:12px;">1. Datos Iniciales y Verificación Legal</h3>
-
-          <!-- Carga rápida desde 3uTools -->
-          <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.18);">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <strong style="color:#00b4ff;">📋 Carga rápida desde 3uTools</strong>
-            </div>
-            <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;">
-              En 3uTools: <strong>Device Details</strong> → <strong>Open in Notepad</strong> → Ctrl+A → Ctrl+C → pegar acá.<br>
-              También podés <strong>copiar el screenshot</strong> (botón Screenshot) y pegarlo con Ctrl+V.
-            </div>
-            <div id="diag3uToolsArea" style="margin-top:4px;">
-              <textarea id="diag3uToolsInput" rows="6" placeholder="Pegá acá texto o imagen de 3uTools (Ctrl+V)&#10;&#10;Opción 1: Device Details → Open in Notepad → Ctrl+A → Ctrl+C → pegar acá&#10;Opción 2: Device Details → Screenshot → pegar acá (Ctrl+V)&#10;Opción 3: Device Report → clic derecho → Select All → Copy → pegar acá" style="width:100%;font-size:12px;font-family:monospace;"></textarea>
-              <div id="diagPastedImgPreview" style="display:none;margin-top:6px;text-align:center;">
-                <img id="diagPastedImgEl" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
-                <div style="font-size:11px;color:var(--txt3);margin-top:4px;">📷 Imagen pegada — clic en "Parsear" para procesar con OCR</div>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-                <button class="btn small" onclick="diagParsear3uTools()">🔍 Parsear y autocompletar</button>
-                <label class="btn ghost small" style="cursor:pointer;">
-                  📷 O subir captura (experimental)
-                  <input type="file" id="diag3uToolsImg" accept="image/*" onchange="diagOCR3uTools(this)" style="display:none;">
-                </label>
-              </div>
-            </div>
-            <div id="diagOCRStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>
-                <span id="diagOCRMsg" style="font-size:13px;color:var(--txt2);">Procesando imagen...</span>
-              </div>
-              <div id="diagOCRProgress" style="margin-top:6px;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;">
-                <div id="diagOCRBar" style="height:100%;width:0%;background:var(--green);transition:width .3s;"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
-            <div>
-              <label>IMEI *</label>
-              <input type="text" id="diagIMEI" maxlength="15" placeholder="15 dígitos" oninput="this.value=this.value.replace(/[^0-9]/g,'');diagAutoDetectModelo();">
-              <small id="diagIMEIStatus" style="color:var(--txt3);"></small>
-            </div>
-            <div>
-              <label>Nro. de Serie</label>
-              <input type="text" id="diagSerial" maxlength="20" placeholder="Serial Apple">
-            </div>
-            <div>
-              <label>Modelo *</label>
-              <select id="diagModelo"><option value="">Seleccionar...</option></select>
-            </div>
-            <div>
-              <label>Capacidad</label>
-              <select id="diagCapacidad">
-                <option value="">Seleccionar...</option>
-                <option>64 GB</option><option>128 GB</option><option>256 GB</option><option>512 GB</option><option>1 TB</option>
-              </select>
-            </div>
-            <div>
-              <label>Color</label>
-              <input type="text" id="diagColor" placeholder="Ej: Negro, Azul...">
-            </div>
-            <div>
-              <label>Cliente</label>
-              <input type="hidden" id="diagCliente">
-              <select id="diagClienteSel" onchange="diagClienteCambio()"></select>
-            </div>
-            <div>
-              <label>El cliente es</label>
-              <select id="diagClienteRol">
-                <option value="comprador">Comprador (le vendemos el equipo)</option>
-                <option value="vendedor">Vendedor (le compramos el equipo)</option>
-              </select>
-            </div>
-            <div id="diagClienteNuevoBox" style="display:none;grid-column:1/-1;padding:10px;border-radius:10px;background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.2);">
-              <div style="font-size:12px;font-weight:600;margin-bottom:6px;">➕ Nuevo cliente (se guarda en Clientes)</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <input type="text" id="diagCliNombre" placeholder="Nombre" style="flex:1;min-width:140px;">
-                <input type="text" id="diagCliApellido" placeholder="Apellido" style="flex:1;min-width:140px;">
-                <input type="text" id="diagCliDni" placeholder="DNI" style="flex:1;min-width:120px;" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                <button type="button" class="btn" onclick="diagGuardarClienteNuevo()">Guardar cliente</button>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:16px;padding:12px;border-radius:10px;background:rgba(255,0,0,0.08);border:1px solid rgba(255,0,0,0.2);">
-            <h4 style="color:#e74c3c;margin-bottom:8px;">⚠️ Verificación Obligatoria</h4>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;">
-              <div>
-                <label>iCloud / "Buscar mi iPhone"</label>
-                <select id="diagiCloud">
-                  <option value="">Seleccionar...</option>
-                  <option value="desactivado">✅ Desactivado</option>
-                  <option value="activado">🚫 ACTIVADO - NO PROCEDER</option>
-                </select>
-                <small id="diagiCloudWarn" style="display:none;color:#e74c3c;font-weight:600;">⛔ EQUIPO BLOQUEADO. No se puede continuar con el diagnóstico.</small>
-              </div>
-              <div>
-                <label>Bloqueo de Operador</label>
-                <select id="diagOperador">
-                  <option value="">Seleccionar...</option>
-                  <option value="liberado">✅ Liberado</option>
-                  <option value="bloqueado">⚠️ Bloqueado a operador</option>
-                </select>
-              </div>
-              <div>
-                <label>Estado IMEI (ENACOM)</label>
-                <select id="diagENACOM">
-                  <option value="">No verificado</option>
-                  <option value="habilitado">✅ Habilitado</option>
-                  <option value="inhibido">🚫 Inhibido/Robado</option>
-                </select>
-                <button class="btn ghost small" onclick="diagVerificarENACOM()" style="margin-top:4px;" title="Abrir web de ENACOM para verificar IMEI">🔗 Verificar en ENACOM</button>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:12px;display:flex;justify-content:flex-end;">
-            <button class="btn" onclick="diagGoStep(2)" id="diagStep1Next">Siguiente →</button>
-          </div>
-        </div>
-
-        <!-- STEP 2: Estado Estético y Batería -->
-        <div id="diagStep2" class="diagStep" style="display:none;">
-          <h3 style="color:var(--amber);margin-bottom:12px;">2. Estado Estético y Batería</h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
-            <div>
-              <label>Salud de Batería (%)</label>
-              <input type="number" id="diagBateria" min="0" max="100" placeholder="Ej: 87" oninput="diagCheckBateria()">
-              <small id="diagBateriaWarn" style="display:none;"></small>
-            </div>
-            <div>
-              <label>Ciclos de Carga</label>
-              <input type="number" id="diagCiclos" min="0" placeholder="Ej: 320">
-            </div>
-            <div>
-              <label>Batería Original</label>
-              <select id="diagBateriaOrig">
-                <option value="si">✅ Original</option>
-                <option value="no">⚠️ Reemplazada</option>
-                <option value="desconocido">❓ Desconocido</option>
-              </select>
-            </div>
-          </div>
-
-          <h4 style="margin-top:16px;margin-bottom:8px;">Estado Estético</h4>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
-            <div>
-              <label>Pantalla</label>
-              <select id="diagEstPantalla">
-                <option value="perfecto">✨ Perfecto</option>
-                <option value="leve">🟡 Rayaduras leves</option>
-                <option value="moderado">🟠 Rayaduras moderadas</option>
-                <option value="roto">🔴 Rota/Fisurada</option>
-              </select>
-            </div>
-            <div>
-              <label>Parte Trasera</label>
-              <select id="diagEstTrasera">
-                <option value="perfecto">✨ Perfecto</option>
-                <option value="leve">🟡 Rayaduras leves</option>
-                <option value="moderado">🟠 Rayaduras moderadas</option>
-                <option value="roto">🔴 Rota/Fisurada</option>
-              </select>
-            </div>
-            <div>
-              <label>Marco/Chasis</label>
-              <select id="diagEstMarco">
-                <option value="perfecto">✨ Perfecto</option>
-                <option value="leve">🟡 Marcas leves</option>
-                <option value="moderado">🟠 Golpes visibles</option>
-                <option value="severo">🔴 Daño severo</option>
-              </select>
-            </div>
-            <div>
-              <label>Grado General</label>
-              <select id="diagGrado">
-                <option value="">Seleccionar...</option>
-                <option value="A">A - Como nuevo</option>
-                <option value="B">B - Muy bueno</option>
-                <option value="C">C - Bueno (uso normal)</option>
-                <option value="D">D - Regular</option>
-                <option value="E">E - Malo</option>
-              </select>
-            </div>
-          </div>
-
-          <h4 style="margin-top:16px;margin-bottom:8px;">Piezas Reemplazadas (alerta iOS)</h4>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="diagPiezas">
-            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="pantalla"> Pantalla</label>
-            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="bateria"> Batería</label>
-            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="camara"> Cámara</label>
-            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="altavoz"> Altavoz</label>
-            <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" value="otra"> Otra</label>
-          </div>
-
-          <div>
-            <label>Observaciones estéticas</label>
-            <textarea id="diagObsEstetica" rows="2" placeholder="Notas adicionales..."></textarea>
-          </div>
-
-          <div style="margin-top:12px;display:flex;justify-content:space-between;">
-            <button class="btn ghost" onclick="diagGoStep(1)">← Anterior</button>
-            <button class="btn" onclick="diagGoStep(3)">Siguiente →</button>
-          </div>
-        </div>
-
-        <!-- STEP 3: Checklist Hardware -->
-        <div id="diagStep3" class="diagStep" style="display:none;">
-          <h3 style="color:#00b4ff;margin-bottom:12px;">3. Checklist de Hardware y Funcionalidad</h3>
-          <div id="diagChecklist"></div>
-          <div>
-            <label>Observaciones hardware</label>
-            <textarea id="diagObsHardware" rows="2" placeholder="Notas adicionales..."></textarea>
-          </div>
-          <div style="margin-top:12px;display:flex;justify-content:space-between;">
-            <button class="btn ghost" onclick="diagGoStep(2)">← Anterior</button>
-            <button class="btn" onclick="diagGoStep(4)">Siguiente →</button>
-          </div>
-        </div>
-
-        <!-- STEP 4: Resultado y Cierre -->
-        <div id="diagStep4" class="diagStep" style="display:none;">
-          <h3 style="color:var(--green);margin-bottom:12px;">4. Resultado y Cierre</h3>
-          <div id="diagResultado" style="padding:16px;border-radius:12px;background:rgba(255,255,255,0.04);margin-bottom:12px;"></div>
-          <div>
-            <label>Notas finales / Observaciones</label>
-            <textarea id="diagNotasFinal" rows="3" placeholder="Observaciones del técnico..."></textarea>
-          </div>
-          <div>
-            <label>Técnico responsable</label>
-            <input type="text" id="diagTecnico" placeholder="Nombre del técnico">
-          </div>
-          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn ghost" onclick="diagGoStep(3)">← Anterior</button>
-            <button class="btn" onclick="guardarDiagnostico()" id="diagBtnGuardar">💾 Guardar Diagnóstico</button>
-            <button class="btn ghost" onclick="diagGenerarPDF()" id="diagBtnPDF" style="display:none;">📄 Descargar reporte para firmar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DETALLE DIAGNÓSTICO -->
-    <div class="card" id="diagDetalleCard" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <h2 id="diagDetalleTitulo">Detalle Diagnóstico</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn ghost" onclick="diagGenerarPDFDetalle()">📄 Reporte para firmar</button>
-          <button class="btn ghost" onclick="diagVolverListado()">← Volver</button>
-        </div>
-      </div>
-      <div id="diagDetalleContenido"></div>
-    </div>
-  </div>
-
 </main>
 
 <div id="printArea"></div>
 
 <script>
 const MODELOS = [
-  "iPhone 11","iPhone 11 Pro","iPhone 11 Pro Max",
-  "iPhone 12 mini","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max",
-  "iPhone 13 mini","iPhone 13","iPhone 13 Pro","iPhone 13 Pro Max",
+  "iPhone 11","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max",
+  "iPhone 13","iPhone 13 mini","iPhone 13 Pro","iPhone 13 Pro Max",
   "iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max",
   "iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max",
   "iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max",
-  "iPhone 17","iPhone 17 Air","iPhone 17e","iPhone 17 Pro","iPhone 17 Pro Max",
-  "iPhone 18 Pro","iPhone 18 Pro Max","iPhone Duo"
+  "iPhone 17","iPhone 17 Air","iPhone 17 Pro","iPhone 17 Pro Max",
+  "iPhone 18","iPhone 18 Pro","iPhone 18 Pro Max","iPhone 18 Fold"
 ];
-const COLORES_POR_MODELO = {
-  'iPhone 11':['Black','White','Yellow','Green','Purple','(PRODUCT)RED'],
-  'iPhone 11 Pro':['Midnight Green','Space Gray','Silver','Gold'],
-  'iPhone 11 Pro Max':['Midnight Green','Space Gray','Silver','Gold'],
-  'iPhone 12 mini':['Black','White','(PRODUCT)RED','Green','Blue','Purple'],
-  'iPhone 12':['Black','White','(PRODUCT)RED','Green','Blue','Purple'],
-  'iPhone 12 Pro':['Silver','Graphite','Gold','Pacific Blue'],
-  'iPhone 12 Pro Max':['Silver','Graphite','Gold','Pacific Blue'],
-  'iPhone 13 mini':['Starlight','Midnight','Blue','Pink','(PRODUCT)RED','Green'],
-  'iPhone 13':['Starlight','Midnight','Blue','Pink','(PRODUCT)RED','Green'],
-  'iPhone 13 Pro':['Graphite','Gold','Silver','Sierra Blue','Alpine Green'],
-  'iPhone 13 Pro Max':['Graphite','Gold','Silver','Sierra Blue','Alpine Green'],
-  'iPhone 14':['Midnight','Starlight','(PRODUCT)RED','Blue','Purple','Yellow'],
-  'iPhone 14 Plus':['Midnight','Starlight','(PRODUCT)RED','Blue','Purple','Yellow'],
-  'iPhone 14 Pro':['Space Black','Silver','Gold','Deep Purple'],
-  'iPhone 14 Pro Max':['Space Black','Silver','Gold','Deep Purple'],
-  'iPhone 15':['Black','Blue','Green','Yellow','Pink'],
-  'iPhone 15 Plus':['Black','Blue','Green','Yellow','Pink'],
-  'iPhone 15 Pro':['Natural Titanium','Blue Titanium','White Titanium','Black Titanium'],
-  'iPhone 15 Pro Max':['Natural Titanium','Blue Titanium','White Titanium','Black Titanium'],
-  'iPhone 16':['Black','White','Pink','Teal','Ultramarine'],
-  'iPhone 16 Plus':['Black','White','Pink','Teal','Ultramarine'],
-  'iPhone 16 Pro':['Black Titanium','White Titanium','Natural Titanium','Desert Titanium'],
-  'iPhone 16 Pro Max':['Black Titanium','White Titanium','Natural Titanium','Desert Titanium'],
-  'iPhone 17':['Black','White','Lavender','Sage','Mist Blue'],
-  'iPhone 17 Air':['Space Black','Cloud White','Light Gold','Sky Blue'],
-  'iPhone 17e':['Black','White','Soft Pink'],
-  'iPhone 17 Pro':['Silver','Deep Blue','Cosmic Orange'],
-  'iPhone 17 Pro Max':['Silver','Deep Blue','Cosmic Orange'],
-  'iPhone 18 Pro':['Black','Silver','Glacier','Burgundy'],
-  'iPhone 18 Pro Max':['Black','Silver','Glacier','Burgundy'],
-  'iPhone Duo':['Star White','Night Sky']
-};
-function actualizarColoresModelo(selectModeloId, selectColorId){
-  const modelo = document.getElementById(selectModeloId).value;
-  const sel = document.getElementById(selectColorId);
-  const actual = sel.value;
-  const colores = COLORES_POR_MODELO[modelo] || [];
-  sel.innerHTML = '<option value="">Seleccionar color</option>';
-  colores.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-  sel.innerHTML += '<option value="__otro">Otro...</option>';
-  if(colores.includes(actual)) sel.value = actual;
-}
 
 function ls_get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
 function ls_set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function fmt(n){ return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0}); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function hoyISO(){ return new Date().toISOString().slice(0,10); }
-const MEDIOS_PAGO_LABELS = { efectivo:'💵 Efectivo', transferencia:'🏦 Transferencia', cripto:'₿ Cripto', debito:'💳 Débito', credito:'💳 Crédito' };
-function badgeMedioPago(mp){ if(!mp) return '<span style="color:var(--txt3);font-size:11px;">—</span>'; return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp]||mp}</span>`; }
+const MEDIOS_PAGO_LABELS = { efectivo:'💵 Efectivo', transferencia:'🏦 Transferencia', cripto:'₿ Cripto', debito:'💳 Débito', credito:'💳 Crédito', cuenta_corriente:'📒 Cta. Corriente' };
+const OPCIONES_MEDIO_PAGO = '<option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option>';
+
+function formatMedioPagoTexto(mp){
+  // mp puede ser string simple o objeto {medio1,monto1,medio2,monto2} para pago dividido
+  if(!mp) return 'Contado';
+  if(typeof mp === 'string') return MEDIOS_PAGO_LABELS[mp]||mp;
+  if(mp.medio1 && mp.medio2){
+    return `${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} ($${fmt(mp.monto1)}) + ${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} ($${fmt(mp.monto2)})`;
+  }
+  if(mp.medio1) return MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1;
+  return 'Contado';
+}
+
+function badgeMedioPago(mp){
+  if(!mp) return '<span style="color:var(--txt3);font-size:11px;">—</span>';
+  if(typeof mp === 'string') return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp]||mp}</span>`;
+  // Pago dividido
+  if(mp.medio1 && mp.medio2){
+    return `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;display:inline-block;line-height:1.4;">${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} $${fmt(mp.monto1)}<br>${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} $${fmt(mp.monto2)}</span>`;
+  }
+  if(mp.medio1) return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1}</span>`;
+  return '<span style="color:var(--txt3);font-size:11px;">—</span>';
+}
+
+/* ---------- FUNCIONES DOBLE MEDIO DE PAGO ---------- */
+function togglePagoDividido(prefix){
+  const chk = document.getElementById(prefix+'PagoDividido');
+  const wrap = document.getElementById(prefix+'PagoDivididoWrap');
+  wrap.style.display = chk.checked ? 'block' : 'none';
+  if(!chk.checked){
+    if(prefix==='v'){ document.getElementById('vMonto1').value=''; document.getElementById('vMonto2').value=''; document.getElementById('vMedioPago2').value=''; }
+    else { document.getElementById('vcMontoPago1').value=''; document.getElementById('vcMontoPago2').value=''; document.getElementById('vcMedioPago2').value=''; }
+  }
+}
+function calcMonto2Venta(){
+  const total = Number(document.getElementById('vPrecio').value)||0;
+  const m1 = Number(document.getElementById('vMonto1').value)||0;
+  document.getElementById('vMonto2').value = Math.max(0, total - m1);
+}
+function calcMonto2Cuotas(){
+  const total = Number(document.getElementById('vcAnticipo').value)||0;
+  const m1 = Number(document.getElementById('vcMontoPago1').value)||0;
+  document.getElementById('vcMontoPago2').value = Math.max(0, total - m1);
+}
+function obtenerMedioPago(prefix){
+  // Devuelve string simple u objeto {medio1,monto1,medio2,monto2}
+  const chk = document.getElementById(prefix+'PagoDividido');
+  if(chk && chk.checked){
+    const medio1 = document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value;
+    const medio2 = document.getElementById(prefix==='v'?'vMedioPago2':'vcMedioPago2').value;
+    const monto1 = Number(document.getElementById(prefix==='v'?'vMonto1':'vcMontoPago1').value)||0;
+    const monto2 = Number(document.getElementById(prefix==='v'?'vMonto2':'vcMontoPago2').value)||0;
+    if(medio1 && medio2 && monto1>0 && monto2>0){
+      return { medio1, monto1, medio2, monto2 };
+    }
+    // Si falta algún dato, devolver el primer medio como simple
+    return medio1 || '';
+  }
+  return document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value;
+}
+function resetMedioPago(prefix){
+  document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value='';
+  const chk = document.getElementById(prefix+'PagoDividido');
+  if(chk){ chk.checked=false; togglePagoDividido(prefix); }
+}
 
 /* ---------- SESIÓN / LOGIN ---------- */
 let adminCred = ls_get('admin_cred', null);
@@ -1986,7 +1734,7 @@ let sesionActual = ls_get('sesion_actual', null);
 
 function esAdmin(){ return !!(sesionActual && sesionActual.rol==='admin'); }
 
-const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','analisis','comercios','sueldos','micuenta','actividad','ventaCuotas','diagnostico'];
+const MODULOS_SOLO_ADMIN = ['caja','proveedores','consignaciones','reparaciones','analisis','comercios','sueldos','micuenta','actividad','ventaCuotas'];
 
 async function intentarLogin(){
   const u = document.getElementById('loginUsuario').value.trim();
@@ -2055,7 +1803,6 @@ function switchModule(m){
   document.getElementById('moduloMiCuenta').style.display = m==='micuenta' ? 'block':'none';
   document.getElementById('moduloActividad').style.display = m==='actividad' ? 'block':'none';
   document.getElementById('moduloVentaCuotas').style.display = m==='ventaCuotas' ? 'block':'none';
-  document.getElementById('moduloDiagnostico').style.display = m==='diagnostico' ? 'block':'none';
   document.getElementById('navInicio').classList.toggle('active', m==='inicio');
   document.getElementById('navStock').classList.toggle('active', m==='stock');
   document.getElementById('navVenta').classList.toggle('active', m==='venta');
@@ -2072,7 +1819,6 @@ function switchModule(m){
   document.getElementById('navMiCuenta').classList.toggle('active', m==='micuenta');
   document.getElementById('navActividad').classList.toggle('active', m==='actividad');
   document.getElementById('navVentaCuotas').classList.toggle('active', m==='ventaCuotas');
-  document.getElementById('navDiagnostico').classList.toggle('active', m==='diagnostico');
   if(m==='inicio'){ renderStockResumen(); renderInicioVentaGanancia(); }
   if(m==='venta'){ cargarSelectEquiposVenta(); renderVentas(); }
   if(m==='ventaCuotas'){ cargarSelectVentaCuotas(); renderVentasCuotas(); verificarAlertasCuotas(); }
@@ -2084,7 +1830,6 @@ function switchModule(m){
   if(m==='marketing'){ renderMarketing(); }
   if(m==='analisis'){ renderAnalisis(); }
   if(m==='comercios'){ renderComercios(); }
-  if(m==='diagnostico'){ renderDiagnosticos(); }
   if(m==='usuarios'){ renderUsuarios(); }
   if(m==='sueldos'){ renderSueldos(); }
   if(m==='micuenta'){ renderMiCuenta(); }
@@ -2574,9 +2319,6 @@ function switchTab(t){
 function initModelos(){
   const sel = document.getElementById('eModelo');
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  const fi = document.getElementById('eFechaIngreso');
-  if(fi && !fi.value) fi.value = hoyISO();
-  actualizarColoresModelo('eModelo','eColor');
   const cant = document.getElementById('aCantidad');
   for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cant.appendChild(o); }
   const cantGps = document.getElementById('gCantidad');
@@ -2586,20 +2328,6 @@ function initModelos(){
 function ganancia(compra, venta, sugerido){
   const base = venta ? venta : sugerido;
   return (Number(base)||0) - (Number(compra)||0);
-}
-
-function pctRentabilidad(compra, venta, sugerido){
-  const c = Number(compra)||0;
-  const base = Number(venta)||Number(sugerido)||0;
-  if(c <= 0) return null;
-  return ((base - c) / c * 100);
-}
-
-function badgeRentabilidad(compra, venta, sugerido){
-  const pct = pctRentabilidad(compra, venta, sugerido);
-  if(pct === null) return '';
-  const color = pct >= 30 ? 'var(--green)' : pct >= 15 ? 'var(--amber)' : 'var(--red)';
-  return '<span class="sec-price" style="color:'+color+';font-weight:600;">Rent: <b>'+pct.toFixed(1)+'%</b></span>';
 }
 
 function agregarEquipo(){
@@ -2614,34 +2342,22 @@ function agregarEquipo(){
     if(imei && (imei.length !== 15 || !/^\d{15}$/.test(imei))){ alert('Si ingresás IMEI debe tener 15 dígitos numéricos.'); return; }
     if(imei && equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI.'); return; }
   }
-  const provId = document.getElementById('eProveedor').value;
-  const cliId = document.getElementById('eCliente').value;
-  let origenTipo = 'directo';
-  let origenId = '';
-  if(cliId){ origenTipo = 'cliente'; origenId = cliId; }
-  else if(provId){ origenTipo = 'proveedor'; origenId = provId; }
-  const fechaIng = document.getElementById('eFechaIngreso').value || hoyISO();
   const base = {
     modelo: document.getElementById('eModelo').value,
-    proveedorId: provId,
-    clienteVendedorId: cliId,
-    color: (document.getElementById('eColor').value==='__otro' ? document.getElementById('eColorCustom').value.trim() : document.getElementById('eColor').value) || document.getElementById('eColorCustom').value.trim(),
+    proveedorId: document.getElementById('eProveedor').value,
+    clienteVendedorId: document.getElementById('eCliente').value,
+    color: document.getElementById('eColor').value.trim(),
     bateria: document.getElementById('eBateria').value,
     compra: document.getElementById('eCompra').value,
     sugerido: document.getElementById('eSugerido').value,
     venta: document.getElementById('eVenta').value,
-    estado: document.getElementById('eEstado').value,
-    fechaIngreso: fechaIng,
-    origenTipo: origenTipo,
-    origenId: origenId
+    estado: document.getElementById('eEstado').value
   };
   for(let i = 0; i < cantidad; i++){
     equipos.push(Object.assign({}, base, { id: uid(), imei: (cantidad === 1 ? imei : '') }));
   }
   syncGuardar('stock_equipos', equipos);
-  ['eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('eColor').value=''; document.getElementById('eColorCustom').value=''; document.getElementById('eColorCustom').style.display='none'; document.getElementById('eColor').style.display='';
-  document.getElementById('eFechaIngreso').value = '';
+  ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('eCliente').value = '';
   document.getElementById('eCantidad').value = '1';
   if(cantidad > 1) alert(`✅ Se cargaron ${cantidad} equipos. Recordá completar el IMEI de cada uno.`);
@@ -2678,8 +2394,8 @@ function editarEquipoCard(id){
   const card = document.querySelector(`.stock-equipo-card[data-id="${id}"]`);
   if(!card) return;
   card.innerHTML = `<div class="sec-edit-form">
-    <div><label>Modelo</label><select class="ed-modelo" onchange="const c=this.closest('.sec-edit-form').querySelector('.ed-color');const cols=COLORES_POR_MODELO[this.value]||[];c.innerHTML='<option value=\\'\\'>Seleccionar</option>'+cols.map(x=>'<option>'+x+'</option>').join('')+'<option value=\\'__otro\\'>Otro...</option>';">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
-    <div><label>Color</label><select class="ed-color" onchange="if(this.value==='__otro'){this.style.display='none';const ci=this.nextElementSibling;ci.style.display='';ci.focus();}">${(()=>{const cols=COLORES_POR_MODELO[e.modelo]||[];const opts=['<option value="">Seleccionar</option>',...cols.map(c=>`<option ${c===e.color?'selected':''}>${c}</option>`),'<option value="__otro"'+(e.color&&!cols.includes(e.color)?' selected':'')+'>Otro...</option>'];return opts.join('');})()}</select><input class="ed-color-custom" style="display:${e.color&&!(COLORES_POR_MODELO[e.modelo]||[]).includes(e.color)?'':'none'}" value="${e.color&&!(COLORES_POR_MODELO[e.modelo]||[]).includes(e.color)?e.color:''}"></div>
+    <div><label>Modelo</label><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div><label>Color</label><input class="ed-color" value="${e.color||''}"></div>
     <div><label>Batería %</label><input class="ed-bateria" type="number" min="0" max="100" value="${e.bateria||''}"></div>
     <div><label>IMEI</label><input class="ed-imei" value="${e.imei||''}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></div>
     <div><label>Proveedor</label><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></div>
@@ -2687,7 +2403,6 @@ function editarEquipoCard(id){
     <div><label>Compra (USD)</label><input class="ed-compra" type="number" value="${e.compra||''}"></div>
     <div><label>Sugerido (USD)</label><input class="ed-sugerido" type="number" value="${e.sugerido||''}"></div>
     <div><label>Venta (USD)</label><input class="ed-venta" type="number" value="${e.venta||''}"></div>
-    <div><label>Fecha ingreso</label><input class="ed-fechaIngreso" type="date" value="${e.fechaIngreso||''}"></div>
     <div><label>Estado</label><select class="ed-estado">
       <option value="disponible" ${e.estado==='disponible'?'selected':''}>Disponible</option>
       <option value="reservado" ${e.estado==='reservado'?'selected':''}>Reservado</option>
@@ -2708,9 +2423,7 @@ function guardarEdicionCard(id){
   e.modelo = card.querySelector('.ed-modelo').value;
   e.proveedorId = card.querySelector('.ed-proveedor').value;
   e.clienteVendedorId = card.querySelector('.ed-cliente').value;
-  const edColorSel = card.querySelector('.ed-color').value;
-  const edColorCustom = card.querySelector('.ed-color-custom');
-  e.color = (edColorSel==='__otro' && edColorCustom ? edColorCustom.value.trim() : edColorSel) || (edColorCustom ? edColorCustom.value.trim() : '');
+  e.color = card.querySelector('.ed-color').value.trim();
   e.bateria = card.querySelector('.ed-bateria').value;
   const imeiVal = card.querySelector('.ed-imei').value.trim();
   if(imeiVal.length !== 15 || !/^\d{15}$/.test(imeiVal)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
@@ -2718,7 +2431,6 @@ function guardarEdicionCard(id){
   e.compra = card.querySelector('.ed-compra').value;
   e.sugerido = card.querySelector('.ed-sugerido').value;
   e.venta = card.querySelector('.ed-venta').value;
-  e.fechaIngreso = card.querySelector('.ed-fechaIngreso').value;
   e.estado = card.querySelector('.ed-estado').value;
   syncGuardar('stock_equipos', equipos);
   renderEquipos();
@@ -2737,22 +2449,6 @@ function imprimirEtiqueta(id){
   try{ JsBarcode('#barcode-print', e.imei, {format:'CODE128', width:1.5, height:40, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
   setTimeout(()=> window.print(), 200);
 }
-function imprimirEtiquetaVenta(nroVenta, modelo, color, imei, fecha){
-  const nroCorto = (nroVenta||'').slice(-8).toUpperCase();
-  document.getElementById('printArea').innerHTML = `
-    <div class="etiqueta-venta">
-      <div class="ev-brand">Aruba Apple</div>
-      <div class="ev-nro">Venta #${nroCorto}</div>
-      <div class="ev-modelo">${modelo||'-'}</div>
-      ${color?`<div class="ev-color">${color}</div>`:''}
-      <div class="ev-imei">IMEI: ${imei||'-'}</div>
-      <div class="ev-barcode"><svg id="barcode-venta"></svg></div>
-      <div class="ev-fecha">${fecha||''}</div>
-    </div>`;
-  const bc = imei && imei!=='—' && imei!=='-' ? imei : nroVenta;
-  try{ JsBarcode('#barcode-venta', bc, {format:'CODE128', width:1.5, height:35, displayValue:false, margin:0}); }catch(err){ console.error('Error generando código de barras:', err); }
-  setTimeout(()=> window.print(), 200);
-}
 let stockGroupBy = 'modelo';
 function setStockGroup(g){
   stockGroupBy = g;
@@ -2763,20 +2459,15 @@ function setStockGroup(g){
 function colorDot(color){
   const c = (color||'').toLowerCase();
   const map = {
-    'black titanium':'#3b3b3d','black':'#1d1d1f','midnight green':'#4e5851','midnight':'#1d1d1f',
-    'space black':'#2e2c2f','space gray':'#535150','night sky':'#1a1a2e',
-    'star white':'#f5f0eb','cloud white':'#f0ede8','white titanium':'#f5f0eb','white':'#f5f0eb',
-    'starlight':'#f9f3ee','light gold':'#f4e8ce','gold':'#f4e8ce',
-    'natural titanium':'#c2b8a3','desert titanium':'#b8a58c',
-    'blue titanium':'#4a4a5a','pacific blue':'#2d4e6f','sierra blue':'#9bb5ce',
-    'alpine green':'#505e4b','deep blue':'#1a3a5c','mist blue':'#b8c9d6','sky blue':'#87ceeb',
-    'ultramarine':'#3f51b5','teal':'#008080','blue':'#5b7eb5',
-    '(product)red':'#c41e3a','red':'#c41e3a','burgundy':'#800020',
-    'soft pink':'#f4c2c2','pink':'#f5c6d0',
-    'deep purple':'#4a2d6b','purple':'#635672','lavender':'#d6cfe9',
-    'green':'#394c38','sage':'#9caf88',
-    'graphite':'#54524f','silver':'#e3e4e5','glacier':'#d4e8ef',
-    'yellow':'#f9e200','coral':'#ff6f61','cosmic orange':'#e86833',
+    'negro':'#1d1d1f','titanio negro':'#3b3b3d','midnight':'#1d1d1f','black':'#1d1d1f',
+    'blanco':'#f5f0eb','titanio blanco':'#f5f0eb','white':'#f5f0eb','starlight':'#f9f3ee',
+    'natural':'#c2b8a3','titanio natural':'#c2b8a3','gold':'#f4e8ce','dorado':'#f4e8ce',
+    'azul':'#4a4a6a','titanio azul':'#4a4a5a','blue':'#5b7eb5','titanio desierto':'#b8a58c',
+    'rojo':'#c41e3a','red':'#c41e3a','(product)red':'#c41e3a',
+    'rosa':'#f5c6d0','pink':'#f5c6d0','rosado':'#f5c6d0',
+    'verde':'#394c38','green':'#394c38','morado':'#635672','purple':'#635672',
+    'gris':'#86868b','space gray':'#535150','plata':'#e3e4e5','silver':'#e3e4e5',
+    'amarillo':'#f9e200','yellow':'#f9e200','coral':'#ff6f61','lavanda':'#d6cfe9',
   };
   for(const [k,v] of Object.entries(map)){ if(c.includes(k)) return v; }
   return '#888';
@@ -2811,9 +2502,7 @@ function renderCarpetaVendidos(){
         <div class="vi-modelo">${e.modelo} ${e.color?'— '+e.color:''}</div>
         <div class="vi-detail">
           <span>IMEI: ${e.imei||'-'}</span>
-          <span>📅 Venta: ${fechaVenta}</span>
-          ${e.fechaIngreso?`<span>📥 Ingreso: ${e.fechaIngreso}</span>`:''}
-          ${e.fechaIngreso && fechaVenta && fechaVenta!=='-'?`<span>⏱ ${Math.floor((new Date(fechaVenta)-new Date(e.fechaIngreso))/(86400000))} días</span>`:''}
+          <span>📅 ${fechaVenta}</span>
         </div>
       </div>
       <div class="vi-cliente">
@@ -2923,16 +2612,12 @@ function renderEquipoCard(e){
       <span class="sec-info-label">IMEI</span><span class="sec-info-val sec-imei">${e.imei||'-'}</span>
       <span class="sec-info-label">Proveedor</span><span class="sec-info-val">${nombreProveedor(e.proveedorId)}</span>
       ${e.clienteVendedorId?`<span class="sec-info-label">Cliente</span><span class="sec-info-val">${nombreClienteStock(e.clienteVendedorId)}</span>`:''}
-      ${e.fechaIngreso?`<span class="sec-info-label">Ingreso</span><span class="sec-info-val">${e.fechaIngreso}</span>`:''}
-      ${e.origenTipo?`<span class="sec-info-label">Origen</span><span class="sec-info-val">${e.origenTipo==='cliente'?'Cliente: '+nombreClienteStock(e.origenId):e.origenTipo==='proveedor'?'Proveedor: '+nombreProveedor(e.origenId):e.origenTipo==='consignacion'?'Consignación: '+nombreProveedor(e.origenId):e.origenTipo}</span>`:''}
-      ${e.fechaIngreso && e.estado!=='vendido'?`<span class="sec-info-label">Días en stock</span><span class="sec-info-val">${Math.floor((new Date()-new Date(e.fechaIngreso))/(86400000))}</span>`:''}
     </div>
     <div class="sec-prices">
       ${admin?`<span class="sec-price">Compra: <b>$${fmt(e.compra)}</b></span>`:''}
       <span class="sec-price precio-sugerido-glow">Sugerido: <b>$${fmt(e.sugerido)}</b></span>
       ${e.venta?`<span class="sec-price">Venta: <b>$${fmt(e.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(g)}</b></span>`:''}
-      ${admin?badgeRentabilidad(e.compra, e.venta, e.sugerido):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="imprimirEtiqueta('${e.id}')">🏷 Etiqueta</button>
@@ -3199,7 +2884,6 @@ function renderAccesorioCard(a){
       <span class="sec-price precio-sugerido-glow">Sugerido: <b>$${fmt(a.sugerido)}</b></span>
       ${a.venta?`<span class="sec-price">Venta: <b>$${fmt(a.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(g)}</b></span>`:''}
-      ${admin?badgeRentabilidad(a.compra, a.venta, a.sugerido):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="editarAccesorio('${a.id}')">✏️ Editar</button>
@@ -3397,7 +3081,6 @@ function renderGpsCard(g){
       ${admin?`<span class="sec-price">Compra: <b>$${fmt(g.compra)}</b></span>`:''}
       ${g.venta?`<span class="sec-price precio-sugerido-glow">Venta: <b>$${fmt(g.venta)}</b></span>`:''}
       ${admin?`<span class="sec-price sec-ganancia">Ganancia: <b>$${fmt(gan)}</b></span>`:''}
-      ${admin?badgeRentabilidad(g.compra, g.venta, 0):''}
     </div>
     ${admin?`<div class="sec-actions">
       <button class="btn ghost small" onclick="editarGps('${g.id}')">✏️ Editar</button>
@@ -3750,8 +3433,16 @@ function venderItemVenta(){
   const cliente = clienteSel ? `${clienteSel.nombre} ${clienteSel.apellido}` : 'Consumidor final';
   const precio = document.getElementById('vPrecio').value;
   const fecha = document.getElementById('vFecha').value || hoyISO();
-  const medioPago = document.getElementById('vMedioPago').value;
+  const medioPago = obtenerMedioPago('v');
   if(!precio){ alert('Cargá el precio de venta.'); return; }
+  // Validar pago dividido
+  if(typeof medioPago === 'object' && medioPago.medio1){
+    const sumaPagos = (Number(medioPago.monto1)||0) + (Number(medioPago.monto2)||0);
+    if(Math.abs(sumaPagos - Number(precio)) > 0.01){
+      alert(`La suma de los montos de pago ($${fmt(sumaPagos)}) no coincide con el precio de venta ($${fmt(precio)}). Revisá los montos.`);
+      return;
+    }
+  }
 
   if(tipo==='equipo'){
     const id = document.getElementById('vEquipo').value;
@@ -3778,7 +3469,7 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
     renderEquipos();
     marcarConsignacionVendida(e.id);
     ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined });
-    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${medioPago?' ('+MEDIOS_PAGO_LABELS[medioPago]+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
+    registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${medioPago?' ('+formatMedioPagoTexto(medioPago)+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   } else {
     const id = document.getElementById('vAccesorio').value;
     const a = accesorios.find(x=>x.id===id);
@@ -3786,7 +3477,7 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
     syncGuardar('stock_accesorios', accesorios);
     renderAccesorios();
     ventas.push({ id: uid(), tipo:'accesorio', itemId: a.id, modelo: a.nombre, color: a.color, imei: '', cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: a.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined });
-    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${medioPago?' ('+MEDIOS_PAGO_LABELS[medioPago]+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
+    registrarActividad(`Venta: ${a.nombre} (accesorio) — $${fmt(precio)} a ${cliente}${medioPago?' ('+formatMedioPagoTexto(medioPago)+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   }
 
   // Registrar cada bonificación como venta a precio $0 (solo descuenta costo de compra)
@@ -3820,7 +3511,7 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
 
   syncGuardar('ventas', ventas);
   document.getElementById('vPrecio').value='';
-  document.getElementById('vMedioPago').value='';
+  resetMedioPago('v');
   cargarSelectEquiposVenta();
   renderVentas();
 }
@@ -3907,7 +3598,7 @@ function imprimirFactura(id){
 
       <div style="margin-top:12px; font-size:13px;">
         Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
-        Forma de pago: ${v.medioPago ? (MEDIOS_PAGO_LABELS[v.medioPago]||v.medioPago) : 'Contado'}.
+        Forma de pago: ${formatMedioPagoTexto(v.medioPago)}.
       </div>
 
       ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
@@ -3999,7 +3690,7 @@ function facturaConIVA(id){
       </div>
       <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(total)}.</div>
 
-      ${v.medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[v.medioPago]||v.medioPago}.</div>` : ''}
+      ${v.medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${formatMedioPagoTexto(v.medioPago)}.</div>` : ''}
 
       <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
         <div>CAE N°: _______________________</div>
@@ -4114,6 +3805,7 @@ function marcarReservaEntregada(nro){
           <option value="cripto">₿ Cripto</option>
           <option value="debito">💳 Débito</option>
           <option value="credito">💳 Crédito</option>
+          <option value="cuenta_corriente">📒 Cuenta Corriente</option>
         </select>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:14px;">
@@ -4142,7 +3834,7 @@ async function confirmarEntregaReserva(nro){
     `¿Confirmás que la venta Nº ${nro} fue entregada en el local? Pasará a "Vendido".`);
   if(ok){
     await setEstadoEquipoReserva(equipoId, 'vendido');
-    registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido) — ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.`);
+    registrarActividad(`Venta por Mensajes Nº ${nro} entregada en el local (Vendido) — ${formatMedioPagoTexto(medioPago)}.`);
   }
 }
 function reciboReservaMensaje(nro){
@@ -4189,7 +3881,7 @@ function reciboReservaMensaje(nro){
       </div>
       <div style="margin-top:12px; font-size:13px;">
         Agente / Vendedor: ${agenteTxt}<br>
-        Forma de pago: ${medioPago ? (MEDIOS_PAGO_LABELS[medioPago]||medioPago) : 'Contado'}.
+        Forma de pago: ${formatMedioPagoTexto(medioPago)}.
       </div>
       <p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>
       <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
@@ -4258,7 +3950,7 @@ function facturaReservaMensaje(nro){
       <div style="margin-top:14px; font-size:13px;">
         Agente / Vendedor: ${agenteTxt}
       </div>
-      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.</div>` : ''}
+      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${formatMedioPagoTexto(medioPago)}.</div>` : ''}
       <div style="margin-top:16px; border-top:1px solid #000; padding-top:10px; font-size:11px; color:#555;">
         CAE N°: _________________________ &nbsp; Vto. CAE: ___ / ___ / ______
       </div>
@@ -4307,7 +3999,7 @@ function reciboReservaMensajeVendida(nro){
       </div>
       <div style="margin-top:12px; font-size:13px;">
         Agente / Vendedor: ${agenteTxt}<br>
-        Forma de pago: ${medioPago ? (MEDIOS_PAGO_LABELS[medioPago]||medioPago) : 'Contado'}.
+        Forma de pago: ${formatMedioPagoTexto(medioPago)}.
       </div>
       <p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>
       <div style="display:flex; justify-content:space-between; margin-top:50px; gap:20px;">
@@ -4375,7 +4067,7 @@ function facturaReservaMensajeVendida(nro){
       <div style="margin-top:14px; font-size:13px;">
         Agente / Vendedor: ${agenteTxt}
       </div>
-      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${MEDIOS_PAGO_LABELS[medioPago]||medioPago}.</div>` : ''}
+      ${medioPago ? `<div style="margin-top:12px; font-size:13px;">Forma de pago: ${formatMedioPagoTexto(medioPago)}.</div>` : ''}
       <div style="margin-top:16px; border-top:1px solid #000; padding-top:10px; font-size:11px; color:#555;">
         CAE N°: _________________________ &nbsp; Vto. CAE: ___ / ___ / ______
       </div>
@@ -4427,17 +4119,6 @@ async function borrarReservaMensaje(nro){
     registrarActividad(`Venta por Mensajes Nº ${nro} borrada del historial.`);
     if(document.getElementById('usuariosBody')) renderUsuarios();
   }
-}
-
-function cargarMensajesPrueba(){
-  if(!confirm('¿Cargar 2 mensajes de prueba (WhatsApp y Messenger)?')) return;
-  const hoy = hoyISO();
-  const m1 = { nro_venta:'MSG-'+uid(), fecha:hoy, modelo:'iPhone 16 Pro Max', color:'Desert Titanium', imei:'354876109234567', cliente:'Juan Pérez', precio:1899, compra:1500, agente:'Carlos (WhatsApp)', estado:'reservado', equipo_id:null, medioPago:'transferencia' };
-  const m2 = { nro_venta:'MSG-'+uid(), fecha:hoy, modelo:'iPhone 15', color:'Blue', imei:'359012478563210', cliente:'María López', precio:999, compra:750, agente:'Laura (Messenger)', estado:'reservado', equipo_id:null, medioPago:'efectivo' };
-  ventasMensajes.push(m1, m2);
-  syncGuardar('ventas_mensajes', ventasMensajes);
-  renderVentas();
-  showToast('Se cargaron 2 mensajes de prueba');
 }
 
 function renderVentas(){
@@ -4502,12 +4183,11 @@ function renderVentas(){
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">${v.precio!=null ? '$'+fmt(v.precio) : '—'}</td>
         <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
-        <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia)+' <span style="font-size:11px;color:'+(v.precio&&v.ganancia!=null?((v.ganancia/Number(v.precio)*100)>=30?'var(--green)':((v.ganancia/Number(v.precio)*100)>=15?'var(--amber)':'var(--red)')):'#999')+'">'+(v.precio&&v.ganancia!=null?(v.ganancia/Number(v.precio)*100).toFixed(1)+'%':'')+'</span>' : '—'}</td>
+        <td data-label="Ganancia" class="ganancia solo-admin">${v.ganancia!=null ? '$'+fmt(v.ganancia) : '—'}</td>
         <td data-label="Estado">${badge}</td>
         <td data-label="Acciones"><div class="actions">
           ${accEstado}
           ${docsBtns}
-          <button class="btn ghost small" onclick="imprimirEtiquetaVenta('${v.nro}','${(v.modelo||'').replace(/'/g,"\\'")}','${(v.color||'').replace(/'/g,"\\'")}','${v.imei||''}','${v.fecha||''}')">🏷 Etiqueta</button>
           <button class="btn danger small solo-admin" onclick="borrarReservaMensaje('${v.nro}')">Borrar</button>
         </div></td>`;
     } else {
@@ -4519,10 +4199,9 @@ function renderVentas(){
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">$${fmt(v.precio)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(v.medioPago)}</td>
-        <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)} <span style="font-size:11px;color:${((v.ganancia/((Number(v.precio)||1)))*100)>=30?'var(--green)':((v.ganancia/((Number(v.precio)||1)))*100)>=15?'var(--amber)':'var(--red)'}">${v.precio?(v.ganancia/(Number(v.precio))*100).toFixed(1)+'%':''}</span></td>
+        <td data-label="Ganancia" class="ganancia solo-admin">$${fmt(v.ganancia)}</td>
         <td data-label="Estado"><span class="badge vendido">Vendido</span></td>
         <td data-label="Acciones"><div class="actions">
-          <button class="btn ghost small" onclick="imprimirEtiquetaVenta('${v.id}','${(v.modelo||'').replace(/'/g,"\\'")}','','${v.imei||''}','${v.fecha||''}')">🏷 Etiqueta</button>
           <button class="btn ghost small" onclick="imprimirFactura('${v.id}')">🧾 Recibo</button>
           <button class="btn ghost small" onclick="facturaConIVA('${v.id}')">📄 Factura</button>
           <button class="btn danger small solo-admin" onclick="borrarVenta('${v.id}')">Anular</button>
@@ -4869,7 +4548,16 @@ function venderEnCuotas(){
   const frecuencia = document.getElementById('vcFrecuencia').value;
   const fechaPago = document.getElementById('vcFechaPago').value || hoyISO();
   const fechaInicio = document.getElementById('vcFechaInicio').value || hoyISO();
-  const medioPago = document.getElementById('vcMedioPago').value;
+  const medioPago = obtenerMedioPago('vc');
+
+  // Validar pago dividido del anticipo
+  if(medioPago && typeof medioPago === 'object' && medioPago.medio1 && medioPago.medio2){
+    const sumaPagos = (Number(medioPago.monto1)||0) + (Number(medioPago.monto2)||0);
+    if(anticipo > 0 && Math.abs(sumaPagos - anticipo) > 0.01){
+      alert(`La suma de los montos del pago dividido ($${fmt(sumaPagos)}) no coincide con el anticipo ($${fmt(anticipo)}).`);
+      return;
+    }
+  }
 
   if(!precioCuotas){ alert('Cargá el precio en cuotas.'); return; }
 
@@ -4992,7 +4680,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
   if(gpsVendidos.length) registro.gpsIncluidoEnPrecio = true;
   syncGuardar('ventas_cuotas', ventasCuotas);
 
-  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}${gpsVendidos.length?' + GPS: '+gpsVendidos.map(g=>g.modelo).join(', '):''}`);
+  registrarActividad(`Venta en cuotas: ${modelo} — $${fmt(precioCuotas)} en cuotas${anticipo>0?` + anticipo $${fmt(anticipo)}${medioPago?' ('+formatMedioPagoTexto(medioPago)+')':''}`:''} (${cantCuotas} cuotas) a ${cliente}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}${gpsVendidos.length?' + GPS: '+gpsVendidos.map(g=>g.modelo).join(', '):''}`);
 
   // Limpiar formulario
   document.getElementById('vcPrecioCuotas').value = '';
@@ -5000,7 +4688,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
   document.getElementById('vcAnticipo').value = '';
   document.getElementById('vcInteres').value = '';
   document.getElementById('vcCuotaValor').value = '';
-  document.getElementById('vcMedioPago').value = '';
+  resetMedioPago('vc');
   document.getElementById('vcSimulacion').style.display = 'none';
   cargarSelectVentaCuotas();
   cargarSelectEquiposVenta();
@@ -5339,7 +5027,7 @@ function renderVentasCuotas(){
         <td data-label="Cuota">$${fmt(valorCuota)}</td>
         <td data-label="Medio de pago">${badgeMedioPago(vc.medioPago)}</td>
         <td data-label="Ganancia mensual" class="ganancia solo-admin">$${fmt(gMensual)}</td>
-        <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)} <span style="font-size:11px;color:${gTotal>0?(gTotal/Number(vc.precioCompra)*100>=30?"var(--green)":gTotal/Number(vc.precioCompra)*100>=15?"var(--amber)":"var(--red)"):"#999"}">${(Number(vc.precioCompra)>0 ? (gTotal/Number(vc.precioCompra)*100).toFixed(1)+"%" : "")}</span></td>
+        <td data-label="Ganancia en cuotas" class="ganancia solo-admin">$${fmt(gTotal)}</td>
         <td data-label="Acciones"><div class="actions">
           ${esFinalizdo
             ? `<span style="color:var(--green); font-size:12px; font-weight:600;">✓ Finalizado</span> <button class="btn ghost small" onclick="imprimirComprobanteCuotas('${vc.id}')">🖨️ Imprimir comprobante</button>`
@@ -5483,7 +5171,7 @@ function reciboCuotas(id){
 
       <div style="margin-top:12px; font-size:13px;">
         Vendedor: ${vendedorTxt} &nbsp;&nbsp; Sucursal: ${sucursalTxt}<br>
-        Forma de pago: Financiado en ${cantCuotas} cuotas${anticipoVc>0?' + anticipo':''}${vc.medioPago ? ' — Medio de pago (anticipo): '+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago) : ''}.
+        Forma de pago: Financiado en ${cantCuotas} cuotas${anticipoVc>0?' + anticipo':''}${vc.medioPago ? ' — Medio de pago (anticipo): '+(formatMedioPagoTexto(vc.medioPago)) : ''}.
       </div>
 
       ${esEquipo?`<p style="margin-top:12px; font-size:13px;">El equipo se entrega en el estado de funcionamiento verificado por el comprador, con garantía de un (1) mes por fallas técnicas internas (se excluyen roturas, golpes, ingreso de líquidos y mal uso).</p>`:''}
@@ -5597,7 +5285,7 @@ function facturaCuotasConIVA(id){
       </div>
       <div style="text-align:right; font-size:12px; color:#555; margin-top:4px;">Son dólares estadounidenses: ${numALetrasVC(totalOperacion)}.</div>
 
-      ${vc.medioPago ? `<div style="margin-top:12px; font-size:13px;">Medio de pago (anticipo): ${MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago}.</div>` : ''}
+      ${vc.medioPago ? `<div style="margin-top:12px; font-size:13px;">Medio de pago (anticipo): ${formatMedioPagoTexto(vc.medioPago)}.</div>` : ''}
 
       <div style="display:flex; justify-content:space-between; margin-top:24px; font-size:13px;">
         <div>CAE N°: _______________________</div>
@@ -5699,7 +5387,7 @@ function imprimirComprobanteCuotas(id){
 
   <div class="seccion"><h3>Plan de Financiación</h3><table>
     <tr><td>Cuotas:</td><td><b>${vc.cantCuotas} x USD $${fmt(valorCuota)}</b></td><td style="padding-left:24px;">Frecuencia:</td><td>${vc.frecuencia||'-'}</td>${anticipo > 0 ? `<td style="padding-left:24px;">Anticipo:</td><td><b>USD $${fmt(anticipo)}</b></td>` : ''}</tr>
-    ${vc.medioPago ? `<tr><td>Medio de pago (anticipo):</td><td colspan="5"><b>${MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago}</b></td></tr>` : ''}
+    ${vc.medioPago ? `<tr><td>Medio de pago (anticipo):</td><td colspan="5"><b>${formatMedioPagoTexto(vc.medioPago)}</b></td></tr>` : ''}
   </table></div>
 
   <div class="seccion"><h3>Cronograma de Cuotas</h3>
@@ -5912,7 +5600,7 @@ function generarContratoCuotas(id){
         ${filas}
       </table>
 
-      <p style="margin-top:8px;"><b>Medio y moneda de pago:</b>${vc.medioPago ? ' Medio de pago del anticipo: <b>'+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago)+'</b>.' : ''} Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
+      <p style="margin-top:8px;"><b>Medio y moneda de pago:</b>${vc.medioPago ? ' Medio de pago del anticipo: <b>'+(formatMedioPagoTexto(vc.medioPago))+'</b>.' : ''} Los pagos deberán efectuarse en efectivo billete Dólar Estadounidense, o mediante transferencia bancaria al CBU / Alias: ______________________. En su defecto, en caso de abonar en Pesos Argentinos (ARS), el monto a cancelar se calculará tomando el valor de la cotización del Dólar Informal / Blue (tipo VENTA) informada en plaza a la fecha y hora de la realización de cada pago efectivo.</p>
 
       <p><b>CUARTA: MORA E INTERESES MORATORIOS.</b> La falta de pago de cualquiera de las cuotas a su correspondiente vencimiento constituirá al COMPRADOR en mora de pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna. Transcurrido un período de gracia de tres (3) días corridos desde el vencimiento, se aplicará un interés punitorio del ${tasaPunitoriaVC(cant)}% mensual sobre el monto de la cuota adeudada hasta el día de su efectivo pago.</p>
 
@@ -6008,7 +5696,7 @@ function generarPagareCuotas(id){
         ${vc.gpsVendidos.map(gv => `<p style="margin:2px 0;">• ${gv.modelo||'GPS'}: U$S ${fmt(Number(gv.precioVenta)||0)}</p>`).join('')}
         <p style="margin:4px 0 0; font-size:12px; color:#555;">El valor del GPS se encuentra incluido dentro del monto total del presente pagaré.</p>
       </div>` : ''}
-      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''}${(vc.gpsVendidos && vc.gpsVendidos.length) ? ' · GPS: '+vc.gpsVendidos.map(gv=>gv.modelo||'GPS').join(', ') : ''} — ${vc.cantCuotas} cuotas${vc.medioPago?' · Medio de pago anticipo: '+(MEDIOS_PAGO_LABELS[vc.medioPago]||vc.medioPago):''}.</p>
+      <p style="margin-top:12px; font-size:12px; color:#555;">Referencia interna: ${vc.modelo||''}${vc.imei?' · IMEI '+vc.imei:''}${(vc.gpsVendidos && vc.gpsVendidos.length) ? ' · GPS: '+vc.gpsVendidos.map(gv=>gv.modelo||'GPS').join(', ') : ''} — ${vc.cantCuotas} cuotas${vc.medioPago?' · Medio de pago anticipo: '+(formatMedioPagoTexto(vc.medioPago)):''}.</p>
     </div>`;
   abrirDocumentoEditable('Pagaré' + (deudorNombre ? ' — ' + deudorNombre : ''), cuerpoPagare);
 }
@@ -6725,11 +6413,9 @@ function agregarConsignacion(){
   const deuda = document.getElementById('csDeuda').value;
   const sugerido = (Number(deuda)||0) + 50;
 
-  const fechaConsig = document.getElementById('csFecha').value || hoyISO();
   const equipoNuevo = {
     id: uid(), modelo, proveedorId, color, bateria, imei,
-    compra: deuda, sugerido: sugerido, venta: '', estado: 'disponible',
-    fechaIngreso: fechaConsig, origenTipo: 'consignacion', origenId: proveedorId
+    compra: deuda, sugerido: sugerido, venta: '', estado: 'disponible'
   };
   equipos.push(equipoNuevo);
   syncGuardar('stock_equipos', equipos);
@@ -6968,7 +6654,7 @@ function imprimirComprobanteCliente(id){
     <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
     <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
     <tr><td>Pago:</td><td>${r.pagado?'✅ Pagado':'⏳ Pendiente de pago'}</td></tr>
-    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${MEDIOS_PAGO_LABELS[r.medioPago]||r.medioPago}</b></td></tr>` : ''}
+    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${formatMedioPagoTexto(r.medioPago)}</b></td></tr>` : ''}
   </table></div>
   <div class="monto-box">
     <div class="label">Costo estimado de reparación</div>
@@ -7018,7 +6704,7 @@ function imprimirComprobanteTecnico(id){
     <tr><td>Problema:</td><td>${r.descripcion}</td></tr>
     <tr><td>Estado:</td><td><b>${(r.estado||'a reparar').toUpperCase()}</b></td></tr>
     <tr><td>Fecha de ingreso:</td><td>${r.fecha||'-'}</td></tr>
-    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${MEDIOS_PAGO_LABELS[r.medioPago]||r.medioPago}</b></td></tr>` : ''}
+    ${r.medioPago ? `<tr><td>Medio de pago:</td><td><b>${formatMedioPagoTexto(r.medioPago)}</b></td></tr>` : ''}
   </table></div>
   <div class="acceso"><h3>🔒 Datos de Acceso al Dispositivo</h3><table>
     <tr><td>Código / Patrón:</td><td style="font-size:16px;font-weight:700;">${r.codigo||'—'}</td></tr>
@@ -8284,1247 +7970,6 @@ renderReparaciones();
   }
   document.getElementById('loginOverlay').style.display = 'flex';
 })();
-
-// ============================================
-// MÓDULO DIAGNÓSTICO DE iPHONE
-// ============================================
-// TAC → Modelo iPhone (primeros 8 dígitos del IMEI)
-const IPHONE_TAC = {
-  '35391811':'iPhone 6','35## 6s mapping':'',
-  '35325509':'iPhone 6s','35325510':'iPhone 6s','35407710':'iPhone 6s Plus',
-  '35391110':'iPhone 7','35467010':'iPhone 7','35558810':'iPhone 7 Plus','35558910':'iPhone 7 Plus',
-  '35321810':'iPhone 8','35321910':'iPhone 8','35676810':'iPhone 8 Plus','35676910':'iPhone 8 Plus',
-  '35694709':'iPhone X','35694809':'iPhone X','35313410':'iPhone X',
-  '35383210':'iPhone XR','35383310':'iPhone XR',
-  '35388210':'iPhone XS','35388310':'iPhone XS','35397810':'iPhone XS Max','35397910':'iPhone XS Max',
-  '35334010':'iPhone 11','35334110':'iPhone 11','35395610':'iPhone 11 Pro','35395710':'iPhone 11 Pro',
-  '35395810':'iPhone 11 Pro Max','35395910':'iPhone 11 Pro Max',
-  '35412511':'iPhone SE (2nd)','35412611':'iPhone SE (2nd)',
-  '35341810':'iPhone 12 mini','35341910':'iPhone 12 mini',
-  '35349010':'iPhone 12','35349110':'iPhone 12',
-  '35383810':'iPhone 12 Pro','35383910':'iPhone 12 Pro',
-  '35407410':'iPhone 12 Pro Max','35407510':'iPhone 12 Pro Max',
-  '35424511':'iPhone 13 mini','35424611':'iPhone 13 mini',
-  '35427011':'iPhone 13','35427111':'iPhone 13',
-  '35476111':'iPhone 13 Pro','35476211':'iPhone 13 Pro',
-  '35513111':'iPhone 13 Pro Max','35513211':'iPhone 13 Pro Max',
-  '35538811':'iPhone SE (3rd)','35538911':'iPhone SE (3rd)',
-  '35571012':'iPhone 14','35571112':'iPhone 14','35579412':'iPhone 14 Plus','35579512':'iPhone 14 Plus',
-  '35591712':'iPhone 14 Pro','35591812':'iPhone 14 Pro','35604512':'iPhone 14 Pro Max','35604612':'iPhone 14 Pro Max',
-  '35648113':'iPhone 15','35648213':'iPhone 15','35674913':'iPhone 15 Plus','35674813':'iPhone 15 Plus',
-  '35684913':'iPhone 15 Pro','35684813':'iPhone 15 Pro','35699913':'iPhone 15 Pro Max','35699813':'iPhone 15 Pro Max','35437977':'iPhone 15 Pro Max',
-  '35742714':'iPhone 16','35742614':'iPhone 16','35762714':'iPhone 16 Plus','35762614':'iPhone 16 Plus',
-  '35772714':'iPhone 16 Pro','35772614':'iPhone 16 Pro','35788714':'iPhone 16 Pro Max','35788614':'iPhone 16 Pro Max',
-  '35788814':'iPhone 16e'
-};
-
-// Busca modelo por TAC (primeros 8 dígitos del IMEI)
-function diagAutoDetectModelo(){
-  const imei = document.getElementById('diagIMEI').value.trim();
-  const status = document.getElementById('diagIMEIStatus');
-  if(imei.length < 8){ status.textContent = ''; return; }
-
-  const tac = imei.substring(0, 8);
-  let aprendidos = {};
-  try{ aprendidos = JSON.parse(localStorage.getItem('diag_tac_aprendidos')||'{}'); }catch(e){}
-  const modelo = IPHONE_TAC[tac] || aprendidos[tac];
-
-  if(modelo){
-    status.innerHTML = '✅ Detectado: <b>' + modelo + '</b>';
-    status.style.color = 'var(--green)';
-    // Auto-select in dropdown
-    const sel = document.getElementById('diagModelo');
-    for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].value && modelo.toLowerCase().includes(sel.options[i].value.toLowerCase().replace('apple ','').replace('iphone ',''))){
-        sel.selectedIndex = i; break;
-      }
-    }
-    // Try exact match
-    for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].value === modelo || sel.options[i].text === modelo){
-        sel.selectedIndex = i; break;
-      }
-    }
-  } else if(document.getElementById('diagModelo').value){
-    // TAC desconocido pero ya hay modelo elegido (ej. cargado desde 3uTools): no mostrar advertencia
-    status.textContent = '';
-  } else if(imei.length >= 8){
-    status.innerHTML = 'TAC no reconocido — seleccioná el modelo manualmente';
-    status.style.color = 'var(--amber)';
-  }
-}
-
-// Abrir ENACOM para verificar IMEI
-function diagVerificarENACOM(){
-  const imei = document.getElementById('diagIMEI').value.trim();
-  if(!imei || imei.length < 15){
-    showToast('Ingresá un IMEI de 15 dígitos primero','error');
-    return;
-  }
-  window.open('https://enacom.gob.ar/imei', '_blank');
-  showToast('Se abrió ENACOM — buscá el IMEI: ' + imei);
-}
-
-// Handle paste event on the textarea — detect clipboard images
-document.addEventListener('DOMContentLoaded', () => {
-  const ta = document.getElementById('diag3uToolsInput');
-  if(!ta) return;
-  ta.addEventListener('paste', (e) => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    for(const item of items){
-      if(item.type.indexOf('image') !== -1){
-        e.preventDefault();
-        const blob = item.getAsFile();
-        // Show preview
-        const url = URL.createObjectURL(blob);
-        const preview = document.getElementById('diagPastedImgPreview');
-        const imgEl = document.getElementById('diagPastedImgEl');
-        imgEl.src = url;
-        preview.style.display = 'block';
-        ta.value = '';
-        // Store blob for OCR processing
-        window._diag3uToolsPastedBlob = blob;
-        showToast('📷 Imagen pegada. Hacé clic en "Parsear y autocompletar" para procesarla.');
-        return;
-      }
-    }
-    // If no image, it's text — clear any previous pasted image
-    window._diag3uToolsPastedBlob = null;
-    document.getElementById('diagPastedImgPreview').style.display = 'none';
-  });
-});
-
-// OCR desde captura de 3uTools (file input or pasted blob)
-async function diagOCR3uTools(input){
-  let file;
-  if(input instanceof Blob){
-    file = input;
-  } else {
-    file = input.files[0];
-    if(!file) return;
-    input.value = '';
-  }
-
-  const statusDiv = document.getElementById('diagOCRStatus');
-  const msgEl = document.getElementById('diagOCRMsg');
-  const barEl = document.getElementById('diagOCRBar');
-  statusDiv.style.display = 'block';
-  msgEl.textContent = 'Cargando motor OCR...';
-  barEl.style.width = '10%';
-
-  try {
-    const worker = await Tesseract.createWorker('eng', 1, {
-      logger: m => {
-        if(m.status === 'recognizing text'){
-          const pct = Math.round((m.progress||0)*100);
-          barEl.style.width = (10 + pct*0.85) + '%';
-          msgEl.textContent = 'Leyendo imagen... ' + pct + '%';
-        }
-      }
-    });
-
-    msgEl.textContent = 'Procesando imagen...';
-    barEl.style.width = '20%';
-
-    // Scale up + invert dark theme for better OCR
-    const img = new Image();
-    const imgUrl = URL.createObjectURL(file);
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = imgUrl;
-    });
-    const canvas = document.createElement('canvas');
-    const scale = Math.max(1, 2400 / Math.max(img.width, img.height));
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    // Invert colors: 3uTools dark theme → light bg for OCR
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const px = imageData.data;
-    for(let i = 0; i < px.length; i += 4){
-      px[i] = 255 - px[i];
-      px[i+1] = 255 - px[i+1];
-      px[i+2] = 255 - px[i+2];
-    }
-    ctx.putImageData(imageData, 0, 0);
-    URL.revokeObjectURL(imgUrl);
-
-    const { data: { text } } = await worker.recognize(canvas);
-    await worker.terminate();
-
-    barEl.style.width = '100%';
-    console.log('OCR 3uTools texto extraído:', text);
-
-    // Show extracted text so user can see what was read
-    document.getElementById('diag3uToolsArea').style.display = 'block';
-    document.getElementById('diag3uToolsInput').value = text;
-
-    // Parse
-    const count = diagParsear3uTools();
-
-    if(count === 0){
-      msgEl.textContent = '⚠️ No se pudieron extraer datos. Revisá el texto y editalo si es necesario.';
-      msgEl.style.color = 'var(--amber)';
-      setTimeout(() => { statusDiv.style.display = 'none'; msgEl.style.color = ''; }, 4000);
-    } else {
-      msgEl.textContent = `✅ ${count} campos autocompletados desde la imagen`;
-      setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-    }
-
-  } catch(e){
-    console.error('OCR error:', e);
-    statusDiv.style.display = 'none';
-    showToast('Error al procesar la imagen: ' + e.message, 'error');
-  }
-}
-
-// Parser de datos de 3uTools
-function diagParsear3uTools(){
-  // If there's a pasted image blob, run OCR on it instead
-  if(window._diag3uToolsPastedBlob){
-    const blob = window._diag3uToolsPastedBlob;
-    window._diag3uToolsPastedBlob = null;
-    document.getElementById('diagPastedImgPreview').style.display = 'none';
-    diagOCR3uTools(blob);
-    return 0;
-  }
-
-  let raw = document.getElementById('diag3uToolsInput').value.trim();
-  if(!raw){ showToast('Pegá los datos de 3uTools primero','error'); return 0; }
-
-  // Fix 3uTools mojibake: £¬ is a garbled comma (Chinese encoding issue)
-  raw = raw.replace(/£¬/g, ',');
-
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  let found = {};
-
-  // Detect if this is "Device Raw Data" (internal plist/keys) — skip those lines
-  // Raw data has keys like kCTPostponementStatus, DeviceEnclosureColor, etc.
-  const isRawData = /\bkCT[A-Z]|DeviceEnclosureColor|DeviceBackingColor|DeviceCoverGlassColor/i.test(raw);
-  // Only reject if there is NO readable Device Details / Report data mixed in
-  const hasReadable = /(device name|model name|serial number|capacity\s*&\s*color|imei)/i.test(raw);
-  if(isRawData && !hasReadable){
-    showToast('⚠️ Esos son datos crudos (Raw Data). Usá "Open in Notepad" en 3uTools para copiar los datos legibles.','error');
-    return 0;
-  }
-
-  // Known 3uTools labels — used to split "flat" text where columns are separated by single spaces
-  // (e.g. text extracted from a screenshot: "Device Name iPhone 15 Pro Max Capacity & Color 256GB White Titanium Release Date 9/13/2023")
-  const LABELS_3U = ['Screen Serial Number','Verify Serial Number','Mainboard Serial No','Logic Board SN','Battery SN','Baseband SN',
-    'Serial Number','Device Name','Capacity & Color','Capacity','Device Color','Release Date','Model Name','Model Identifier','Model Number',
-    'Regulatory Model','Hardware Model','Product Type','Activation','Mfg. Date','Mfg Date','Jailbreak','Sales Type','Sales Region','ECID','UDID',
-    'Firmware Version','Baseband Version','IMEI2','IMEI 2','IMEI1','IMEI 1','IMEI','MEID','ICCID','EID','Warranty Date','Battery Life','Battery Health',
-    'Charge Times','Charge Cycles','Apple ID Lock','ID Lock','iCloud','SIM Lock Status','SIM Lock','SIMLock','Carrier Lock Status','Carrier Lock','Network Lock','Carrier','CPU Architecture','CPU','Hard Disk Type',
-    'Disk Capacity','Wi-Fi Address','Bluetooth Address','Cellular Address','Five-Code Matching','Front Camera','Rear Camera','Touch ID','Face ID']
-    .sort((a,b) => b.length - a.length);
-  const labelRe = new RegExp('(?<![A-Za-z0-9])(' + LABELS_3U.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s*')).join('|') + ')(?![A-Za-z0-9])\\s*:?', 'gi');
-  const splitByLabels = (line) => {
-    const out = []; const ms = [...line.matchAll(labelRe)];
-    ms.forEach((m, i) => {
-      const end = i + 1 < ms.length ? ms[i+1].index : line.length;
-      const val = line.substring(m.index + m[0].length, end).trim();
-      if(val) out.push({ key: m[1].replace(/\s+/g,' ').toLowerCase(), val });
-    });
-    return out;
-  };
-
-  // Also try to find IMEI as a standalone 15-digit number in text (OCR fallback)
-  // But only match numbers that start with known IMEI prefixes (3x)
-  const imeiMatch = raw.match(/\b(3[0-9]\d{13})\b/);
-  // OCR: find "iPhone XX Pro Max" anywhere
-  const iphoneMatch = raw.match(/iPhone\s*(SE|\d{1,2})\s*(mini|Plus|Pro\s*Max|Pro)?/i);
-  // OCR: find battery percentage (near "battery" or "life" or "health" keywords)
-  const batteryPctMatch = raw.match(/(?:batter|life|health|salud|vida)[^\n]{0,20}?(\d{2,3})\s*%/i)
-    || raw.match(/(\d{2,3})\s*%\s*(?:batter|life|health)/i);
-  // OCR: find capacity anywhere
-  const capacityMatch = raw.match(/\b(\d{2,4})\s*(GB|TB)\b/i);
-
-  // 3uTools produces TWO formats when copying:
-  // A) Device Details ("Open in Notepad"): multi-column rows with tabs
-  //    e.g. "Device Name\tiPhone 15 Pro Max\tCapacity & Color\t256GB White Titanium\tRelease Date\t9/13/2023"
-  //    Each line has 6 tab-parts: key1, val1, key2, val2, key3, val3
-  // B) Device Report (Select All → Copy): mixed tabs and spaces
-  //    e.g. "Model Name\tiPhone 15 Pro Max\tiPhone 15 Pro Max\tNormal"
-  //    Has 4 cols: Test Item, Ex-factory Value, Read Value, Result
-  //    Device Info section uses spaces: "Battery Life\t79%"
-  //
-  // Strategy: split by tabs first. If parts are key-value-key-value pattern, use that.
-  // Otherwise treat as table row (take first two as key-val).
-  const pairs = [];
-  lines.forEach(line => {
-    const parts = line.split('\t').map(p => p.trim()).filter(Boolean);
-    if(parts.length >= 6){
-      // Device Details format: 3 key-val pairs per line
-      for(let i = 0; i < parts.length - 1; i += 2){
-        pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
-      }
-    } else if(parts.length >= 4){
-      // Could be Device Details (2 pairs) or Device Report table (4 cols)
-      // Heuristic: if parts[2] looks like a known key name, treat as key-val pairs
-      const p2 = parts[2].toLowerCase();
-      const isKey = /^(model|device|serial|imei|capacity|color|battery|charge|sim|activation|jailbreak|sale|region|firmware|release|mfg|warranty|id lock|screen|cpu|baseband|bluetooth|cellular|wi-fi|lidar|infrared|dot|distance|ambient|cover|vibrator|partition|storage|hardware|wireless|call|protocol|esim|coprocessor|24-hour)/.test(p2);
-      if(isKey){
-        // Key-val pairs
-        for(let i = 0; i < parts.length - 1; i += 2){
-          pairs.push({ key: parts[i].toLowerCase(), val: parts[i+1] });
-        }
-      } else {
-        // Device Report table: col0=Test Item, col1=Ex-factory, col2=Read, col3=Result
-        pairs.push({ key: parts[0].toLowerCase(), val: parts[1] });
-      }
-    } else if(parts.length >= 2){
-      // Simple key-val pair (Device Info section)
-      let k = parts[0], v = parts[1];
-      // Check if key has inner spaces (mixed format: "Serial Number    DW3..." as one tab-chunk)
-      const innerSplit = k.search(/ {3,}/);
-      if(innerSplit > 0){
-        pairs.push({ key: k.substring(0, innerSplit).trim().toLowerCase(), val: k.substring(innerSplit).trim() });
-      } else {
-        pairs.push({ key: k.toLowerCase(), val: v });
-      }
-    } else {
-      // No tabs — first try splitting by known 3uTools labels (flat / OCR-like text)
-      const byLabel = splitByLabels(line);
-      if(byLabel.length){ byLabel.forEach(p => pairs.push(p)); return; }
-      // Otherwise try colon separator
-      const sep = line.indexOf(':');
-      if(sep > 0){
-        pairs.push({ key: line.substring(0, sep).trim().toLowerCase(), val: line.substring(sep+1).trim() });
-      } else {
-        // Try multiple spaces (3+)
-        const spaceSep = line.search(/ {3,}/);
-        if(spaceSep > 0){
-          pairs.push({ key: line.substring(0, spaceSep).trim().toLowerCase(), val: line.substring(spaceSep).trim() });
-        }
-      }
-    }
-  });
-
-  pairs.forEach(({key, val}) => {
-    // IMEI (IMEI1, IMEI, not IMEI2)
-    if((key.includes('imei') || key === 'imei1' || key === 'imei 1') && !key.includes('imei2') && !key.includes('imei 2')){
-      const digits = val.replace(/\D/g,'');
-      if(digits.length >= 15) found.imei = digits.substring(0, 15);
-    }
-    // Serial Number — but NOT "Screen Serial Number", "Logic Board SN", "Battery SN", "Wi-Fi Serial", "Baseband SN"
-    if((key.includes('serial number') || key === 'serial' || key.includes('serial n'))
-       && !key.includes('screen') && !key.includes('logic') && !key.includes('battery') && !key.includes('wi-fi')
-       && !key.includes('baseband') && !key.includes('board')
-       && val.length >= 5 && val.length <= 15){
-      found.serial = val.replace(/\*/g, '');
-    }
-    // Model Name / Model Identifier (3uTools Device Report and Device Details)
-    if(key === 'model name' || key.includes('model name')){
-      found.modelo = val;
-    }
-    // "Device Name" in Device Details also shows model (e.g. "iPhone 15 Pro Max")
-    // but only use if no Model Name found yet
-    if((key === 'device name' || key === 'model identifier' || key.includes('model id'))
-       && val.toLowerCase().includes('iphone') && !found.modelo){
-      found.modelo = val;
-    }
-    if(key.includes('device model') || (key.includes('model') && !key.includes('number') && !key.includes('region') && !key.includes('regulatory') && !key.includes('identifier') && !found.modelo)){
-      found.modelo = val;
-    }
-    // Capacity & Color combined (Device Details format: "256GB White Titanium")
-    if(key.includes('capacity') && key.includes('color')){
-      const capColor = val.match(/(\d+)\s*(GB|TB)\s+(.+)/i);
-      if(capColor){
-        found.capacidad = capColor[1] + ' ' + capColor[2].toUpperCase();
-        found.color = capColor[3].trim();
-      }
-    }
-    // Capacity alone
-    else if(key.includes('capacity') || key.includes('capacidad')){
-      const gb = val.match(/(\d+)\s*(gb|tb)/i);
-      if(gb) found.capacidad = gb[1] + ' ' + gb[2].toUpperCase();
-    }
-    // Color (Device Color in report)
-    // 3uTools format: "Front Black, Rear White Titanium" → extract Rear color
-    if(!found.color && (key.includes('color') || key.includes('colour'))){
-      const rearMatch = val.match(/rear\s+(.+)/i);
-      if(rearMatch){
-        found.color = rearMatch[1].replace(/,.*$/,'').trim();
-      } else {
-        // If no "Rear" prefix, strip "Front" prefix if present
-        found.color = val.replace(/^front\s+/i,'').replace(/,.*$/,'').trim();
-      }
-    }
-    // Battery Life / Battery Health
-    if(key.includes('battery') && (key.includes('life') || key.includes('health')) || key.includes('salud de batería')){
-      const pct = val.match(/(\d+)/);
-      if(pct) found.bateria = pct[1];
-    }
-    // Charge Cycles
-    if((key.includes('charge') && (key.includes('cycle') || key.includes('times'))) || key.includes('ciclos')){
-      const n = val.match(/(\d+)/);
-      if(n) found.ciclos = n[1];
-    }
-    // Device Name → Cliente (only if value contains owner name, not just model)
-    // In Device Details "Device Name" is the model. If someone renames their iPhone
-    // to "iPhone de Juan", we extract "Juan". Otherwise skip.
-    if(key.includes('device name') || key.includes('nombre del dispositivo')){
-      if(/iphone de\s+/i.test(val)){
-        found.cliente = val.replace(/^iPhone de\s*/i, '').trim();
-      }
-      // else: it's just the model name, skip for cliente
-    }
-    // ID Lock / iCloud / Find My (3uTools shows "ID Lock: On")
-    if(key.includes('id lock') || key.includes('icloud') || key.includes('find my') || key.includes('buscar mi')){
-      const v = val.toLowerCase().trim();
-      // Use exact match or word-boundary to avoid "unknown" matching "on"
-      if(v === 'on' || v === 'yes' || v === 'activado' || v === 'activated' || v === 'sí'){
-        found.icloud = 'activado';
-      } else if(v === 'off' || v === 'no' || v === 'desactivado' || v === 'deactivated'){
-        found.icloud = 'desactivado';
-      }
-      // "Unknown" is intentionally left unmatched — don't set iCloud status
-    }
-    // SIM Lock / Carrier Lock
-    if(key.includes('sim lock') || key.includes('simlock') || key.includes('carrier lock') || key.includes('network lock') || key.includes('bloqueo')){
-      const v = val.toLowerCase();
-      if(/unlock|liberado|libre|sin bloqueo|factory/.test(v) || /^(no|off|none)\b/.test(v)){
-        found.operador = 'liberado';
-      } else if(/lock|bloqueado/.test(v) || /^(yes|on)\b/.test(v)){
-        found.operador = 'bloqueado';
-      }
-    }
-    // Activation status
-    if(key.includes('activation')){
-      // Just informational, no field for this
-    }
-    // Jailbreak
-    if(key.includes('jailbreak')){
-      if(val.toLowerCase().includes('yes')) found.jailbreak = true;
-    }
-  });
-
-  // OCR fallback: if IMEI not found via key:val, use regex match
-  if(!found.imei && imeiMatch) found.imei = imeiMatch[1];
-
-  // Fallback: iPhone model from anywhere in text
-  if(!found.modelo && iphoneMatch) found.modelo = iphoneMatch[0].trim();
-
-  // Fallback: Model Identifier like "iPhone16,2" → "iPhone 15 Pro Max"
-  if(!found.modelo){
-    const idMatch = raw.match(/iPhone\s*(\d{1,2})\s*[,.]?\s*(\d)/i);
-    if(idMatch){
-      const modelIds = {'15,2':'iPhone 15 Pro Max','15,3':'iPhone 15 Pro Max','15,4':'iPhone 15 Pro','15,5':'iPhone 15 Pro',
-        '14,2':'iPhone 14 Pro','14,3':'iPhone 14 Pro Max','14,4':'iPhone 14','14,5':'iPhone 14 Plus',
-        '14,6':'iPhone 14','14,7':'iPhone 14 Plus','14,8':'iPhone 14 Pro','16,1':'iPhone 15','16,2':'iPhone 15 Pro Max',
-        '15,6':'iPhone 15','15,7':'iPhone 15 Plus','17,1':'iPhone 16','17,2':'iPhone 16 Plus',
-        '17,3':'iPhone 16 Pro','17,4':'iPhone 16 Pro Max','17,5':'iPhone 16e'};
-      const k = idMatch[1]+','+idMatch[2];
-      if(modelIds[k]) found.modelo = modelIds[k];
-    }
-  }
-
-  // Fallback: capacity from anywhere
-  if(!found.capacidad && capacityMatch) found.capacidad = capacityMatch[1] + ' ' + capacityMatch[2].toUpperCase();
-
-  // Fallback: battery % from anywhere
-  if(!found.bateria && batteryPctMatch){
-    const v = parseInt(batteryPctMatch[1]);
-    if(v > 0 && v <= 100) found.bateria = String(v);
-  }
-
-  // Fallback: charge cycles from anywhere
-  if(!found.ciclos){
-    const cycleMatch = raw.match(/(?:cycle|ciclo)[s]?\s*[:\s]*(\d{1,5})/i);
-    if(cycleMatch) found.ciclos = cycleMatch[1];
-  }
-
-  // Fallback: serial number — Apple serials are 10-12 alphanumeric chars
-  // Look for "Serial" keyword nearby or known Apple serial patterns (starts with letter, 10+ chars)
-  if(!found.serial){
-    const serialRegex = raw.match(/serial[^a-z0-9]{0,20}([A-Z0-9]{10,12})\b/i);
-    if(serialRegex) found.serial = serialRegex[1];
-  }
-
-  // Fallback: color — prefer "Rear" color if present
-  if(!found.color){
-    const rearColor = raw.match(/rear\s+((?:White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)\s*(?:Titanium|Aluminum)?)/i);
-    if(rearColor){
-      found.color = rearColor[1].trim();
-    } else {
-      const colorMatch = raw.match(/((?:White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)\s*(?:Titanium|Aluminum))/i)
-        || raw.match(/(White|Black|Blue|Natural|Gold|Silver|Pink|Red|Green|Yellow|Purple|Starlight|Midnight|Desert|Teal)/i);
-      if(colorMatch) found.color = colorMatch[1].trim();
-    }
-  }
-
-  console.log('3uTools parser found:', found);
-
-  // Apply found values
-  let count = 0;
-  if(found.imei){
-    document.getElementById('diagIMEI').value = found.imei; count++;
-    diagAutoDetectModelo();
-  }
-  if(found.serial){
-    document.getElementById('diagSerial').value = found.serial; count++;
-  }
-  if(found.modelo){
-    // Try to match in select - normalize both sides for comparison
-    const sel = document.getElementById('diagModelo');
-    const modeloNorm = found.modelo.toLowerCase().replace(/\s+/g,' ').trim();
-    let matched = false;
-    // First: exact match
-    for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].value && sel.options[i].value.toLowerCase() === modeloNorm){
-        sel.selectedIndex = i; count++; matched = true; break;
-      }
-    }
-    // Second: option value contained in found modelo — pick LONGEST match
-    if(!matched){
-      let bestIdx = -1, bestLen = 0;
-      for(let i = 0; i < sel.options.length; i++){
-        const ov = sel.options[i].value;
-        if(ov && modeloNorm.includes(ov.toLowerCase()) && ov.length > bestLen){
-          bestIdx = i; bestLen = ov.length;
-        }
-      }
-      if(bestIdx >= 0){ sel.selectedIndex = bestIdx; count++; matched = true; }
-    }
-    // Third: found modelo contained in option value — pick LONGEST match
-    if(!matched){
-      let bestIdx = -1, bestLen = 0;
-      for(let i = 0; i < sel.options.length; i++){
-        const ov = sel.options[i].value;
-        if(ov && ov.toLowerCase().includes(modeloNorm) && ov.length > bestLen){
-          bestIdx = i; bestLen = ov.length;
-        }
-      }
-      if(bestIdx >= 0){ sel.selectedIndex = bestIdx; count++; matched = true; }
-    }
-    // Fourth: partial word match (e.g. "15 Pro Max" matches "iPhone 15 Pro Max")
-    if(!matched){
-      const words = modeloNorm.replace('iphone','').trim().split(/\s+/);
-      if(words.length >= 1){
-        for(let i = 0; i < sel.options.length; i++){
-          const optNorm = sel.options[i].value.toLowerCase();
-          if(optNorm && words.every(w => optNorm.includes(w))){
-            sel.selectedIndex = i; count++; break;
-          }
-        }
-      }
-    }
-  }
-  if(found.capacidad){
-    const sel = document.getElementById('diagCapacidad');
-    for(let i = 0; i < sel.options.length; i++){
-      if(sel.options[i].text.replace(/\s/g,'').toLowerCase() === found.capacidad.replace(/\s/g,'').toLowerCase()){
-        sel.selectedIndex = i; count++; break;
-      }
-    }
-  }
-  if(found.color){
-    document.getElementById('diagColor').value = found.color; count++;
-  }
-  if(found.icloud){
-    const sel = document.getElementById('diagiCloud');
-    sel.value = found.icloud; count++;
-    if(found.icloud === 'activado'){
-      document.getElementById('diagiCloudWarn').style.display = 'block';
-    }
-  }
-  if(found.operador){
-    document.getElementById('diagOperador').value = found.operador; count++;
-  }
-  // Aprender el TAC de este IMEI para reconocer el modelo la próxima vez, y refrescar el aviso
-  try{
-    const selM = document.getElementById('diagModelo');
-    if(found.imei && selM.value){
-      const ap = JSON.parse(localStorage.getItem('diag_tac_aprendidos')||'{}');
-      const tac = found.imei.substring(0,8);
-      if(!IPHONE_TAC[tac] && ap[tac] !== selM.value){ ap[tac] = selM.value; localStorage.setItem('diag_tac_aprendidos', JSON.stringify(ap)); }
-    }
-    if(found.imei) diagAutoDetectModelo();
-  }catch(e){ console.warn(e); }
-  // Battery goes to step 2
-  if(found.bateria){
-    document.getElementById('diagBateria').value = found.bateria; count++;
-    diagCheckBateria();
-  }
-  if(found.ciclos){
-    document.getElementById('diagCiclos').value = found.ciclos; count++;
-  }
-
-  if(count > 0){
-    showToast(`✅ 3uTools: ${count} campos autocompletados`);
-  }
-  return count;
-}
-
-const DIAG_CHECKLIST = [
-  { cat: 'Pantalla', items: ['Táctil funciona correctamente','True Tone activo','Brillo automático','Sin manchas/líneas/dead pixels'] },
-  { cat: 'Biometría', items: ['Face ID funciona','Touch ID funciona (si aplica)'] },
-  { cat: 'Cámaras', items: ['Cámara trasera (foto/video)','Cámara frontal (foto/video)','Flash LED','Estabilización óptica'] },
-  { cat: 'Audio', items: ['Auricular de llamada','Altavoz inferior','Micrófono principal','Micrófono secundario'] },
-  { cat: 'Conectividad', items: ['WiFi','Bluetooth','GPS/Ubicación','AirDrop','NFC'] },
-  { cat: 'Red Celular', items: ['Bandeja SIM / eSIM','Señal celular / Datos móviles','Llamadas de voz'] },
-  { cat: 'Sensores', items: ['Giroscopio/Acelerómetro','Sensor de proximidad','Brújula','Barómetro'] },
-  { cat: 'Botones', items: ['Botón de encendido','Volumen +','Volumen -','Silenciador/Acción'] },
-  { cat: 'Carga y Puertos', items: ['Lightning / USB-C (carga)','Lightning / USB-C (datos)','Carga inalámbrica MagSafe','Vibración (Taptic Engine)'] }
-];
-
-let diagEditId = null;
-
-function renderDiagChecklist(){
-  const el = document.getElementById('diagChecklist');
-  if(!el) return;
-  el.innerHTML = DIAG_CHECKLIST.map((sec,si) => `
-    <div style="margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.03);">
-      <h4 style="margin-bottom:8px;color:#00b4ff;">${sec.cat}</h4>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px;">
-        ${sec.items.map((item,ii) => `
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.04);">
-            <span style="flex:1;font-size:13px;">${item}</span>
-            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-              <input type="radio" name="chk_${si}_${ii}" value="ok"> <span style="color:var(--green);font-size:12px;">OK</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-              <input type="radio" name="chk_${si}_${ii}" value="fallo"> <span style="color:#e74c3c;font-size:12px;">Falló</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-              <input type="radio" name="chk_${si}_${ii}" value="na"> <span style="color:var(--txt3);font-size:12px;">N/A</span>
-            </label>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
-}
-
-function getChecklistResults(){
-  const results = [];
-  DIAG_CHECKLIST.forEach((sec,si) => {
-    const items = [];
-    sec.items.forEach((item,ii) => {
-      const sel = document.querySelector(`input[name="chk_${si}_${ii}"]:checked`);
-      items.push({ item, val: sel ? sel.value : 'pendiente' });
-    });
-    results.push({ cat: sec.cat, items });
-  });
-  return results;
-}
-
-function diagCheckBateria(){
-  const v = Number(document.getElementById('diagBateria').value);
-  const w = document.getElementById('diagBateriaWarn');
-  if(v && v < 80){
-    w.style.display='block';
-    w.style.color='#e74c3c';
-    w.textContent='⚠️ Batería por debajo del 80% — se recomienda reemplazo';
-  } else if(v && v < 90){
-    w.style.display='block';
-    w.style.color='var(--amber)';
-    w.textContent='🟡 Batería entre 80-90% — desgaste moderado';
-  } else {
-    w.style.display='none';
-  }
-}
-
-// Devuelve el texto de lo que falta completar en un paso ('' si está completo)
-function diagValidarPaso(paso){
-  const val = id => (document.getElementById(id).value || '').trim();
-  const falta = [];
-  if(paso === 1){
-    if(val('diagIMEI').length !== 15) falta.push('IMEI (15 dígitos)');
-    if(!val('diagModelo')) falta.push('Modelo');
-    if(!val('diagCapacidad')) falta.push('Capacidad');
-    if(!val('diagColor')) falta.push('Color');
-    if(!val('diagCliente')) falta.push('Cliente');
-    if(!val('diagiCloud')) falta.push('iCloud');
-    if(!val('diagOperador')) falta.push('Bloqueo de operador');
-  } else if(paso === 2){
-    const b = Number(val('diagBateria'));
-    if(!val('diagBateria') || b < 1 || b > 100) falta.push('Salud de batería (1 a 100)');
-    if(!val('diagGrado')) falta.push('Grado general');
-  } else if(paso === 3){
-    let sin = 0;
-    DIAG_CHECKLIST.forEach((sec,si) => sec.items.forEach((item,ii) => {
-      if(!document.querySelector('input[name="chk_'+si+'_'+ii+'"]:checked')) sin++;
-    }));
-    if(sin) falta.push(sin + ' ítem' + (sin>1?'s':'') + ' del checklist sin marcar (OK, Falló o N/A)');
-  }
-  return falta.join(', ');
-}
-
-function diagGoStep(n){
-  // No se puede avanzar a un paso sin completar los anteriores
-  for(let p = 1; p < n; p++){
-    const falta = diagValidarPaso(p);
-    if(falta){
-      showToast('⚠️ Completá el paso ' + p + ' antes de seguir. Falta: ' + falta);
-      n = p;
-      break;
-    }
-  }
-  // Validate step 1 iCloud lock
-  if(n > 1){
-    const icloud = document.getElementById('diagiCloud').value;
-    if(icloud === 'activado'){
-      document.getElementById('diagiCloudWarn').style.display = 'block';
-      showToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
-      return;
-    }
-    document.getElementById('diagiCloudWarn').style.display = 'none';
-  }
-
-  for(let i=1;i<=4;i++){
-    const el = document.getElementById('diagStep'+i);
-    if(el) el.style.display = i===n ? 'block' : 'none';
-    const btn = document.getElementById('diagStep'+i+'btn');
-    if(btn){
-      btn.className = 'badge';
-      if(i === n) btn.classList.add('vendido');
-      else if(i < n) btn.classList.add('reservado');
-      else btn.style.background = 'rgba(255,255,255,0.08)';
-    }
-  }
-
-  // Solo dibujar el checklist si está vacío, para no borrar lo ya marcado
-  if(n === 3 && !document.querySelector('#diagChecklist input[type=radio]')) renderDiagChecklist();
-  if(n === 4) calcularVeredicto();
-}
-
-function calcularVeredicto(){
-  const el = document.getElementById('diagResultado');
-  const checklist = getChecklistResults();
-  const bateria = Number(document.getElementById('diagBateria').value) || 0;
-  const icloud = document.getElementById('diagiCloud').value;
-  const enacom = document.getElementById('diagENACOM').value;
-  const grado = document.getElementById('diagGrado').value;
-  const operador = document.getElementById('diagOperador').value;
-  const modelo = document.getElementById('diagModelo').value;
-
-  // Count failures
-  let totalItems = 0, fallos = 0, oks = 0, pendientes = 0;
-  const fallosList = [];
-  checklist.forEach(sec => {
-    sec.items.forEach(it => {
-      if(it.val !== 'na'){ totalItems++; }
-      if(it.val === 'fallo'){ fallos++; fallosList.push(`${sec.cat}: ${it.item}`); }
-      if(it.val === 'ok') oks++;
-      if(it.val === 'pendiente') pendientes++;
-    });
-  });
-
-  // Determine verdict
-  let veredicto = 'aprobado';
-  let color = 'var(--green)';
-  let icon = '✅';
-  let razon = [];
-
-  if(icloud === 'activado' || enacom === 'inhibido'){
-    veredicto = 'rechazado';
-    color = '#e74c3c';
-    icon = '🚫';
-    if(icloud === 'activado') razon.push('iCloud/Buscar mi iPhone activado');
-    if(enacom === 'inhibido') razon.push('IMEI inhibido/robado (ENACOM)');
-  } else if(fallos >= 3 || bateria < 70 || grado === 'E'){
-    veredicto = 'rechazado';
-    color = '#e74c3c';
-    icon = '🚫';
-    if(fallos >= 3) razon.push(fallos + ' componentes fallidos');
-    if(bateria < 70) razon.push('Batería crítica: ' + bateria + '%');
-    if(grado === 'E') razon.push('Grado estético E');
-  } else if(fallos > 0 || bateria < 80 || operador === 'bloqueado' || grado === 'D'){
-    veredicto = 'observaciones';
-    color = 'var(--amber)';
-    icon = '⚠️';
-    if(fallos > 0) razon.push(fallos + ' componente(s) con fallo');
-    if(bateria > 0 && bateria < 80) razon.push('Batería al ' + bateria + '%');
-    if(operador === 'bloqueado') razon.push('Bloqueado a operador');
-    if(grado === 'D') razon.push('Grado estético D');
-  }
-
-  const verdictText = veredicto === 'aprobado' ? 'APROBADO' :
-                       veredicto === 'observaciones' ? 'ACEPTADO CON OBSERVACIONES' : 'RECHAZADO';
-
-  el.innerHTML = `
-    <div style="text-align:center;padding:20px;">
-      <div style="font-size:48px;">${icon}</div>
-      <h2 style="color:${color};font-size:24px;margin:8px 0;">${verdictText}</h2>
-      <p style="color:var(--txt2);">${modelo || 'iPhone'} ${document.getElementById('diagCapacidad').value || ''}</p>
-      ${razon.length ? '<div style="margin-top:8px;text-align:left;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.04);">'+razon.map(r=>'<div style="color:var(--txt2);font-size:13px;">• '+r+'</div>').join('')+'</div>' : ''}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px;">
-      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:var(--green);">${oks}</div>
-        <div style="font-size:11px;color:var(--txt3);">Componentes OK</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(231,76,60,0.08);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:#e74c3c;">${fallos}</div>
-        <div style="font-size:11px;color:var(--txt3);">Fallos</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:var(--txt2);">${bateria||'?'}%</div>
-        <div style="font-size:11px;color:var(--txt3);">Batería</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:var(--txt2);">${grado||'?'}</div>
-        <div style="font-size:11px;color:var(--txt3);">Grado</div>
-      </div>
-    </div>
-    ${fallosList.length ? '<div style="margin-top:12px;"><h4 style="color:#e74c3c;margin-bottom:6px;">Componentes con fallo:</h4>'+fallosList.map(f=>'<div style="font-size:12px;color:var(--txt2);padding:2px 0;">❌ '+f+'</div>').join('')+'</div>' : ''}
-  `;
-}
-
-// Deja el formulario de diagnóstico completamente en blanco
-function diagLimpiarFormulario(){
-  diagEditId = null;
-  // Reset form
-  ['diagIMEI','diagSerial','diagColor','diagCliente','diagObsEstetica','diagObsHardware','diagNotasFinal','diagTecnico'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  ['diagModelo','diagCapacidad','diagiCloud','diagOperador','diagENACOM','diagGrado','diagBateriaOrig'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.selectedIndex = 0;
-  });
-  document.getElementById('diagBateria').value = '';
-  document.getElementById('diagCiclos').value = '';
-  document.getElementById('diagBateriaWarn').style.display = 'none';
-  document.getElementById('diagiCloudWarn').style.display = 'none';
-  document.getElementById('diagIMEIStatus').textContent = '';
-  document.getElementById('diagBtnPDF').style.display = 'none';
-
-  // Reset checkboxes
-  document.querySelectorAll('#diagPiezas input[type=checkbox]').forEach(c => c.checked = false);
-
-  // Populate model select
-  const sel = document.getElementById('diagModelo');
-  sel.innerHTML = '<option value="">Seleccionar...</option>';
-  if(typeof MODELOS !== 'undefined'){
-    MODELOS.forEach(m => {
-      sel.innerHTML += '<option value="'+m+'">'+m+'</option>';
-    });
-  }
-
-  ['diagEstPantalla','diagEstTrasera','diagEstMarco','diagClienteRol'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.selectedIndex = 0;
-  });
-  document.querySelectorAll('#diagChecklist input[type=radio]').forEach(r => r.checked = false);
-  const ta = document.getElementById('diag3uToolsInput'); if(ta) ta.value = '';
-  window._diag3uToolsPastedBlob = null;
-  const pv = document.getElementById('diagPastedImgPreview'); if(pv) pv.style.display = 'none';
-  const res = document.getElementById('diagResultado'); if(res) res.innerHTML = '';
-  ['diagCliNombre','diagCliApellido','diagCliDni'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  diagCargarClientesSelect('');
-}
-
-// --- Cliente del diagnóstico (tomado del módulo Clientes) ---
-function diagCargarClientesSelect(selId){
-  const sel = document.getElementById('diagClienteSel');
-  if(!sel) return;
-  const esc = v => String(v||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const lista = (clientes||[]).slice().sort((a,b) => (a.apellido+' '+a.nombre).localeCompare(b.apellido+' '+b.nombre));
-  sel.innerHTML = '<option value="">Seleccionar cliente...</option>'
-    + '<option value="__nuevo__">➕ Agregar cliente nuevo...</option>'
-    + lista.map(c => '<option value="'+esc(c.id)+'">'+esc(c.apellido)+', '+esc(c.nombre)+(c.dni?' — DNI '+esc(c.dni):'')+'</option>').join('');
-  sel.value = selId || '';
-  diagClienteCambio();
-}
-function diagClienteCambio(){
-  const sel = document.getElementById('diagClienteSel');
-  const box = document.getElementById('diagClienteNuevoBox');
-  box.style.display = sel.value === '__nuevo__' ? 'block' : 'none';
-  const c = (clientes||[]).find(x => x.id === sel.value);
-  document.getElementById('diagCliente').value = c ? (c.nombre+' '+c.apellido).trim() : '';
-}
-function diagGuardarClienteNuevo(){
-  const nombre = document.getElementById('diagCliNombre').value.trim();
-  const apellido = document.getElementById('diagCliApellido').value.trim();
-  const dni = document.getElementById('diagCliDni').value.trim();
-  if(!nombre || !apellido || !dni){ showToast('Completá nombre, apellido y DNI del cliente'); return; }
-  const existe = clientes.find(c => c.dni && c.dni === dni);
-  if(existe){
-    showToast('Ya hay un cliente con ese DNI: ' + existe.nombre + ' ' + existe.apellido + '. Lo seleccioné.');
-    diagCargarClientesSelect(existe.id);
-    return;
-  }
-  const nuevo = { id: uid(), nombre, apellido, dni, telefono: '', direccion: '' };
-  clientes.push(nuevo);
-  syncGuardar('clientes', clientes);
-  registrarActividad('Nuevo cliente: ' + nombre + ' ' + apellido);
-  ['diagCliNombre','diagCliApellido','diagCliDni'].forEach(id => document.getElementById(id).value = '');
-  diagCargarClientesSelect(nuevo.id);
-  showToast('Cliente agregado ✅');
-}
-
-function iniciarNuevoDiagnostico(){
-  diagEditId = null;
-  document.getElementById('diagListCard').style.display = 'none';
-  document.getElementById('diagFormCard').style.display = 'block';
-  document.getElementById('diagDetalleCard').style.display = 'none';
-  document.getElementById('diagFormTitle').textContent = 'Nuevo Diagnóstico';
-
-  diagLimpiarFormulario();
-  diagGoStep(1);
-}
-
-function cancelarDiagnostico(){
-  diagLimpiarFormulario();
-  diagGoStep(1);
-  document.getElementById('diagListCard').style.display = 'block';
-  document.getElementById('diagFormCard').style.display = 'none';
-  document.getElementById('diagDetalleCard').style.display = 'none';
-  renderDiagnosticos();
-}
-
-function diagVolverListado(){
-  document.getElementById('diagListCard').style.display = 'block';
-  document.getElementById('diagFormCard').style.display = 'none';
-  document.getElementById('diagDetalleCard').style.display = 'none';
-  renderDiagnosticos();
-}
-
-// Datos de diagnósticos: guardado local + nube (tabla crm_datos, clave "diagnosticos")
-async function cargarDatos(){
-  let lista = ls_get('diagnosticos', []);
-  if(sbClient){
-    try{
-      const { data, error } = await sbClient.from('crm_datos').select('valor').eq('clave','diagnosticos').maybeSingle();
-      if(!error && data && Array.isArray(data.valor)){ lista = data.valor; ls_set('diagnosticos', lista); }
-    }catch(e){ console.warn('No se pudo leer diagnósticos de la nube', e); }
-  }
-  return { diagnosticos: Array.isArray(lista) ? lista : [] };
-}
-async function guardarClave(clave, valor){
-  ls_set(clave, valor);
-  if(!sbClient) return false;
-  const { error } = await sbClient.from('crm_datos').upsert({ clave, valor, actualizado_en: new Date().toISOString() });
-  if(error){ console.error('No se pudo sincronizar '+clave, error); return false; }
-  return true;
-}
-
-// Lee todo el formulario de diagnóstico y calcula el veredicto
-function diagLeerFormulario(){
-  const imei = document.getElementById('diagIMEI').value.trim();
-  const modelo = document.getElementById('diagModelo').value;
-  const icloud = document.getElementById('diagiCloud').value;
-  const cliSel = (clientes||[]).find(x => x.id === document.getElementById('diagClienteSel').value);
-  const checklist = getChecklistResults();
-  let fallos = 0, oks = 0;
-  const fallosList = [];
-  checklist.forEach(sec => sec.items.forEach(it => {
-    if(it.val === 'fallo'){ fallos++; fallosList.push(sec.cat+': '+it.item); }
-    if(it.val === 'ok') oks++;
-  }));
-
-  const bateria = Number(document.getElementById('diagBateria').value) || 0;
-  const grado = document.getElementById('diagGrado').value;
-  const enacom = document.getElementById('diagENACOM').value;
-  const operador = document.getElementById('diagOperador').value;
-
-  let veredicto = 'aprobado';
-  if(icloud === 'activado' || enacom === 'inhibido' || fallos >= 3 || bateria < 70 || grado === 'E'){
-    veredicto = 'rechazado';
-  } else if(fallos > 0 || (bateria > 0 && bateria < 80) || operador === 'bloqueado' || grado === 'D'){
-    veredicto = 'observaciones';
-  }
-
-  const piezas = [];
-  document.querySelectorAll('#diagPiezas input[type=checkbox]:checked').forEach(c => piezas.push(c.value));
-
-  return {
-    id: diagEditId || ('diag_' + Date.now()),
-    fecha: new Date().toLocaleDateString('es-AR'),
-    fechaISO: new Date().toISOString(),
-    imei, modelo,
-    serial: document.getElementById('diagSerial').value.trim(),
-    capacidad: document.getElementById('diagCapacidad').value,
-    color: document.getElementById('diagColor').value.trim(),
-    cliente: document.getElementById('diagCliente').value.trim(),
-    clienteId: (cliSel && cliSel.id) || '',
-    clienteDni: (cliSel && cliSel.dni) || '',
-    clienteRol: document.getElementById('diagClienteRol').value,
-    icloud, operador, enacom,
-    bateria, ciclos: Number(document.getElementById('diagCiclos').value) || 0,
-    bateriaOriginal: document.getElementById('diagBateriaOrig').value,
-    estetica: {
-      pantalla: document.getElementById('diagEstPantalla').value,
-      trasera: document.getElementById('diagEstTrasera').value,
-      marco: document.getElementById('diagEstMarco').value
-    },
-    grado, piezasReemplazadas: piezas,
-    obsEstetica: document.getElementById('diagObsEstetica').value.trim(),
-    checklist, obsHardware: document.getElementById('diagObsHardware').value.trim(),
-    veredicto, fallos, oks, fallosList,
-    notasFinal: document.getElementById('diagNotasFinal').value.trim(),
-    tecnico: document.getElementById('diagTecnico').value.trim(),
-    usuario: sesionActual ? sesionActual.usuario : ''
-  };
-}
-
-async function guardarDiagnostico(){
-  const diag = diagLeerFormulario();
-  if(!diag.imei || diag.imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
-  if(!diag.modelo){ showToast('Seleccioná un modelo','error'); return; }
-  if(diag.icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
-  for(let p = 1; p <= 3; p++){
-    const falta = diagValidarPaso(p);
-    if(falta){ showToast('⚠️ Falta completar el paso ' + p + ': ' + falta); diagGoStep(p); return; }
-  }
-  if(!diag.tecnico){ showToast('⚠️ Completá el técnico responsable'); return; }
-
-  try {
-    const data = await cargarDatos();
-    const idx = data.diagnosticos.findIndex(d => d.id === diag.id);
-    if(idx >= 0) data.diagnosticos[idx] = diag;
-    else data.diagnosticos.unshift(diag);
-    const enNube = await guardarClave('diagnosticos', data.diagnosticos);
-    diagEditId = diag.id; // si vuelve a guardar, actualiza el mismo en vez de duplicar
-    showToast(enNube ? 'Diagnóstico guardado correctamente ✅' : '⚠️ Diagnóstico guardado solo en este dispositivo (sin conexión a la nube)');
-    registrarActividad('Diagnóstico: ' + diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
-    document.getElementById('diagBtnPDF').style.display = 'inline-flex';
-  } catch(e){
-    showToast('Error al guardar: ' + e.message, 'error');
-  }
-}
-
-async function renderDiagnosticos(){
-  const data = await cargarDatos();
-  const list = data.diagnosticos || [];
-  const buscar = (document.getElementById('diagBuscar')?.value || '').toLowerCase();
-  const filtered = buscar ? list.filter(d =>
-    (d.imei||'').toLowerCase().includes(buscar) ||
-    (d.serial||'').toLowerCase().includes(buscar) ||
-    (d.modelo||'').toLowerCase().includes(buscar) ||
-    (d.cliente||'').toLowerCase().includes(buscar)
-  ) : list;
-
-  const el = document.getElementById('diagListado');
-  const empty = document.getElementById('diagEmpty');
-  if(!filtered.length){
-    el.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-
-  el.innerHTML = `<div style="overflow-x:auto;"><table class="tabla"><thead><tr>
-    <th>Fecha</th><th>Modelo</th><th>IMEI</th><th>Cliente</th><th>Batería</th><th>Grado</th><th>Veredicto</th><th>Acciones</th>
-  </tr></thead><tbody>
-  ${filtered.map(d => {
-    const vColor = d.veredicto==='aprobado'?'var(--green)':d.veredicto==='observaciones'?'var(--amber)':'#e74c3c';
-    const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'CON OBSERVACIONES':'RECHAZADO';
-    const vIcon = d.veredicto==='aprobado'?'✅':d.veredicto==='observaciones'?'⚠️':'🚫';
-    return `<tr>
-      <td data-label="Fecha">${d.fecha}</td>
-      <td data-label="Modelo">${d.modelo}</td>
-      <td data-label="IMEI" style="font-family:monospace;font-size:12px;">${d.imei}</td>
-      <td data-label="Cliente">${d.cliente||'—'}</td>
-      <td data-label="Batería"><span style="color:${d.bateria<80?'#e74c3c':d.bateria<90?'var(--amber)':'var(--green)'};">${d.bateria||'?'}%</span></td>
-      <td data-label="Grado"><span class="badge" style="background:rgba(255,255,255,0.08);">${d.grado||'—'}</span></td>
-      <td data-label="Veredicto"><span style="color:${vColor};font-weight:600;">${vIcon} ${vText}</span></td>
-      <td data-label="Acciones"><div class="actions">
-        <button class="btn ghost small" onclick="verDiagnostico('${d.id}')">👁 Ver</button>
-        <button class="btn ghost small" onclick="diagGenerarPDFById('${d.id}')">📄 PDF</button>
-        <button class="btn danger small" onclick="eliminarDiagnostico('${d.id}')">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('')}
-  </tbody></table></div>`;
-}
-
-async function verDiagnostico(id){
-  const data = await cargarDatos();
-  const d = (data.diagnosticos||[]).find(x => x.id === id);
-  if(!d){ showToast('Diagnóstico no encontrado','error'); return; }
-  window._diagDetalleId = id;
-
-  document.getElementById('diagListCard').style.display = 'none';
-  document.getElementById('diagFormCard').style.display = 'none';
-  document.getElementById('diagDetalleCard').style.display = 'block';
-
-  const vColor = d.veredicto==='aprobado'?'var(--green)':d.veredicto==='observaciones'?'var(--amber)':'#e74c3c';
-  const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'CON OBSERVACIONES':'RECHAZADO';
-  const vIcon = d.veredicto==='aprobado'?'✅':d.veredicto==='observaciones'?'⚠️':'🚫';
-
-  document.getElementById('diagDetalleTitulo').textContent = d.modelo + ' — ' + d.fecha;
-
-  const el = document.getElementById('diagDetalleContenido');
-  el.innerHTML = `
-    <div style="text-align:center;padding:16px;margin-bottom:16px;border-radius:12px;background:rgba(255,255,255,0.03);">
-      <div style="font-size:36px;">${vIcon}</div>
-      <h3 style="color:${vColor};">${vText}</h3>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
-      <div><strong>IMEI:</strong> <span style="font-family:monospace;">${d.imei}</span></div>
-      <div><strong>Serial:</strong> ${d.serial||'—'}</div>
-      <div><strong>Modelo:</strong> ${d.modelo}</div>
-      <div><strong>Capacidad:</strong> ${d.capacidad||'—'}</div>
-      <div><strong>Color:</strong> ${d.color||'—'}</div>
-      <div><strong>Cliente:</strong> ${d.cliente||'—'}</div>
-      <div><strong>iCloud:</strong> ${d.icloud==='desactivado'?'✅ Desactivado':'🚫 Activado'}</div>
-      <div><strong>Operador:</strong> ${d.operador==='liberado'?'✅ Liberado':'⚠️ Bloqueado'}</div>
-      <div><strong>ENACOM:</strong> ${d.enacom==='habilitado'?'✅ Habilitado':d.enacom==='inhibido'?'🚫 Inhibido':'No verificado'}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;">
-      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:${d.bateria<80?'#e74c3c':d.bateria<90?'var(--amber)':'var(--green)'};">${d.bateria||'?'}%</div>
-        <div style="font-size:11px;color:var(--txt3);">Batería (${d.ciclos||'?'} ciclos)</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);text-align:center;">
-        <div style="font-size:20px;font-weight:700;">${d.grado||'?'}</div>
-        <div style="font-size:11px;color:var(--txt3);">Grado Estético</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(0,200,100,0.08);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:var(--green);">${d.oks||0}</div>
-        <div style="font-size:11px;color:var(--txt3);">OK</div>
-      </div>
-      <div style="padding:10px;border-radius:8px;background:rgba(231,76,60,0.08);text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:#e74c3c;">${d.fallos||0}</div>
-        <div style="font-size:11px;color:var(--txt3);">Fallos</div>
-      </div>
-    </div>
-    ${d.checklist ? '<h4 style="margin-bottom:8px;">Checklist de Hardware</h4>' + d.checklist.map(sec => `
-      <div style="margin-bottom:8px;">
-        <strong style="color:#00b4ff;">${sec.cat}</strong>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px;margin-top:4px;">
-          ${sec.items.map(it => {
-            const ic = it.val==='ok'?'✅':it.val==='fallo'?'❌':it.val==='na'?'➖':'⬜';
-            const cl = it.val==='fallo'?'color:#e74c3c;':'';
-            return '<div style="font-size:12px;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,0.03);'+cl+'">'+ic+' '+it.item+'</div>';
-          }).join('')}
-        </div>
-      </div>
-    `).join('') : ''}
-    ${d.fallosList && d.fallosList.length ? '<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(231,76,60,0.06);"><h4 style="color:#e74c3c;">Fallos detectados:</h4>'+d.fallosList.map(f=>'<div style="font-size:12px;color:var(--txt2);">❌ '+f+'</div>').join('')+'</div>' : ''}
-    ${d.piezasReemplazadas && d.piezasReemplazadas.length ? '<div style="margin-top:8px;"><strong>Piezas reemplazadas:</strong> '+d.piezasReemplazadas.join(', ')+'</div>' : ''}
-    ${d.obsEstetica ? '<div style="margin-top:8px;"><strong>Obs. estéticas:</strong> '+d.obsEstetica+'</div>' : ''}
-    ${d.obsHardware ? '<div style="margin-top:8px;"><strong>Obs. hardware:</strong> '+d.obsHardware+'</div>' : ''}
-    ${d.notasFinal ? '<div style="margin-top:8px;"><strong>Notas finales:</strong> '+d.notasFinal+'</div>' : ''}
-    ${d.tecnico ? '<div style="margin-top:8px;"><strong>Técnico:</strong> '+d.tecnico+'</div>' : ''}
-    <div style="margin-top:8px;font-size:11px;color:var(--txt3);">Registrado por: ${d.usuario||'—'} | ${d.fecha}</div>
-  `;
-}
-
-async function eliminarDiagnostico(id){
-  if(!confirm('¿Eliminar este diagnóstico?')) return;
-  const data = await cargarDatos();
-  data.diagnosticos = (data.diagnosticos||[]).filter(d => d.id !== id);
-  await guardarClave('diagnosticos', data.diagnosticos);
-  showToast('Diagnóstico eliminado');
-  renderDiagnosticos();
-}
-
-function diagGenerarPDF(){
-  diagGenerarPDFData(diagLeerFormulario());
-}
-
-async function diagGenerarPDFById(id){
-  const data = await cargarDatos();
-  const d = (data.diagnosticos||[]).find(x => x.id === id);
-  if(!d){ showToast('No encontrado','error'); return; }
-  diagGenerarPDFData(d);
-}
-
-function diagGenerarPDFDetalle(){
-  if(window._diagDetalleId) diagGenerarPDFById(window._diagDetalleId);
-}
-
-function diagGenerarPDFData(d){
-  const e = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'ACEPTADO CON OBSERVACIONES':'RECHAZADO';
-  const vCol = d.veredicto==='aprobado'?'#1a8f3c':d.veredicto==='observaciones'?'#c77700':'#c0392b';
-  const checklist = d.checklist || [];
-  const est = d.estetica || {};
-
-  let checklistHTML = '';
-  checklist.forEach(sec => {
-    checklistHTML += '<tr><td colspan="2" class="cat">'+e(sec.cat)+'</td></tr>';
-    sec.items.forEach(it => {
-      const ic = it.val==='ok'?'✔ OK':it.val==='fallo'?'✘ FALLO':it.val==='na'?'N/A':'Sin revisar';
-      checklistHTML += '<tr><td>'+e(it.item)+'</td><td style="text-align:center;width:110px;'+(it.val==='fallo'?'color:#c0392b;font-weight:700;':it.val==='ok'?'color:#1a8f3c;':'color:#888;')+'">'+ic+'</td></tr>';
-    });
-  });
-  const icloudTxt = d.icloud==='desactivado'?'✔ Desactivado':d.icloud==='activado'?'✘ ACTIVADO':'No verificado';
-  const operTxt = d.operador==='liberado'?'✔ Liberado':d.operador==='bloqueado'?'⚠ Bloqueado a operador':'No verificado';
-  const enacomTxt = d.enacom==='habilitado'?'✔ Habilitado':d.enacom==='inhibido'?'✘ Inhibido':'No verificado';
-  const batOrig = d.bateriaOriginal ? e(d.bateriaOriginal) : '—';
-  const piezas = (d.piezasReemplazadas && d.piezasReemplazadas.length) ? d.piezasReemplazadas.map(e).join(', ') : 'Ninguna declarada';
-  const nro = d.id ? String(d.id).replace('diag_','') : '';
-  // Partes: el cliente es comprador o vendedor; la otra parte es el negocio
-  const cli = { nombre: d.cliente || '', dni: d.clienteDni || '' };
-  const negocio = { nombre: 'Aruba Apple' + (d.tecnico ? ' — ' + d.tecnico : ''), dni: '' };
-  const vend = d.clienteRol === 'vendedor' ? cli : negocio;
-  const comp = d.clienteRol === 'vendedor' ? negocio : cli;
-
-  const win = window.open('','_blank');
-  if(!win){ showToast('El navegador bloqueó la ventana del reporte. Permití las ventanas emergentes para este sitio.','error'); return; }
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte diagnóstico ${e(d.modelo)} - ${e(d.imei)}</title>
-    <style>
-    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;font-size:12.5px;line-height:1.35;}
-    h1{font-size:20px;text-align:center;margin:0 0 2px;} h3{font-size:14px;margin:16px 0 4px;border-bottom:2px solid #222;padding-bottom:3px;}
-    table{width:100%;border-collapse:collapse;margin:6px 0;} td,th{padding:4px 8px;border:1px solid #bbb;text-align:left;vertical-align:top;}
-    td.l{font-weight:600;background:#f4f4f4;width:20%;} td.cat{background:#e6e6e6;font-weight:700;}
-    .verdict{text-align:center;padding:12px;margin:14px 0;border:2px solid ${vCol};border-radius:8px;color:${vCol};font-size:18px;font-weight:800;page-break-inside:avoid;}
-    .firmas{display:flex;justify-content:space-between;gap:40px;margin-top:20px;page-break-inside:avoid;}
-    .firma{flex:1;} .firma .linea{border-top:1px solid #222;margin-top:70px;padding-top:4px;text-align:center;font-weight:700;}
-    .firma .dato{margin-top:14px;border-bottom:1px dotted #666;padding-bottom:2px;color:#444;}
-    .decl{margin-top:16px;padding:8px 10px;border:1px solid #bbb;border-radius:6px;font-size:11.5px;page-break-inside:avoid;}
-    .btnp{display:block;margin:0 auto 16px;padding:10px 18px;font-size:14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
-    tr{page-break-inside:avoid;}
-    @media print{body{padding:0;}.no-print{display:none;}}
-    </style>
-  </head><body>
-    <button class="btnp no-print" onclick="window.print()">🖨 Imprimir / Guardar como PDF</button>
-    <h1>Reporte de Checkeo y Diagnóstico de iPhone</h1>
-    <p style="text-align:center;color:#555;margin:2px 0 0;">Aruba Apple${nro?' · Reporte N° '+e(nro):''} · Fecha: ${e(d.fecha)} · Técnico: ${e(d.tecnico)||'—'}</p>
-
-    <h3>Partes</h3>
-    <table>
-      <tr><td class="l">Vendedor</td><td>${e(vend.nombre)||'—'}</td><td class="l">DNI</td><td>${e(vend.dni)||'—'}</td></tr>
-      <tr><td class="l">Comprador</td><td>${e(comp.nombre)||'—'}</td><td class="l">DNI</td><td>${e(comp.dni)||'—'}</td></tr>
-    </table>
-
-    <h3>1. Datos del equipo y verificación legal</h3>
-    <table>
-      <tr><td class="l">Modelo</td><td>${e(d.modelo)}</td><td class="l">Capacidad</td><td>${e(d.capacidad)||'—'}</td></tr>
-      <tr><td class="l">IMEI</td><td style="font-family:monospace;">${e(d.imei)}</td><td class="l">Nro. de serie</td><td style="font-family:monospace;">${e(d.serial)||'—'}</td></tr>
-      <tr><td class="l">Color</td><td colspan="3">${e(d.color)||'—'}</td></tr>
-      <tr><td class="l">iCloud / Buscar</td><td>${icloudTxt}</td><td class="l">Operador</td><td>${operTxt}</td></tr>
-      <tr><td class="l">IMEI (ENACOM)</td><td colspan="3">${enacomTxt}</td></tr>
-    </table>
-
-    <h3>2. Batería y estado estético</h3>
-    <table>
-      <tr><td class="l">Salud de batería</td><td>${d.bateria? e(d.bateria)+'%':'—'}</td><td class="l">Ciclos de carga</td><td>${d.ciclos? e(d.ciclos):'—'}</td></tr>
-      <tr><td class="l">Batería original</td><td>${batOrig}</td><td class="l">Grado estético</td><td>${e(d.grado)||'—'}</td></tr>
-      <tr><td class="l">Pantalla</td><td>${e(est.pantalla)||'—'}</td><td class="l">Parte trasera</td><td>${e(est.trasera)||'—'}</td></tr>
-      <tr><td class="l">Marco</td><td>${e(est.marco)||'—'}</td><td class="l">Piezas reemplazadas</td><td>${piezas}</td></tr>
-      ${d.obsEstetica?'<tr><td class="l">Obs. estéticas</td><td colspan="3">'+e(d.obsEstetica)+'</td></tr>':''}
-    </table>
-
-    <h3>3. Checklist de hardware${(d.oks!=null)?' — '+e(d.oks)+' OK / '+e(d.fallos||0)+' con fallo':''}</h3>
-    <table>${checklistHTML||'<tr><td>Sin checklist registrado</td></tr>'}</table>
-    ${d.obsHardware?'<p><strong>Observaciones de hardware:</strong> '+e(d.obsHardware)+'</p>':''}
-
-    <h3>4. Resultado</h3>
-    <div class="verdict">${vText}</div>
-    ${d.fallosList && d.fallosList.length ? '<p><strong>Fallos detectados:</strong> '+d.fallosList.map(e).join(' · ')+'</p>' : ''}
-    ${d.notasFinal?'<p><strong>Notas finales / observaciones:</strong> '+e(d.notasFinal)+'</p>':''}
-
-    <div class="decl">Las partes firmantes declaran haber revisado el equipo identificado en este reporte y dejan constancia de que su estado, al día de la fecha, es el que aquí se detalla.</div>
-
-    <div class="firmas">
-      <div class="firma"><div class="linea">Firma del Vendedor</div><div class="dato">Aclaración: ${e(vend.nombre)}</div><div class="dato">DNI: ${e(vend.dni)}</div></div>
-      <div class="firma"><div class="linea">Firma del Comprador</div><div class="dato">Aclaración: ${e(comp.nombre)}</div><div class="dato">DNI: ${e(comp.dni)}</div></div>
-    </div>
-    <p style="text-align:center;margin-top:20px;font-size:10px;color:#888;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
-  </body></html>`);
-  win.document.close();
-  setTimeout(() => { try{ win.focus(); win.print(); }catch(err){} }, 500);
-}
-
-// End Diagnostico Module
-
 </script>
 </body>
 </html>
