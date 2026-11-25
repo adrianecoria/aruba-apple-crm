@@ -983,7 +983,11 @@ body.rol-usuario .solo-admin{display:none !important;}
         </div>
         <div class="field" style="min-width:260px;">
           <label>Medio de pago</label>
-          <select id="vMedioPago1"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vMedioPago1" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+            <select id="vMoneda1" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('v',1)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
+          </div>
+          <div id="vMoneda1Info" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           <div style="margin-top:6px;">
             <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
               <input type="checkbox" id="vPagoDividido" onchange="togglePagoDividido('v')"> Dividir en 2 medios de pago
@@ -991,10 +995,13 @@ body.rol-usuario .solo-admin{display:none !important;}
           </div>
           <div id="vPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
-              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 1 (USD)</label><input id="vMonto1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Venta()"></div>
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 1</label><input id="vMonto1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Venta()"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 1</label><select id="vMonedaDiv1" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
               <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
-              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 2 (USD)</label><input id="vMonto2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 2</label><input id="vMonto2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 2</label><select id="vMonedaDiv2" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('v')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
             </div>
+            <div id="vMonedaDivInfo" style="display:none;margin-top:6px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           </div>
         </div>
         <div class="field"><label>Fecha</label><input id="vFecha" type="date"></div>
@@ -1175,7 +1182,11 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Cuota deseada (USD)</label><input id="vcCuotaValor" type="text" readonly style="opacity:0.7;" placeholder="Automático"></div>
         <div class="field" style="min-width:260px;">
           <label>Medio de pago (anticipo)</label>
-          <select id="vcMedioPago1"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vcMedioPago1" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+            <select id="vcMoneda1" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('vc',1)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
+          </div>
+          <div id="vcMoneda1Info" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           <div style="margin-top:6px;">
             <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
               <input type="checkbox" id="vcPagoDividido" onchange="togglePagoDividido('vc')"> Dividir en 2 medios de pago
@@ -1183,10 +1194,13 @@ body.rol-usuario .solo-admin{display:none !important;}
           </div>
           <div id="vcPagoDivididoWrap" style="display:none; margin-top:8px; padding:10px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
-              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 1 (USD)</label><input id="vcMontoPago1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Cuotas()"></div>
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 1</label><input id="vcMontoPago1" type="number" placeholder="0" style="width:100%;" oninput="calcMonto2Cuotas()"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 1</label><select id="vcMonedaDiv1" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('vc')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
               <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Medio 2</label><select id="vcMedioPago2" style="width:100%;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="cuenta_corriente">📒 Cta. Corriente</option></select></div>
-              <div style="flex:1;min-width:120px;"><label style="font-size:11px;">Monto 2 (USD)</label><input id="vcMontoPago2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+              <div style="flex:1;min-width:100px;"><label style="font-size:11px;">Monto 2</label><input id="vcMontoPago2" type="number" placeholder="0" readonly style="opacity:0.7;width:100%;"></div>
+              <div style="flex:1;min-width:70px;"><label style="font-size:11px;">Moneda 2</label><select id="vcMonedaDiv2" style="width:100%;font-size:11px;" onchange="actualizarMonedaDivInfo('vc')"><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
             </div>
+            <div id="vcMonedaDivInfo" style="display:none;margin-top:6px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
           </div>
         </div>
         <div class="field"><label>Fecha de pago</label><input id="vcFechaPago" type="date"></div>
@@ -1354,7 +1368,13 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
         <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
-        <div class="field"><label>Medio de pago</label><select id="csMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select></div>
+        <div class="field"><label>Medio de pago</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="csMedioPago" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+            <select id="csMoneda" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('cs',0)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
+          </div>
+          <div id="csMonedaInfo" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
+        </div>
         <div class="field"><label>Fecha</label><input id="csFecha" type="date"></div>
         <div class="field"><button class="btn" onclick="agregarConsignacion()" style="width:100%;">Agregar</button></div>
       </div>
@@ -1424,7 +1444,13 @@ body.rol-usuario .solo-admin{display:none !important;}
         <!-- Fila 4: Descripción (2 cols) + Costo -->
         <div class="field" style="grid-column:span 2;"><label>Descripción del problema</label><input id="rDescripcion" placeholder="Ej: No enciende, pantalla rota..."></div>
         <div class="field"><label>Costo del servicio (USD)</label><input id="rCosto" type="number" placeholder="0"></div>
-        <div class="field"><label>Medio de pago</label><select id="rMedioPago"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select></div>
+        <div class="field"><label>Medio de pago</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="rMedioPago" style="flex:1;"><option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option></select>
+            <select id="rMoneda" style="width:80px;font-size:12px;" onchange="actualizarMonedaLabel('r',0)"><option value="USD">🇺🇸 USD</option><option value="ARS">🇦🇷 ARS</option></select>
+          </div>
+          <div id="rMonedaInfo" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
+        </div>
         <!-- Fila 5: Fecha + Agregar (alineados a la derecha) -->
         <div style="grid-column:1/-1;display:flex;justify-content:flex-end;align-items:flex-end;gap:12px;margin-top:4px;">
           <div class="field" style="margin:0;min-width:160px;"><label>Fecha</label><input id="rFecha" type="date"></div>
@@ -1663,23 +1689,51 @@ function hoyISO(){ return new Date().toISOString().slice(0,10); }
 const MEDIOS_PAGO_LABELS = { efectivo:'💵 Efectivo', transferencia:'🏦 Transferencia', cripto:'₿ Cripto', debito:'💳 Débito', credito:'💳 Crédito', cuenta_corriente:'📒 Cta. Corriente' };
 const OPCIONES_MEDIO_PAGO = '<option value="">Sin especificar</option><option value="efectivo">💵 Efectivo</option><option value="transferencia">🏦 Transferencia</option><option value="cripto">₿ Cripto</option><option value="debito">💳 Tarjeta de Débito</option><option value="credito">💳 Tarjeta de Crédito</option><option value="cuenta_corriente">📒 Cuenta Corriente</option>';
 
+function fmtMoneda(monto, moneda, cotiz){
+  if(!moneda || moneda==='USD') return `U$D ${fmt(monto)}`;
+  const ars = typeof monto==='number'? monto : 0;
+  const usdEquiv = cotiz? (ars/cotiz) : 0;
+  return `$${fmt(ars)} ARS` + (cotiz? ` (≈U$D ${fmt(usdEquiv)})` : '');
+}
+
 function formatMedioPagoTexto(mp){
-  // mp puede ser string simple o objeto {medio1,monto1,medio2,monto2} para pago dividido
   if(!mp) return 'Contado';
   if(typeof mp === 'string') return MEDIOS_PAGO_LABELS[mp]||mp;
-  if(mp.medio1 && mp.medio2){
-    return `${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} ($${fmt(mp.monto1)}) + ${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} ($${fmt(mp.monto2)})`;
+  // Pago simple con moneda
+  if(mp.medio1 && !mp.medio2){
+    let txt = MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1;
+    if(mp.moneda1 && mp.moneda1==='ARS' && mp.monto1){
+      txt += ` — ${fmtMoneda(mp.monto1,'ARS',mp.cotizacion)}`;
+    }
+    return txt;
   }
-  if(mp.medio1) return MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1;
+  // Pago dividido
+  if(mp.medio1 && mp.medio2){
+    const mon1 = mp.moneda1||'USD', mon2 = mp.moneda2||'USD';
+    const t1 = `${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} (${fmtMoneda(mp.monto1,mon1,mp.cotizacion)})`;
+    const t2 = `${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} (${fmtMoneda(mp.monto2,mon2,mp.cotizacion)})`;
+    return `${t1} + ${t2}`;
+  }
   return 'Contado';
 }
 
 function badgeMedioPago(mp){
   if(!mp) return '<span style="color:var(--txt3);font-size:11px;">—</span>';
   if(typeof mp === 'string') return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp]||mp}</span>`;
+  // Pago simple con moneda
+  if(mp.medio1 && !mp.medio2){
+    let lbl = MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1;
+    if(mp.moneda1 && mp.moneda1==='ARS' && mp.monto1){
+      lbl += `<br><span style="font-size:9px;">${fmtMoneda(mp.monto1,'ARS',mp.cotizacion)}</span>`;
+    }
+    return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;display:inline-block;line-height:1.4;">${lbl}</span>`;
+  }
   // Pago dividido
   if(mp.medio1 && mp.medio2){
-    return `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;display:inline-block;line-height:1.4;">${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} $${fmt(mp.monto1)}<br>${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} $${fmt(mp.monto2)}</span>`;
+    const mon1 = mp.moneda1||'USD', mon2 = mp.moneda2||'USD';
+    const l1 = `${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1} ${fmtMoneda(mp.monto1,mon1,mp.cotizacion)}`;
+    const l2 = `${MEDIOS_PAGO_LABELS[mp.medio2]||mp.medio2} ${fmtMoneda(mp.monto2,mon2,mp.cotizacion)}`;
+    return `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;display:inline-block;line-height:1.4;">${l1}<br>${l2}</span>`;
   }
   if(mp.medio1) return `<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.12);color:#60a5fa;white-space:nowrap;">${MEDIOS_PAGO_LABELS[mp.medio1]||mp.medio1}</span>`;
   return '<span style="color:var(--txt3);font-size:11px;">—</span>';
@@ -1706,25 +1760,127 @@ function calcMonto2Cuotas(){
   document.getElementById('vcMontoPago2').value = Math.max(0, total - m1);
 }
 function obtenerMedioPago(prefix){
-  // Devuelve string simple u objeto {medio1,monto1,medio2,monto2}
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
   const chk = document.getElementById(prefix+'PagoDividido');
   if(chk && chk.checked){
     const medio1 = document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value;
     const medio2 = document.getElementById(prefix==='v'?'vMedioPago2':'vcMedioPago2').value;
     const monto1 = Number(document.getElementById(prefix==='v'?'vMonto1':'vcMontoPago1').value)||0;
     const monto2 = Number(document.getElementById(prefix==='v'?'vMonto2':'vcMontoPago2').value)||0;
+    const moneda1 = (document.getElementById(prefix+'MonedaDiv1')||{}).value||'USD';
+    const moneda2 = (document.getElementById(prefix+'MonedaDiv2')||{}).value||'USD';
     if(medio1 && medio2 && monto1>0 && monto2>0){
-      return { medio1, monto1, medio2, monto2 };
+      const obj = { medio1, monto1, medio2, monto2, moneda1, moneda2 };
+      if(moneda1==='ARS'||moneda2==='ARS') obj.cotizacion = dolar;
+      return obj;
     }
-    // Si falta algún dato, devolver el primer medio como simple
     return medio1 || '';
   }
-  return document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value;
+  // Pago simple
+  const medio = document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value;
+  const monedaSel = document.getElementById(prefix==='v'?'vMoneda1':'vcMoneda1');
+  const moneda = monedaSel? monedaSel.value : 'USD';
+  if(moneda==='ARS' && medio){
+    // Para pago simple en ARS necesitamos el monto — se toma del precio total
+    let montoARS = 0;
+    if(prefix==='v') montoARS = Number(document.getElementById('vPrecio').value)||0;
+    else if(prefix==='vc') montoARS = Number(document.getElementById('vcAnticipo').value)||0;
+    // Convertir precio USD a ARS
+    montoARS = montoARS * dolar;
+    return { medio1: medio, monto1: montoARS, moneda1: 'ARS', cotizacion: dolar };
+  }
+  return medio || '';
 }
+
+// Para consignación, reparación, entrega — pago simple con moneda
+function obtenerMedioPagoSimple(selectId, monedaId, montoUSD){
+  const medio = document.getElementById(selectId).value;
+  if(!medio) return '';
+  const monedaSel = document.getElementById(monedaId);
+  const moneda = monedaSel? monedaSel.value : 'USD';
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  if(moneda==='ARS'){
+    return { medio1: medio, monto1: (montoUSD||0)*dolar, moneda1: 'ARS', cotizacion: dolar };
+  }
+  return medio;
+}
+
 function resetMedioPago(prefix){
   document.getElementById(prefix==='v'?'vMedioPago1':'vcMedioPago1').value='';
+  const mon1 = document.getElementById(prefix==='v'?'vMoneda1':'vcMoneda1');
+  if(mon1) mon1.value='USD';
+  const info1 = document.getElementById(prefix==='v'?'vMoneda1Info':'vcMoneda1Info');
+  if(info1) info1.style.display='none';
   const chk = document.getElementById(prefix+'PagoDividido');
   if(chk){ chk.checked=false; togglePagoDividido(prefix); }
+  // reset div currency selects
+  const md1 = document.getElementById(prefix+'MonedaDiv1'); if(md1) md1.value='USD';
+  const md2 = document.getElementById(prefix+'MonedaDiv2'); if(md2) md2.value='USD';
+  const dInfo = document.getElementById(prefix+'MonedaDivInfo'); if(dInfo) dInfo.style.display='none';
+}
+
+/* ---------- FUNCIONES DE MONEDA (USD/ARS) ---------- */
+function actualizarMonedaLabel(prefix, idx){
+  // Para pago simple: prefix = 'v','vc','cs','r','entrega'; idx=1 o 0
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  let monedaSel, infoDiv, montoBase = 0;
+  if(prefix==='v' && idx===1){
+    monedaSel = document.getElementById('vMoneda1');
+    infoDiv = document.getElementById('vMoneda1Info');
+    montoBase = Number(document.getElementById('vPrecio').value)||0;
+  } else if(prefix==='vc' && idx===1){
+    monedaSel = document.getElementById('vcMoneda1');
+    infoDiv = document.getElementById('vcMoneda1Info');
+    montoBase = Number(document.getElementById('vcAnticipo').value)||0;
+  } else if(prefix==='cs'){
+    monedaSel = document.getElementById('csMoneda');
+    infoDiv = document.getElementById('csMonedaInfo');
+    montoBase = Number(document.getElementById('csDeuda').value)||0;
+  } else if(prefix==='r'){
+    monedaSel = document.getElementById('rMoneda');
+    infoDiv = document.getElementById('rMonedaInfo');
+    montoBase = Number(document.getElementById('rCosto').value)||0;
+  } else if(prefix==='entrega'){
+    monedaSel = document.getElementById('entregaMoneda');
+    infoDiv = document.getElementById('entregaMonedaInfo');
+  }
+  if(!monedaSel || !infoDiv) return;
+  if(monedaSel.value==='ARS' && montoBase>0){
+    const ars = montoBase * dolar;
+    infoDiv.innerHTML = `💱 Equivale a <b>$${fmt(ars)} ARS</b> (cotiz: $${fmt(dolar)})`;
+    infoDiv.style.display='block';
+  } else if(monedaSel.value==='ARS'){
+    infoDiv.innerHTML = `💱 Se abonará en pesos argentinos (cotiz: $${fmt(dolar)})`;
+    infoDiv.style.display='block';
+  } else {
+    infoDiv.style.display='none';
+  }
+}
+
+function actualizarMonedaDivInfo(prefix){
+  const dolar = parseFloat(ls_get('dolar_blue',1555))||1555;
+  const md1 = document.getElementById(prefix+'MonedaDiv1');
+  const md2 = document.getElementById(prefix+'MonedaDiv2');
+  const info = document.getElementById(prefix+'MonedaDivInfo');
+  if(!md1||!md2||!info) return;
+  const m1 = md1.value, m2 = md2.value;
+  if(m1==='ARS'||m2==='ARS'){
+    let txt = '💱 Cotización dólar blue: $'+fmt(dolar);
+    if(m1==='ARS'){
+      const monto1El = document.getElementById(prefix==='v'?'vMonto1':'vcMontoPago1');
+      const val1 = Number(monto1El?.value)||0;
+      if(val1>0) txt += ` · Pago 1: $${fmt(val1*dolar)} ARS`;
+    }
+    if(m2==='ARS'){
+      const monto2El = document.getElementById(prefix==='v'?'vMonto2':'vcMontoPago2');
+      const val2 = Number(monto2El?.value)||0;
+      if(val2>0) txt += ` · Pago 2: $${fmt(val2*dolar)} ARS`;
+    }
+    info.innerHTML = txt;
+    info.style.display='block';
+  } else {
+    info.style.display='none';
+  }
 }
 
 /* ---------- SESIÓN / LOGIN ---------- */
@@ -3798,15 +3954,22 @@ function marcarReservaEntregada(nro){
       </div>
       <div style="margin-bottom:18px;">
         <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Medio de pago</label>
-        <select id="entregaMedioPago" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--card-b);background:var(--bg2);color:var(--txt);font-size:14px;">
-          <option value="">— Seleccionar —</option>
-          <option value="efectivo">💵 Efectivo</option>
-          <option value="transferencia">🏦 Transferencia</option>
-          <option value="cripto">₿ Cripto</option>
-          <option value="debito">💳 Débito</option>
-          <option value="credito">💳 Crédito</option>
-          <option value="cuenta_corriente">📒 Cuenta Corriente</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="entregaMedioPago" style="flex:1;padding:11px 14px;border-radius:12px;border:1px solid var(--card-b);background:var(--bg2);color:var(--txt);font-size:14px;">
+            <option value="">— Seleccionar —</option>
+            <option value="efectivo">💵 Efectivo</option>
+            <option value="transferencia">🏦 Transferencia</option>
+            <option value="cripto">₿ Cripto</option>
+            <option value="debito">💳 Débito</option>
+            <option value="credito">💳 Crédito</option>
+            <option value="cuenta_corriente">📒 Cuenta Corriente</option>
+          </select>
+          <select id="entregaMoneda" style="width:80px;font-size:12px;padding:11px 6px;border-radius:12px;border:1px solid var(--card-b);background:var(--bg2);color:var(--txt);" onchange="actualizarMonedaLabel('entrega',0)">
+            <option value="USD">🇺🇸 USD</option>
+            <option value="ARS">🇦🇷 ARS</option>
+          </select>
+        </div>
+        <div id="entregaMonedaInfo" style="display:none;margin-top:4px;font-size:11px;color:var(--amber);background:rgba(245,158,11,0.08);padding:4px 8px;border-radius:6px;"></div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:14px;">
         <button class="btn ghost small" style="flex:1;padding:12px;font-size:13px;" onclick="reciboReservaMensaje('${nro}')">🧾 Recibo</button>
@@ -3824,9 +3987,10 @@ function cerrarModalEntrega(){
   if(o) o.remove();
 }
 async function confirmarEntregaReserva(nro){
-  const sel = document.getElementById('entregaMedioPago');
-  const medioPago = sel ? sel.value : '';
-  if(!medioPago){ alert('Seleccioná un medio de pago antes de confirmar.'); return; }
+  const medioPagoSel = document.getElementById('entregaMedioPago');
+  if(!medioPagoSel || !medioPagoSel.value){ alert('Seleccioná un medio de pago antes de confirmar.'); return; }
+  const r2 = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
+  const medioPago = obtenerMedioPagoSimple('entregaMedioPago','entregaMoneda', Number(r2?.precio)||0);
   cerrarModalEntrega();
   const equipoId = equipoIdDeReserva(nro);
   const cambios = { estado:'vendido', entregado_en:new Date().toISOString(), medioPago };
@@ -3840,8 +4004,7 @@ async function confirmarEntregaReserva(nro){
 function reciboReservaMensaje(nro){
   const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
   if(!r) return;
-  const sel = document.getElementById('entregaMedioPago');
-  const medioPago = sel ? sel.value : '';
+  const medioPago = obtenerMedioPagoSimple('entregaMedioPago','entregaMoneda', Number(r.precio)||0);
   const cliNombre = r.cliente || 'Consumidor final';
   const agenteTxt = r.agente || '-';
   const total = Number(r.precio)||0;
@@ -3895,8 +4058,7 @@ function reciboReservaMensaje(nro){
 function facturaReservaMensaje(nro){
   const r = (ventasMensajes||[]).find(x=>x.nro_venta===nro);
   if(!r) return;
-  const sel = document.getElementById('entregaMedioPago');
-  const medioPago = sel ? sel.value : '';
+  const medioPago = obtenerMedioPagoSimple('entregaMedioPago','entregaMoneda', Number(r.precio)||0);
   const cliNombre = r.cliente || 'Consumidor Final';
   const agenteTxt = r.agente || '-';
   const total = Number(r.precio)||0;
@@ -6425,13 +6587,15 @@ function agregarConsignacion(){
     id: uid(), equipoId: equipoNuevo.id, modelo, proveedorId,
     clienteId: document.getElementById('csCliente').value,
     color, bateria, imei, deuda,
-    medioPago: document.getElementById('csMedioPago').value || undefined,
+    medioPago: obtenerMedioPagoSimple('csMedioPago','csMoneda',deuda),
     fecha: document.getElementById('csFecha').value || hoyISO(),
     estado: 'activa'
   });
   syncGuardar('consignaciones', consignaciones);
   ['csColor','csBateria','csImei','csDeuda'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('csMedioPago').value='';
+  document.getElementById('csMoneda').value='USD';
+  document.getElementById('csMonedaInfo').style.display='none';
   renderConsignaciones();
 }
 
@@ -6540,7 +6704,7 @@ function agregarReparacion(){
     icloud: document.getElementById('rIcloud').value.trim(),
     icloudPass: document.getElementById('rIcloudPass').value.trim(),
     descripcion, costo: document.getElementById('rCosto').value,
-    medioPago: document.getElementById('rMedioPago').value || undefined,
+    medioPago: obtenerMedioPagoSimple('rMedioPago','rMoneda',Number(document.getElementById('rCosto').value)||0),
     fecha: document.getElementById('rFecha').value || hoyISO(),
     estado: 'a reparar'
   });
@@ -6548,6 +6712,8 @@ function agregarReparacion(){
   const repAgregada = reparaciones[reparaciones.length - 1];
   ['rModelo','rColor','rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('rMedioPago').value='';
+  document.getElementById('rMoneda').value='USD';
+  document.getElementById('rMonedaInfo').style.display='none';
   document.getElementById('rImeiMsg').style.display='none';
   renderReparaciones();
   mostrarModalComprobante(repAgregada);
