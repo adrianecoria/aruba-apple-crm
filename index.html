@@ -809,7 +809,8 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div class="field"><label>Modelo</label><select id="eModelo"></select></div>
           <div class="field"><label>Proveedor</label><select id="eProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
           <div class="field"><label>Cliente (compra a un cliente)</label><select id="eCliente"><option value="">Sin especificar</option></select></div>
-          <div class="field"><label>Color</label><input id="eColor" placeholder="Ej: Titanio negro"></div>
+          <div class="field"><label>Color</label><select id="eColor" onchange="manejarColorOtro('eColor')"><option value="">Seleccionar color...</option></select></div>
+          <div class="field"><label>Almacenamiento</label><select id="eAlmacenamiento"><option value="">Seleccionar...</option></select></div>
           <div class="field"><label>Batería %</label><input id="eBateria" type="number" min="0" max="100" placeholder="100"></div>
           <div class="field"><label>IMEI</label><input id="eImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
           <div class="field" style="min-width:150px;">
@@ -995,8 +996,8 @@ body.rol-usuario .solo-admin{display:none !important;}
           <div style="font-size:13px;font-weight:600;color:var(--blue,#3b82f6);margin-bottom:10px;">📱 Equipo a tomar</div>
           <div class="form-row">
             <div class="field"><label>Modelo</label><select id="vtModelo"></select></div>
-            <div class="field"><label>Color</label><input id="vtColor" placeholder="Ej: Negro"></div>
-            <div class="field"><label>Almacenamiento</label><select id="vtAlmacenamiento"><option value="64GB">64GB</option><option value="128GB">128GB</option><option value="256GB">256GB</option><option value="512GB">512GB</option><option value="1TB">1TB</option></select></div>
+            <div class="field"><label>Color</label><select id="vtColor" onchange="manejarColorOtro('vtColor')"><option value="">Seleccionar color...</option></select></div>
+            <div class="field"><label>Almacenamiento</label><select id="vtAlmacenamiento"><option value="">Seleccionar...</option></select></div>
             <div class="field"><label>Batería %</label><input id="vtBateria" type="number" min="0" max="100" placeholder="100"></div>
             <div class="field"><label>IMEI</label><input id="vtImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
             <div class="field"><label>Precio de toma (USD)</label><input id="vtPrecioToma" type="number" placeholder="0" oninput="calcularPrecioSugeridoToma()"></div>
@@ -1410,7 +1411,8 @@ body.rol-usuario .solo-admin{display:none !important;}
         <div class="field"><label>Modelo</label><select id="csModelo"></select></div>
         <div class="field"><label>Proveedor (quién me lo consignó)</label><select id="csProveedor" class="proveedor-select"><option value="">Sin especificar</option></select></div>
         <div class="field"><label>Cliente (a quién se lo consigné)</label><select id="csCliente"><option value="">Sin especificar</option></select></div>
-        <div class="field"><label>Color</label><input id="csColor" placeholder="Ej: Blanco"></div>
+        <div class="field"><label>Color</label><select id="csColor" onchange="manejarColorOtro('csColor')"><option value="">Seleccionar color...</option></select></div>
+        <div class="field"><label>Almacenamiento</label><select id="csAlmacenamiento"><option value="">Seleccionar...</option></select></div>
         <div class="field"><label>Batería %</label><input id="csBateria" type="number" min="0" max="100" placeholder="100"></div>
         <div class="field"><label>IMEI</label><input id="csImei" placeholder="15 dígitos" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'').slice(0,15)"></div>
         <div class="field"><label>Deuda por este equipo (USD)</label><input id="csDeuda" type="number" placeholder="0"></div>
@@ -1430,7 +1432,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos consignados</h2>
       <div class="search"><input id="buscarConsignacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderConsignaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>IMEI</th><th>Deuda</th><th>Medio de pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Modelo</th><th>Proveedor</th><th>Cliente</th><th>Color</th><th>Almac.</th><th>IMEI</th><th>Deuda</th><th>Medio de pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="consignacionesBody"></tbody>
       </table></div>
       <div class="empty" id="consignacionesEmpty" style="display:none;">Todavía no cargaste consignaciones.</div>
@@ -1480,7 +1482,8 @@ body.rol-usuario .solo-admin{display:none !important;}
 <optgroup label="── iPad ──"><option>iPad 11ra gen (A16, 2025)</option><option>iPad 10ma gen (A14, 2022)</option><option>iPad 9na gen (A13, 2021)</option></optgroup>
 <optgroup label="── iPad Mini ──"><option>iPad Mini 7ma gen (A17 Pro, 2024)</option><option>iPad Mini 6ta gen (A15, 2021)</option></optgroup>
 </select></div>
-        <div class="field"><label>Color</label><input id="rColor" placeholder="Ej: Negro"></div>
+        <div class="field"><label>Color</label><select id="rColor" onchange="manejarColorOtro('rColor')"><option value="">Seleccionar color...</option></select></div>
+        <div class="field"><label>Almacenamiento</label><select id="rAlmacenamiento"><option value="">Seleccionar...</option></select></div>
         <!-- Fila 2: IMEI (ancho completo) -->
         <div class="field" style="grid-column:1/-1;"><label>IMEI</label><div style="display:flex;gap:8px;align-items:center;"><input id="rImei" placeholder="Ingresá los 15 dígitos del IMEI" maxlength="15" oninput="validarImeiInput(this)" style="flex:1;font-size:16px;letter-spacing:2px;font-family:monospace;"><button class="btn" onclick="consultarImei()" title="Consultar IMEI en Reincubate" style="padding:10px 16px;font-size:13px;white-space:nowrap;">🔍 Consultar</button></div><div id="rImeiMsg" style="font-size:12px;margin-top:4px;color:#e74c3c;display:none;"></div></div>
         <!-- Fila 3: Código, iCloud, Contraseña -->
@@ -1509,7 +1512,7 @@ body.rol-usuario .solo-admin{display:none !important;}
       <h2>Equipos en reparación</h2>
       <div class="search"><input id="buscarReparacion" placeholder="Buscar por modelo, IMEI o cliente..." oninput="renderReparaciones()"></div>
       <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>IMEI</th><th>Código</th><th>iCloud</th><th>Problema</th><th>Costo</th><th>Medio de pago</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Modelo</th><th>Color</th><th>Almac.</th><th>IMEI</th><th>Código</th><th>iCloud</th><th>Problema</th><th>Costo</th><th>Medio de pago</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="reparacionesBody"></tbody>
       </table></div>
       <div class="empty" id="reparacionesEmpty" style="display:none;">Todavía no cargaste reparaciones.</div>
@@ -1726,6 +1729,99 @@ const MODELOS = [
   "iPhone 17","iPhone 17 Air","iPhone 17 Pro","iPhone 17 Pro Max",
   "iPhone 18","iPhone 18 Pro","iPhone 18 Pro Max","iPhone 18 Fold"
 ];
+
+const COLORES_IPHONE = {
+  "iPhone 11":["Negro","Blanco","Verde","Amarillo","Púrpura","(PRODUCT)RED"],
+  "iPhone 12":["Negro","Blanco","Azul","Verde","(PRODUCT)RED","Púrpura"],
+  "iPhone 12 Pro":["Grafito","Plata","Oro","Azul pacífico"],
+  "iPhone 12 Pro Max":["Grafito","Plata","Oro","Azul pacífico"],
+  "iPhone 13":["Medianoche","Luz estelar","Azul","Rosa","(PRODUCT)RED","Verde"],
+  "iPhone 13 mini":["Medianoche","Luz estelar","Azul","Rosa","(PRODUCT)RED","Verde"],
+  "iPhone 13 Pro":["Grafito","Plata","Oro","Azul sierra","Verde alpino"],
+  "iPhone 13 Pro Max":["Grafito","Plata","Oro","Azul sierra","Verde alpino"],
+  "iPhone 14":["Medianoche","Luz estelar","Azul","Púrpura","(PRODUCT)RED","Amarillo"],
+  "iPhone 14 Plus":["Medianoche","Luz estelar","Azul","Púrpura","(PRODUCT)RED","Amarillo"],
+  "iPhone 14 Pro":["Negro espacial","Plata","Oro","Púrpura oscuro"],
+  "iPhone 14 Pro Max":["Negro espacial","Plata","Oro","Púrpura oscuro"],
+  "iPhone 15":["Negro","Azul","Verde","Amarillo","Rosa"],
+  "iPhone 15 Plus":["Negro","Azul","Verde","Amarillo","Rosa"],
+  "iPhone 15 Pro":["Titanio negro","Titanio blanco","Titanio natural","Titanio azul"],
+  "iPhone 15 Pro Max":["Titanio negro","Titanio blanco","Titanio natural","Titanio azul"],
+  "iPhone 16":["Negro","Blanco","Rosa","Verde azulado","Ultramarino"],
+  "iPhone 16 Plus":["Negro","Blanco","Rosa","Verde azulado","Ultramarino"],
+  "iPhone 16 Pro":["Titanio negro","Titanio blanco","Titanio natural","Titanio desierto"],
+  "iPhone 16 Pro Max":["Titanio negro","Titanio blanco","Titanio natural","Titanio desierto"],
+  "iPhone 17":["Negro","Blanco","Lavanda","Azul neblina","Salvia"],
+  "iPhone 17 Air":["Blanco nube","Dorado claro","Azul cielo","Negro espacial"],
+  "iPhone 17 Pro":["Naranja cósmico","Azul oscuro","Plata"],
+  "iPhone 17 Pro Max":["Naranja cósmico","Azul oscuro","Plata"],
+  "iPhone 18":["Negro","Blanco","Azul","Verde","Rosa"],
+  "iPhone 18 Pro":["Negro","Plata","Glaciar","Borgoña"],
+  "iPhone 18 Pro Max":["Negro","Plata","Glaciar","Borgoña"],
+  "iPhone 18 Fold":["Negro","Plata","Oro"]
+};
+
+const ALMACENAMIENTO_IPHONE = {
+  "iPhone 11":["64GB","128GB","256GB"],
+  "iPhone 12":["64GB","128GB","256GB"],
+  "iPhone 12 Pro":["128GB","256GB","512GB"],
+  "iPhone 12 Pro Max":["128GB","256GB","512GB"],
+  "iPhone 13":["128GB","256GB","512GB"],
+  "iPhone 13 mini":["128GB","256GB","512GB"],
+  "iPhone 13 Pro":["128GB","256GB","512GB","1TB"],
+  "iPhone 13 Pro Max":["128GB","256GB","512GB","1TB"],
+  "iPhone 14":["128GB","256GB","512GB"],
+  "iPhone 14 Plus":["128GB","256GB","512GB"],
+  "iPhone 14 Pro":["128GB","256GB","512GB","1TB"],
+  "iPhone 14 Pro Max":["128GB","256GB","512GB","1TB"],
+  "iPhone 15":["128GB","256GB","512GB"],
+  "iPhone 15 Plus":["128GB","256GB","512GB"],
+  "iPhone 15 Pro":["128GB","256GB","512GB","1TB"],
+  "iPhone 15 Pro Max":["256GB","512GB","1TB"],
+  "iPhone 16":["128GB","256GB","512GB"],
+  "iPhone 16 Plus":["128GB","256GB","512GB"],
+  "iPhone 16 Pro":["128GB","256GB","512GB","1TB"],
+  "iPhone 16 Pro Max":["256GB","512GB","1TB"],
+  "iPhone 17":["256GB","512GB"],
+  "iPhone 17 Air":["256GB","512GB","1TB"],
+  "iPhone 17 Pro":["256GB","512GB","1TB"],
+  "iPhone 17 Pro Max":["256GB","512GB","1TB"],
+  "iPhone 18":["256GB","512GB"],
+  "iPhone 18 Pro":["256GB","512GB","1TB","2TB"],
+  "iPhone 18 Pro Max":["256GB","512GB","1TB","2TB"],
+  "iPhone 18 Fold":["256GB","512GB","1TB"]
+};
+
+function poblarColores(modeloSelId, colorSelId){
+  const modelo = document.getElementById(modeloSelId).value;
+  const sel = document.getElementById(colorSelId);
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar color...</option>';
+  const colores = COLORES_IPHONE[modelo] || [];
+  colores.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  const oOtro = document.createElement('option'); oOtro.value='__otro__'; oOtro.textContent='⌨ Otro (escribir)'; sel.appendChild(oOtro);
+  if(colores.includes(actual)) sel.value = actual;
+}
+function poblarAlmacenamiento(modeloSelId, almSelId){
+  const modelo = document.getElementById(modeloSelId).value;
+  const sel = document.getElementById(almSelId);
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar...</option>';
+  const alms = ALMACENAMIENTO_IPHONE[modelo] || ["64GB","128GB","256GB","512GB","1TB"];
+  alms.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+  if(alms.includes(actual)) sel.value = actual;
+}
+function manejarColorOtro(selId){
+  const sel = document.getElementById(selId);
+  if(sel.value==='__otro__'){
+    const custom = prompt('Escribí el color:');
+    if(custom && custom.trim()){
+      const o = document.createElement('option'); o.value=custom.trim(); o.textContent=custom.trim();
+      sel.insertBefore(o, sel.querySelector('option[value="__otro__"]'));
+      sel.value = custom.trim();
+    } else { sel.value = ''; }
+  }
+}
 
 function ls_get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
 function ls_set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -2543,6 +2639,9 @@ function switchTab(t){
 function initModelos(){
   const sel = document.getElementById('eModelo');
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+  sel.addEventListener('change', ()=>{ poblarColores('eModelo','eColor'); poblarAlmacenamiento('eModelo','eAlmacenamiento'); });
+  poblarColores('eModelo','eColor');
+  poblarAlmacenamiento('eModelo','eAlmacenamiento');
   const cant = document.getElementById('aCantidad');
   for(let i=1;i<=50;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; cant.appendChild(o); }
   const cantGps = document.getElementById('gCantidad');
@@ -2570,7 +2669,8 @@ function agregarEquipo(){
     modelo: document.getElementById('eModelo').value,
     proveedorId: document.getElementById('eProveedor').value,
     clienteVendedorId: document.getElementById('eCliente').value,
-    color: document.getElementById('eColor').value.trim(),
+    color: document.getElementById('eColor').value,
+    almacenamiento: document.getElementById('eAlmacenamiento').value,
     bateria: document.getElementById('eBateria').value,
     compra: document.getElementById('eCompra').value,
     sugerido: document.getElementById('eSugerido').value,
@@ -2581,7 +2681,9 @@ function agregarEquipo(){
     equipos.push(Object.assign({}, base, { id: uid(), imei: (cantidad === 1 ? imei : '') }));
   }
   syncGuardar('stock_equipos', equipos);
-  ['eColor','eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  ['eBateria','eImei','eCompra','eSugerido','eVenta'].forEach(id=>document.getElementById(id).value='');
+  poblarColores('eModelo','eColor');
+  poblarAlmacenamiento('eModelo','eAlmacenamiento');
   document.getElementById('eCliente').value = '';
   document.getElementById('eCantidad').value = '1';
   if(cantidad > 1) alert(`✅ Se cargaron ${cantidad} equipos. Recordá completar el IMEI de cada uno.`);
@@ -2617,9 +2719,13 @@ function editarEquipoCard(id){
   if(!e) return;
   const card = document.querySelector(`.stock-equipo-card[data-id="${id}"]`);
   if(!card) return;
+  const edColores = COLORES_IPHONE[e.modelo]||[];
+  const edAlms = ALMACENAMIENTO_IPHONE[e.modelo]||["64GB","128GB","256GB","512GB","1TB"];
+  const colorEnLista = edColores.includes(e.color);
   card.innerHTML = `<div class="sec-edit-form">
-    <div><label>Modelo</label><select class="ed-modelo">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
-    <div><label>Color</label><input class="ed-color" value="${e.color||''}"></div>
+    <div><label>Modelo</label><select class="ed-modelo" onchange="actualizarEdSelectsModelo(this)">${MODELOS.map(m=>`<option ${m===e.modelo?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div><label>Color</label><select class="ed-color" onchange="manejarColorOtroEd(this)"><option value="">Seleccionar color...</option>${edColores.map(c=>`<option ${c===e.color?'selected':''}>${c}</option>`).join('')}${!colorEnLista&&e.color?`<option selected>${e.color}</option>`:''}${'<option value="__otro__">⌨ Otro (escribir)</option>'}</select></div>
+    <div><label>Almacenamiento</label><select class="ed-almacenamiento"><option value="">Seleccionar...</option>${edAlms.map(a=>`<option ${a===e.almacenamiento?'selected':''}>${a}</option>`).join('')}</select></div>
     <div><label>Batería %</label><input class="ed-bateria" type="number" min="0" max="100" value="${e.bateria||''}"></div>
     <div><label>IMEI</label><input class="ed-imei" value="${e.imei||''}" maxlength="15" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,15)"></div>
     <div><label>Proveedor</label><select class="ed-proveedor"><option value="">Sin especificar</option>${proveedores.map(p=>`<option value="${p.id}" ${p.id===e.proveedorId?'selected':''}>${p.nombre}</option>`).join('')}</select></div>
@@ -2647,7 +2753,8 @@ function guardarEdicionCard(id){
   e.modelo = card.querySelector('.ed-modelo').value;
   e.proveedorId = card.querySelector('.ed-proveedor').value;
   e.clienteVendedorId = card.querySelector('.ed-cliente').value;
-  e.color = card.querySelector('.ed-color').value.trim();
+  e.color = card.querySelector('.ed-color').value;
+  e.almacenamiento = card.querySelector('.ed-almacenamiento').value;
   e.bateria = card.querySelector('.ed-bateria').value;
   const imeiVal = card.querySelector('.ed-imei').value.trim();
   if(imeiVal.length !== 15 || !/^\d{15}$/.test(imeiVal)){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
@@ -2665,7 +2772,7 @@ function imprimirEtiqueta(id){
     <div class="etiqueta-equipo">
       <div class="et-brand">Aruba Apple</div>
       <div class="et-modelo">${e.modelo}</div>
-      <div class="et-color">${e.color || 'Sin color'}</div>
+      <div class="et-color">${e.color || 'Sin color'}${e.almacenamiento?' — '+e.almacenamiento:''}</div>
       <div class="et-bateria">Batería: ${e.bateria || '-'}%</div>
       <div class="et-barcode"><svg id="barcode-print"></svg></div>
       <div class="et-imei">IMEI: ${e.imei}</div>
@@ -2692,11 +2799,37 @@ function colorDot(color){
     'verde':'#394c38','green':'#394c38','morado':'#635672','purple':'#635672',
     'gris':'#86868b','space gray':'#535150','plata':'#e3e4e5','silver':'#e3e4e5',
     'amarillo':'#f9e200','yellow':'#f9e200','coral':'#ff6f61','lavanda':'#d6cfe9',
+    'ultramarino':'#2938dc','verde azulado':'#3f7f7f','luz estelar':'#f9f3ee','medianoche':'#1d1d1f',
+    'grafito':'#535150','azul pacífico':'#2d4e6f','azul sierra':'#8da4b8','verde alpino':'#3c5a3a',
+    'negro espacial':'#2d2d2d','púrpura oscuro':'#4a3454','púrpura':'#635672',
+    'naranja cósmico':'#c76b2e','azul oscuro':'#1e2d4d','salvia':'#8a9a7b','azul neblina':'#a0b8c8',
+    'blanco nube':'#f0ece4','dorado claro':'#dbc9a0','azul cielo':'#9ec0d8',
+    'glaciar':'#c8d8e4','borgoña':'#722f37','oro':'#f4e8ce',
   };
   for(const [k,v] of Object.entries(map)){ if(c.includes(k)) return v; }
   return '#888';
 }
 function batColor(b){ const n=Number(b)||0; if(n>=80) return 'var(--green)'; if(n>=50) return 'var(--amber)'; return 'var(--red)'; }
+function actualizarEdSelectsModelo(sel){
+  const card = sel.closest('.sec-edit-form');
+  const modelo = sel.value;
+  const colSel = card.querySelector('.ed-color');
+  const almSel = card.querySelector('.ed-almacenamiento');
+  const colores = COLORES_IPHONE[modelo]||[];
+  colSel.innerHTML = '<option value="">Seleccionar color...</option>'+colores.map(c=>`<option>${c}</option>`).join('')+'<option value="__otro__">⌨ Otro (escribir)</option>';
+  const alms = ALMACENAMIENTO_IPHONE[modelo]||["64GB","128GB","256GB","512GB","1TB"];
+  almSel.innerHTML = '<option value="">Seleccionar...</option>'+alms.map(a=>`<option>${a}</option>`).join('');
+}
+function manejarColorOtroEd(sel){
+  if(sel.value==='__otro__'){
+    const custom = prompt('Escribí el color:');
+    if(custom && custom.trim()){
+      const o = document.createElement('option'); o.value=custom.trim(); o.textContent=custom.trim();
+      sel.insertBefore(o, sel.querySelector('option[value="__otro__"]'));
+      sel.value = custom.trim();
+    } else { sel.value = ''; }
+  }
+}
 function toggleCarpetaVendidos(){
   const btn = document.getElementById('btnCarpetaVendidos');
   const panel = document.getElementById('carpetaVendidosPanel');
@@ -2723,7 +2856,7 @@ function renderCarpetaVendidos(){
     row.innerHTML = `
       <span class="vi-icon">📱</span>
       <div class="vi-info">
-        <div class="vi-modelo">${e.modelo} ${e.color?'— '+e.color:''}</div>
+        <div class="vi-modelo">${e.modelo}${e.almacenamiento?' '+e.almacenamiento:''}${e.color?' — '+e.color:''}</div>
         <div class="vi-detail">
           <span>IMEI: ${e.imei||'-'}</span>
           <span>📅 ${fechaVenta}</span>
@@ -2744,7 +2877,7 @@ function renderCarpetaVendidos(){
 }
 function renderEquipos(){
   const q = document.getElementById('buscarEquipo').value.toLowerCase();
-  const filtrados = equipos.filter(e => e.estado!=='vendido' && (!q || (e.modelo+e.color+e.imei).toLowerCase().includes(q)));
+  const filtrados = equipos.filter(e => e.estado!=='vendido' && (!q || (e.modelo+(e.almacenamiento||'')+e.color+e.imei).toLowerCase().includes(q)));
   // Metrics
   const todos = equipos;
   const disp = todos.filter(e=>e.estado==='disponible');
@@ -2833,6 +2966,7 @@ function renderEquipoCard(e){
     </div>
     <div class="sec-info">
       <span class="sec-info-label">Color</span><span class="sec-info-val">${e.color||'-'}</span>
+      <span class="sec-info-label">Almac.</span><span class="sec-info-val">${e.almacenamiento||'-'}</span>
       <span class="sec-info-label">IMEI</span><span class="sec-info-val sec-imei">${e.imei||'-'}</span>
       <span class="sec-info-label">Proveedor</span><span class="sec-info-val">${nombreProveedor(e.proveedorId)}</span>
       ${e.clienteVendedorId?`<span class="sec-info-label">Cliente</span><span class="sec-info-val">${nombreClienteStock(e.clienteVendedorId)}</span>`:''}
@@ -2889,7 +3023,7 @@ function generarComprobanteCompraUsado(id){
 
       <div style="margin-top:14px;">
         <div style="font-weight:700; margin-bottom:4px;">DETALLE DEL BIEN ADQUIRIDO</div>
-        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____'} &nbsp;&nbsp; Color: ${e.color||'____'}</div>
+        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____'} &nbsp;&nbsp; Color: ${e.color||'____'} &nbsp;&nbsp; Almacenamiento: ${e.almacenamiento||'____'}</div>
         <div>N° de IMEI: ${e.imei||'________________'}${e.bateria?' &nbsp;&nbsp; Batería / condición: '+e.bateria+'%':''}</div>
       </div>
 
@@ -2966,7 +3100,7 @@ function generarPlanillaPermuta(id){
 
       <div style="margin-top:12px; border:1px solid #000; padding:10px 14px;">
         <div style="font-weight:700; margin-bottom:6px;">EQUIPO ENTREGADO EN PARTE DE PAGO</div>
-        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____________'} &nbsp;&nbsp; Color: ${e.color||'________'}</div>
+        <div>Marca: Apple &nbsp;&nbsp; Modelo: ${e.modelo||'____________'} &nbsp;&nbsp; Color: ${e.color||'________'} &nbsp;&nbsp; Almacenamiento: ${e.almacenamiento||'________'}</div>
         <div>N° de IMEI: ${e.imei||'________________'}${e.bateria?' &nbsp;&nbsp; Batería: '+e.bateria+'%':''}</div>
       </div>
 
@@ -3421,7 +3555,7 @@ function cargarSelectEquiposVenta(){
   equipos.filter(e=>e.estado!=='vendido').forEach(e=>{
     const o = document.createElement('option');
     o.value = e.id;
-    o.textContent = `${e.modelo} · ${e.color||'sin color'} · IMEI ${e.imei} (${e.estado})`;
+    o.textContent = `${e.modelo}${e.almacenamiento?' '+e.almacenamiento:''} · ${e.color||'sin color'} · IMEI ${e.imei} (${e.estado})`;
     sel.appendChild(o);
   });
   sel.onchange = ()=>{
@@ -3658,6 +3792,9 @@ function toggleTomarEquipo(){
     const sel = document.getElementById('vtModelo');
     const modelosSel = document.getElementById('eModelo');
     sel.innerHTML = modelosSel.innerHTML;
+    sel.onchange = function(){ poblarColores('vtModelo','vtColor'); poblarAlmacenamiento('vtModelo','vtAlmacenamiento'); };
+    poblarColores('vtModelo','vtColor');
+    poblarAlmacenamiento('vtModelo','vtAlmacenamiento');
   }
   calcularPrecioSugeridoToma();
 }
@@ -3760,7 +3897,7 @@ function _ejecutarVentaDirecta(tipo, comercioId, vendedorId, clienteId, cliente,
     renderEquipos();
     marcarConsignacionVendida(e.id);
     const tomaData = (document.getElementById('vTomarEquipo') && document.getElementById('vTomarEquipo').checked) ? { tomaModelo: document.getElementById('vtModelo').value + ' ' + (document.getElementById('vtAlmacenamiento').value||''), tomaColor: document.getElementById('vtColor').value.trim(), tomaImei: document.getElementById('vtImei').value.trim(), tomaPrecio: document.getElementById('vtPrecioToma').value } : null;
-    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined, equipoTomado: tomaData||undefined });
+    ventas.push({ id: uid(), tipo:'equipo', itemId: e.id, modelo: e.modelo, color: e.color, almacenamiento: e.almacenamiento, imei: e.imei, cliente, clienteId, comercioId, vendedorId, precioVenta: precio, precioCompra: e.compra, fecha, medioPago: medioPago||undefined, bonificados: bonificados.length ? bonificados : undefined, equipoTomado: tomaData||undefined });
     registrarActividad(`Venta: ${e.modelo} — $${fmt(precio)} a ${cliente}${medioPago?' ('+formatMedioPagoTexto(medioPago)+')':''}${comercioId?' — sucursal '+(comercios.find(c=>c.id===comercioId)?.nombre||'-'):''}${vendedorId?' — vendedor '+(usuarios.find(u=>u.id===vendedorId)?.nombre+' '+usuarios.find(u=>u.id===vendedorId)?.apellido):''}${bonificados.length?' + bonificación: '+bonificados.map(b=>b.modelo).join(', '):''}`);
   } else {
     const id = document.getElementById('vAccesorio').value;
@@ -3907,7 +4044,7 @@ function imprimirFactura(id){
             <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
           </tr>
           <tr>
-            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.color?' · '+v.color:''}${esEquipo&&v.imei?'<br>IMEI: '+v.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''}${esEquipo&&v.imei?'<br>IMEI: '+v.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
             <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(total)}</td>
           </tr>
           ${(v.bonificados && v.bonificados.length) ? v.bonificados.map(b => {
@@ -4009,7 +4146,7 @@ function facturaConIVA(id){
           <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
         </tr>
         <tr>
-          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.color?' · '+v.color:''}${esEquipo&&v.imei?' · IMEI '+v.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}</td>
+          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${v.modelo||'-'}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''}${esEquipo&&v.imei?' · IMEI '+v.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}</td>
           <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
@@ -4563,7 +4700,7 @@ function renderVentas(){
     const bonifs = ventas.filter(b=>b.esBonificacion && v.bonificados && v.bonificados.some(bo=>bo.id===b.id));
     const bonifTexto = (v.bonificados && v.bonificados.length) ? v.bonificados.map(b=>`🎁 ${b.modelo}`).join(', ') : '';
     return {
-      kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, imei:v.imei||'-',
+      kind:'manual', id:v.id, fecha:v.fecha, nro:'—', modelo:v.modelo, almacenamiento:v.almacenamiento||'', color:v.color||'', imei:v.imei||'-',
       cliente:v.cliente||'-', precio:v.precioVenta,
       ganancia:(Number(v.precioVenta)||0)-(Number(v.precioCompra)||0),
       medioPago:v.medioPago||'',
@@ -4626,7 +4763,7 @@ function renderVentas(){
       tr.innerHTML = `
         <td data-label="Fecha">${v.fecha}</td>
         <td data-label="Nro. de Venta">${v.nro}</td>
-        <td data-label="Modelo">${v.modelo}${v.bonifTexto?`<br><span style="font-size:11px;color:var(--amber);">${v.bonifTexto}</span>`:''}</td>
+        <td data-label="Modelo">${v.modelo}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''}${v.bonifTexto?`<br><span style="font-size:11px;color:var(--amber);">${v.bonifTexto}</span>`:''}</td>
         <td data-label="IMEI">${v.imei}</td>
         <td data-label="Cliente">${v.cliente}</td>
         <td data-label="Venta">$${fmt(v.precio)}</td>
@@ -4670,7 +4807,7 @@ function cargarSelectVentaCuotas(){
   equipos.filter(e=>e.estado!=='vendido').forEach(e=>{
     const o = document.createElement('option');
     o.value = e.id;
-    o.textContent = `${e.modelo} · ${e.color||'sin color'} · IMEI ${e.imei} (${e.estado})`;
+    o.textContent = `${e.modelo}${e.almacenamiento?' '+e.almacenamiento:''} · ${e.color||'sin color'} · IMEI ${e.imei} (${e.estado})`;
     sel.appendChild(o);
   });
   sel.onchange = ()=>{
@@ -5025,7 +5162,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
   // Sumar GPS al precio de cuotas para que se incluya en el cronograma y totales
   const totalGpsVenta = gpsVendidos.reduce((s,gv)=>s+(Number(gv.precioVenta)||0),0);
   precioCuotas = precioCuotas + totalGpsVenta;
-  let modelo = '', imei = '', color = '', itemId = '', precioCompra = 0, bateria = '';
+  let modelo = '', imei = '', color = '', almacenamiento = '', itemId = '', precioCompra = 0, bateria = '';
 
   if(tipo==='equipo'){
     const id = document.getElementById('vcEquipo').value;
@@ -5035,14 +5172,14 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
     syncGuardar('stock_equipos', equipos);
     renderEquipos();
     marcarConsignacionVendida(e.id);
-    modelo = e.modelo; imei = e.imei; color = e.color; itemId = e.id; precioCompra = Number(e.compra)||0; bateria = e.bateria||'';
+    modelo = e.modelo; imei = e.imei; color = e.color; almacenamiento = e.almacenamiento||''; itemId = e.id; precioCompra = Number(e.compra)||0; bateria = e.bateria||'';
   } else {
     const id = document.getElementById('vcAccesorio').value;
     const a = accesorios.find(x=>x.id===id);
     a.estado = 'vendido';
     syncGuardar('stock_accesorios', accesorios);
     renderAccesorios();
-    modelo = a.nombre; imei = ''; color = a.color; itemId = a.id; precioCompra = Number(a.compra)||0; bateria = '';
+    modelo = a.nombre; imei = ''; color = a.color; almacenamiento = ''; itemId = a.id; precioCompra = Number(a.compra)||0; bateria = '';
   }
 
   // Generar cronograma de cuotas
@@ -5063,6 +5200,7 @@ function _ejecutarVentaCuotas(tipo, comercioId, vendedorId, clienteId, cliente, 
     itemId,
     modelo,
     color,
+    almacenamiento,
     imei,
     bateria,
     cliente,
@@ -5350,6 +5488,7 @@ function imprimirComprobanteCuotaPagada(ventaId, nroCuota){
     <div class="col"><h3>Equipo</h3><table>
       <tr><td>Modelo:</td><td>${vc.modelo||'-'}</td></tr>
       <tr><td>Color:</td><td>${vc.color||'-'}</td></tr>
+      ${vc.almacenamiento ? `<tr><td>Almacenamiento:</td><td>${vc.almacenamiento}</td></tr>` : ''}
       ${vc.imei ? `<tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1px;font-size:11px;">${vc.imei}</td></tr>` : ''}
     </table></div>
   </div>
@@ -5564,7 +5703,7 @@ function renderVentasCuotas(){
       const bonifTextoCuotas = (vc.bonificados && vc.bonificados.length) ? vc.bonificados.map(b=>`🎁 ${b.modelo}`).join(', ') : '';
       tr.innerHTML = `
         <td data-label="Fecha">${vc.fecha}</td>
-        <td data-label="Modelo">${vc.modelo}${bonifTextoCuotas?`<br><span style="font-size:11px;color:var(--amber);">${bonifTextoCuotas}</span>`:''}</td>
+        <td data-label="Modelo">${vc.modelo}${vc.almacenamiento?' '+vc.almacenamiento:''}${vc.color?' · '+vc.color:''}${bonifTextoCuotas?`<br><span style="font-size:11px;color:var(--amber);">${bonifTextoCuotas}</span>`:''}</td>
         <td data-label="IMEI">${vc.imei||'-'}</td>
         <td data-label="Cliente">${vc.cliente||'-'}</td>
         <td data-label="Codeudor">${formatCodeudor(vc.codeudor)}</td>
@@ -5670,7 +5809,7 @@ function reciboCuotas(id){
             <th style="text-align:right; border-bottom:1px solid #000; padding:4px 6px;">Importe</th>
           </tr>
           <tr>
-            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?'<br>IMEI: '+vc.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.almacenamiento?' '+vc.almacenamiento:''}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?'<br>IMEI: '+vc.imei:''}${esEquipo&&bateria?'<br>Batería / condición: '+bateria+'%':''}</td>
             <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">U$S ${fmt(totalOperacion)}</td>
           </tr>
           ${(vc.bonificados && vc.bonificados.length) ? vc.bonificados.map(b => {
@@ -5789,7 +5928,7 @@ function facturaCuotasConIVA(id){
           <th style="text-align:right; border:1px solid #000; padding:6px;">Importe (neto)</th>
         </tr>
         <tr>
-          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?' · IMEI '+vc.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}<br><span style="font-size:11px; color:#555;">Financiado en ${cantCuotas} cuotas de U$S ${fmt(valorCuota)}${anticipoVc>0?' + anticipo U$S '+fmt(anticipoVc):''}</span></td>
+          <td style="border:1px solid #000; padding:6px;">${esEquipo?'Teléfono celular marca Apple':'Accesorio'} — ${vc.modelo||'-'}${vc.almacenamiento?' '+vc.almacenamiento:''}${vc.color?' · '+vc.color:''}${esEquipo&&vc.imei?' · IMEI '+vc.imei:''}${esEquipo&&bateria?' · Batería '+bateria+'%':''}<br><span style="font-size:11px; color:#555;">Financiado en ${cantCuotas} cuotas de U$S ${fmt(valorCuota)}${anticipoVc>0?' + anticipo U$S '+fmt(anticipoVc):''}</span></td>
           <td style="border:1px solid #000; padding:6px; text-align:center;">1</td>
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
           <td style="border:1px solid #000; padding:6px; text-align:right;">U$S ${fmt(neto)}</td>
@@ -5927,6 +6066,7 @@ function imprimirComprobanteCuotas(id){
     <div class="seccion" style="flex:1;margin-bottom:0;"><h3>Datos del Equipo</h3><table>
       <tr><td>Modelo:</td><td>${vc.modelo||'-'}</td></tr>
       <tr><td>Color:</td><td>${vc.color||'-'}</td></tr>
+      ${vc.almacenamiento ? `<tr><td>Almacenamiento:</td><td>${vc.almacenamiento}</td></tr>` : ''}
       ${vc.imei ? `<tr><td>IMEI:</td><td style="font-family:monospace;letter-spacing:1.5px;">${vc.imei}</td></tr>` : ''}
     </table></div>
   </div>
@@ -6357,7 +6497,7 @@ function verComprasCliente(id){
   const tr = document.createElement('tr');
   tr.setAttribute('data-compras', id);
   const contenido = compras.length
-    ? compras.map(v=>`fecha ${v.fecha} — modelo ${v.modelo}${v.color?' · '+v.color:''} — imei ${v.imei||'-'} — precio $${fmt(v.precioVenta)}`).join('<br>')
+    ? compras.map(v=>`fecha ${v.fecha} — modelo ${v.modelo}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''} — imei ${v.imei||'-'} — precio $${fmt(v.precioVenta)}`).join('<br>')
     : 'Sin compras registradas.';
   tr.innerHTML = `<td colspan="7" style="background:rgba(255,255,255,0.02); font-size:13px; color:var(--txt2);">${contenido}</td>`;
   fila.after(tr);
@@ -6690,7 +6830,7 @@ function reporteCaja(periodo){
 
   // Ventas del período (CRM + Mensajes)
   const ventasCRM = ventas.filter(v=>enRango(v.fecha)).map(v=>({
-    fecha:v.fecha, modelo:`${v.modelo||'-'}${v.color?' · '+v.color:''}`, imei:v.imei||'-',
+    fecha:v.fecha, modelo:`${v.modelo||'-'}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''}`, imei:v.imei||'-',
     cliente:v.cliente||'Consumidor final', monto:Number(v.precioVenta)||0, origen:'Venta'
   }));
   const ventasMsg = ventasMensajesContables().filter(v=>enRango(v.fecha)).map(v=>({
@@ -6869,7 +7009,7 @@ function verEquiposProveedor(id){
   const fila = document.querySelector(`tr[data-pid="${id}"]`);
   const tr = document.createElement('tr');
   tr.setAttribute('data-pequipos', id);
-  const lineasEquipos = items.map(e=>`${e.modelo}${e.color?' · '+e.color:''} — IMEI ${e.imei} — compra $${fmt(e.compra)} — ${e.estado}`);
+  const lineasEquipos = items.map(e=>`${e.modelo}${e.almacenamiento?' '+e.almacenamiento:''}${e.color?' · '+e.color:''} — IMEI ${e.imei} — compra $${fmt(e.compra)} — ${e.estado}`);
   const lineasAcc = accs.map(a=>`${a.nombre}${a.color?' · '+a.color:''} (accesorio) — compra $${fmt(a.compra)} — ${a.estado}`);
   const todas = [...lineasEquipos, ...lineasAcc];
   const contenido = todas.length ? todas.join('<br>') : 'Sin equipos ni accesorios cargados de este proveedor.';
@@ -6911,6 +7051,9 @@ let consignaciones = ls_get('consignaciones', []);
 function initConsignacionesSelects(){
   const selModelo = document.getElementById('csModelo');
   MODELOS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; selModelo.appendChild(o); });
+  selModelo.addEventListener('change', ()=>{ poblarColores('csModelo','csColor'); poblarAlmacenamiento('csModelo','csAlmacenamiento'); });
+  poblarColores('csModelo','csColor');
+  poblarAlmacenamiento('csModelo','csAlmacenamiento');
 }
 
 function cargarClienteSelectConsignacion(){
@@ -6954,13 +7097,14 @@ function agregarConsignacion(){
   if(equipos.some(e=>e.imei===imei)){ alert('Ya existe un equipo con ese IMEI en Stock.'); return; }
   const modelo = document.getElementById('csModelo').value;
   const proveedorId = document.getElementById('csProveedor').value;
-  const color = document.getElementById('csColor').value.trim();
+  const color = document.getElementById('csColor').value;
+  const almacenamiento = document.getElementById('csAlmacenamiento').value;
   const bateria = document.getElementById('csBateria').value;
   const deuda = document.getElementById('csDeuda').value;
   const sugerido = (Number(deuda)||0) + 50;
 
   const equipoNuevo = {
-    id: uid(), modelo, proveedorId, color, bateria, imei,
+    id: uid(), modelo, proveedorId, color, almacenamiento, bateria, imei,
     compra: deuda, sugerido: sugerido, venta: '', estado: 'disponible'
   };
   equipos.push(equipoNuevo);
@@ -6970,13 +7114,15 @@ function agregarConsignacion(){
   consignaciones.push({
     id: uid(), equipoId: equipoNuevo.id, modelo, proveedorId,
     clienteId: document.getElementById('csCliente').value,
-    color, bateria, imei, deuda,
+    color, almacenamiento, bateria, imei, deuda,
     medioPago: obtenerMedioPagoSimple('csMedioPago','csMoneda',deuda),
     fecha: document.getElementById('csFecha').value || hoyISO(),
     estado: 'activa'
   });
   syncGuardar('consignaciones', consignaciones);
-  ['csColor','csBateria','csImei','csDeuda'].forEach(id=>document.getElementById(id).value='');
+  ['csBateria','csImei','csDeuda'].forEach(id=>document.getElementById(id).value='');
+  poblarColores('csModelo','csColor');
+  poblarAlmacenamiento('csModelo','csAlmacenamiento');
   document.getElementById('csMedioPago').value='';
   document.getElementById('csMoneda').value='USD';
   document.getElementById('csMonedaInfo').style.display='none';
@@ -7024,6 +7170,7 @@ function renderConsignaciones(){
       <td data-label="Proveedor">${nombreProveedor(c.proveedorId)}</td>
       <td data-label="Cliente">${nombreCliente(c.clienteId)}</td>
       <td data-label="Color">${c.color||'-'}</td>
+      <td data-label="Almac.">${c.almacenamiento||'-'}</td>
       <td data-label="IMEI">${c.imei}</td>
       <td data-label="Deuda">$${fmt(c.deuda)}</td>
       <td data-label="Medio de pago">${badgeMedioPago(c.medioPago)}</td>
@@ -7073,6 +7220,10 @@ function consultarImei(){
   if(!imei || imei.length !== 15 || !/^\d{15}$/.test(imei)){ alert('El IMEI debe tener exactamente 15 dígitos para consultar.'); return; }
   window.open('https://reincubate.com/es/lookup/' + imei + '/', '_blank');
 }
+function initReparacionesSelects(){
+  const rMod = document.getElementById('rModelo');
+  rMod.addEventListener('change', ()=>{ poblarColores('rModelo','rColor'); poblarAlmacenamiento('rModelo','rAlmacenamiento'); });
+}
 
 function agregarReparacion(){
   const modelo = document.getElementById('rModelo').value.trim();
@@ -7082,7 +7233,8 @@ function agregarReparacion(){
   if(rImei && (rImei.length !== 15 || !/^\d{15}$/.test(rImei))){ alert('El IMEI debe tener exactamente 15 dígitos numéricos.'); return; }
   reparaciones.push({
     id: uid(), clienteId: document.getElementById('rCliente').value, modelo,
-    color: document.getElementById('rColor').value.trim(),
+    color: document.getElementById('rColor').value,
+    almacenamiento: document.getElementById('rAlmacenamiento').value,
     imei: rImei,
     codigo: document.getElementById('rCodigo').value.trim(),
     icloud: document.getElementById('rIcloud').value.trim(),
@@ -7094,7 +7246,10 @@ function agregarReparacion(){
   });
   syncGuardar('reparaciones', reparaciones);
   const repAgregada = reparaciones[reparaciones.length - 1];
-  ['rModelo','rColor','rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
+  ['rImei','rCodigo','rIcloud','rIcloudPass','rDescripcion','rCosto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rModelo').value='';
+  poblarColores('rModelo','rColor');
+  poblarAlmacenamiento('rModelo','rAlmacenamiento');
   document.getElementById('rMedioPago').value='';
   document.getElementById('rMoneda').value='USD';
   document.getElementById('rMonedaInfo').style.display='none';
@@ -7420,6 +7575,7 @@ function renderReparaciones(){
       <td data-label="Cliente">${nombreCliente(r.clienteId)}</td>
       <td data-label="Modelo">${r.modelo}</td>
       <td data-label="Color">${r.color||'-'}</td>
+      <td data-label="Almac.">${r.almacenamiento||'-'}</td>
       <td data-label="IMEI" style="font-size:12px;letter-spacing:0.5px;white-space:nowrap;">${r.imei||'-'}</td>
       <td data-label="Código">${r.codigo||'-'}</td>
       <td data-label="iCloud"><span style="font-size:11px;">${r.icloud ? r.icloud + (r.icloudPass ? '<br><span style="color:#888;">Pass: '+r.icloudPass+'</span>' : '') : '-'}</span></td>
@@ -7617,7 +7773,7 @@ async function renderMediaEquipo(equipoId){
 function copiarDescripcion(equipoId){
   const e = equipos.find(x=>x.id===equipoId);
   const precio = e.sugerido || e.venta || e.compra;
-  const texto = `📱 ${e.modelo}${e.color?' - '+e.color:''}${e.bateria?' - Batería '+e.bateria+'%':''} - USD ${fmt(precio)} ¡Escribinos!`;
+  const texto = `📱 ${e.modelo}${e.almacenamiento?' '+e.almacenamiento:''}${e.color?' - '+e.color:''}${e.bateria?' - Batería '+e.bateria+'%':''} - USD ${fmt(precio)} ¡Escribinos!`;
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(texto).then(()=>alert('Descripción copiada.')).catch(()=>alert(texto));
   } else { alert(texto); }
@@ -7627,7 +7783,7 @@ function renderMarketing(){
   const q = document.getElementById('buscarMarketing').value.toLowerCase();
   const grid = document.getElementById('marketingGrid');
   grid.innerHTML = '';
-  const disponibles = equipos.filter(e=>e.estado==='disponible' && (!q || (e.modelo+e.color).toLowerCase().includes(q)));
+  const disponibles = equipos.filter(e=>e.estado==='disponible' && (!q || (e.modelo+(e.almacenamiento||'')+e.color).toLowerCase().includes(q)));
   document.getElementById('marketingEmpty').style.display = disponibles.length ? 'none' : 'block';
   disponibles.forEach(e=>{
     const precio = e.sugerido || e.venta || e.compra;
@@ -7637,7 +7793,7 @@ function renderMarketing(){
       <div class="mkt-photo" id="mktPortada_${e.id}"><span class="placeholder">Cargando...</span></div>
       <div class="mkt-body">
         <div class="modelo">${e.modelo}</div>
-        <div class="meta">${e.color||'sin color'}${e.bateria?' · Batería '+e.bateria+'%':''}</div>
+        <div class="meta">${e.color||'sin color'}${e.almacenamiento?' · '+e.almacenamiento:''}${e.bateria?' · Batería '+e.bateria+'%':''}</div>
         <div class="precio">USD ${fmt(precio)}</div>
         <div class="mkt-thumbs" id="mktMedia_${e.id}"></div>
         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -7946,7 +8102,7 @@ function verVentasComercio(id){
   const tr = document.createElement('tr');
   tr.setAttribute('data-cventas', id);
   const contenido = items.length
-    ? items.map(v=>`${v.fecha} — ${v.tipo==='accesorio'?'accesorio':'equipo'} — ${v.modelo}${v.color?' · '+v.color:''} — $${fmt(v.precioVenta)} — ${v.cliente||'Consumidor final'}`).join('<br>')
+    ? items.map(v=>`${v.fecha} — ${v.tipo==='accesorio'?'accesorio':'equipo'} — ${v.modelo}${v.almacenamiento?' '+v.almacenamiento:''}${v.color?' · '+v.color:''} — $${fmt(v.precioVenta)} — ${v.cliente||'Consumidor final'}`).join('<br>')
     : 'Sin ventas registradas en este comercio.';
   tr.innerHTML = `<td colspan="6" style="background:rgba(255,255,255,0.02); font-size:13px; color:var(--txt2);">${contenido}</td>`;
   fila.after(tr);
@@ -8497,6 +8653,7 @@ renderClientes();
 renderProveedores();
 initConsignacionesSelects();
 renderConsignaciones();
+initReparacionesSelects();
 renderReparaciones();
 
 /* Verificar sesión guardada al cargar */
