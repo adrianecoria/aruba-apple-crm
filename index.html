@@ -1754,6 +1754,202 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div id="diagDetalleContenido"></div>
     </div>
   </div>
+  <div id="moduloMarketing" style="display:none;">
+    <header class="top"><h1>Marketing</h1></header>
+    <div class="card">
+      <h2>Inventario para publicar</h2>
+      <div class="search"><input id="buscarMarketing" placeholder="Buscar por modelo o color..." oninput="renderMarketing()"></div>
+      <div class="note" style="margin-top:0; margin-bottom:14px;">Solo se muestran los equipos "disponibles". Subí una foto a cada uno, y usá "Copiar descripción" para pegarla al publicar en la cuenta de Meta.</div>
+      <div class="mkt-grid" id="marketingGrid"></div>
+      <div class="empty" id="marketingEmpty" style="display:none;">No hay equipos disponibles para publicar ahora mismo.</div>
+    </div>
+  </div>
+
+  <!-- MODULO ANALISIS -->
+  <div id="moduloAnalisis" style="display:none;">
+    <header class="top"><h1>Rentabilidad</h1></header>
+
+    <div class="grid4">
+      <div class="mini-card profit"><label>Ganancia neta histórica (descontadas comisiones)</label><div class="val" id="anGananciaTotal">$ 0</div></div>
+      <div class="mini-card"><label>Ganancia promedio por venta</label><div class="val" id="anGananciaProm">$ 0</div></div>
+      <div class="mini-card"><label>Invertido en stock actual</label><div class="val" id="anInvertido">$ 0</div></div>
+      <div class="mini-card amber"><label>Deuda en consignaciones</label><div class="val" id="anDeudaConsig">$ 0</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Ganancia por mes (últimos 6 meses)</h2>
+      <div class="bar-chart" id="anBarChart"></div>
+    </div>
+
+    <div class="card">
+      <h2>Cantidad de equipos vendidos</h2>
+      <div class="tabs">
+        <button class="tab active" id="anTabDiaBtn" onclick="cambiarPeriodoAnalisis('dia')">Por día</button>
+        <button class="tab" id="anTabSemanaBtn" onclick="cambiarPeriodoAnalisis('semana')">Por semana</button>
+        <button class="tab" id="anTabMesBtn" onclick="cambiarPeriodoAnalisis('mes')">Por mes</button>
+      </div>
+      <div style="overflow-x:auto;"><div class="bar-chart" id="anCantidadChart" style="min-width:560px;"></div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Modelos más vendidos</h2>
+        <div id="anRankingModelos"></div>
+      </div>
+      <div class="card">
+        <h2>Resumen general</h2>
+        <div class="stat-pair">
+          <div class="stat"><label>Equipos vendidos (histórico)</label><div class="val" id="anCantVendidos">0</div></div>
+          <div class="stat"><label>Equipos en stock ahora</label><div class="val" id="anCantStock">0</div></div>
+        </div>
+        <div class="stat-pair" style="margin-top:18px;">
+          <div class="stat"><label>Accesorios vendidos (histórico)</label><div class="val" id="anCantVendidosAcc">0</div></div>
+          <div class="stat"><label>Accesorios en stock ahora</label><div class="val" id="anCantStockAcc">0</div></div>
+        </div>
+        <div class="rank-row" style="margin-top:18px;"><span>Valor del stock a precio sugerido</span><span class="num" id="anValorStock">$ 0</span></div>
+        <div class="rank-row"><span>Gastos totales (Caja)</span><span class="num" id="anGastos">$ 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULO COMERCIOS -->
+  <div id="moduloComercios" style="display:none;">
+    <header class="top"><h1>Comercios</h1></header>
+
+    <div class="card">
+      <h2>Agregar comercio</h2>
+      <div class="form-grid">
+        <div class="field"><label>Nombre</label><input id="pvNombre" placeholder="Ej: Sucursal Centro"></div>
+        <div class="field"><label>Dirección</label><input id="pvDireccion" placeholder="Calle, número, ciudad"></div>
+        <div class="field"><label>Teléfono</label><input id="pvTelefono" placeholder="+54 9 ..."></div>
+        <div class="field"><label>Responsable</label><input id="pvResponsable" placeholder="Nombre y apellido"></div>
+        <div class="field"><button class="btn" onclick="agregarComercio()" style="width:100%;">Agregar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Puntos de venta</h2>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Nombre</th><th>Dirección</th><th>Teléfono</th><th>Responsable</th><th>Vendido</th><th>Acciones</th></tr></thead>
+        <tbody id="comerciosBody"></tbody>
+      </table></div>
+      <div class="empty" id="comerciosEmpty" style="display:none;">Todavía no cargaste comercios.</div>
+      <div class="note">Por ahora Stock, Venta y Caja son compartidos entre todos los comercios (un solo inventario y una sola caja). Si más adelante necesitás separarlos por sucursal, lo armamos aparte.</div>
+    </div>
+  </div>
+
+  <!-- MODULO USUARIOS -->
+  <div id="moduloUsuarios" style="display:none;">
+    <header class="top"><h1>Usuarios</h1></header>
+
+    <div class="card card-destacada solo-admin">
+      <h2>Agregar vendedor</h2>
+      <div class="form-row">
+        <div class="field"><label>Nombre</label><input id="uNombre" placeholder="Nombre"></div>
+        <div class="field"><label>Apellido</label><input id="uApellido" placeholder="Apellido"></div>
+        <div class="field"><label>Teléfono</label><input id="uTelefono" placeholder="+54 9 ..."></div>
+        <div class="field"><label>Red social</label><input id="uRed" placeholder="Ej: Instagram, Tiktok..."></div>
+        <div class="field"><label>Alias / CBU / CVU</label><input id="uAlias" placeholder="Ej: mi.alias.mp"></div>
+        <div class="field"><label>Usuario (para iniciar sesión)</label><input id="uUsuario" placeholder="Ej: juan.perez"></div>
+        <div class="field"><label>Contraseña</label><input id="uClave" type="text" placeholder="Contraseña"></div>
+        <div class="field"><button class="btn" onclick="agregarUsuario()" style="width:100%;">Agregar</button></div>
+      </div>
+      <div class="note">El usuario y la contraseña son lo que esa persona va a usar para entrar al sistema con permisos limitados.</div>
+    </div>
+
+    <div class="card">
+      <h2>Vendedores</h2>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Teléfono</th><th>Red social</th><th>Alias/CBU/CVU</th><th>Equipos vendidos</th><th>Accesorios vendidos</th><th>Ganancia generada</th><th class="solo-admin">Acciones</th></tr></thead>
+        <tbody id="usuariosBody"></tbody>
+      </table></div>
+      <div class="empty" id="usuariosEmpty" style="display:none;">Todavía no cargaste vendedores.</div>
+      <div class="rank-row" style="margin-top:6px; border-bottom:none;"><span>Total de equipos vendidos por todos</span><span class="num" id="uTotalVendidos">0</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Ranking de vendedores</h2>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>#</th><th>Vendedor</th><th>Ganancia hoy</th><th>Ganancia del mes</th></tr></thead>
+        <tbody id="rankingVendedoresBody"></tbody>
+      </table></div>
+      <div class="empty" id="rankingVendedoresEmpty" style="display:none;">Todavía no hay ventas de ningún vendedor.</div>
+      <div style="overflow-x:auto; margin-top:18px;"><div class="bar-chart" id="rankingVendedoresChart" style="min-width:400px;"></div></div>
+      <div class="note">Este ranking es solo para comparar el desempeño del mes — no se ve afectado por el botón "Pagar" de arriba. Cada venta cerrada desde la app de Mensajes suma una comisión de $10 USD al agente, y se habilita recién cuando esa venta se marca como "Entregar (Vendido)".</div>
+    </div>
+  </div>
+
+  <!-- MODULO SUELDOS -->
+  <div id="moduloSueldos" style="display:none;">
+    <header class="top"><h1>Sueldos</h1></header>
+
+    <div class="card">
+      <h2>Agregar empleado</h2>
+      <div class="form-grid">
+        <div class="field"><label>Nombre completo</label><input id="sNombre" placeholder="Nombre y apellido"></div>
+        <div class="field"><label>Email</label><input id="sEmail" placeholder="nombre@email.com"></div>
+        <div class="field"><label>Sueldo mensual (USD)</label><input id="sSueldo" type="number" placeholder="0"></div>
+        <div class="field"><button class="btn" onclick="agregarEmpleado()" style="width:100%;">Agregar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Empleados</h2>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Nombre completo</th><th>Email</th><th>Sueldo mensual</th><th>Último pago</th><th>Acciones</th></tr></thead>
+        <tbody id="empleadosBody"></tbody>
+      </table></div>
+      <div class="empty" id="empleadosEmpty" style="display:none;">Todavía no cargaste empleados.</div>
+      <div class="note">Al usar "Pagar sueldo" el monto se carga automáticamente como gasto en Caja.</div>
+    </div>
+  </div>
+
+  <!-- MODULO MI CUENTA -->
+  <div id="moduloMiCuenta" style="display:none;">
+    <header class="top"><h1>Mi cuenta</h1></header>
+    <div class="card">
+      <h2>Datos del negocio</h2>
+      <div class="form-grid">
+        <div class="field"><label>Nombre del negocio</label><input id="mcNegocio" placeholder="Ej: Aruba Apple"></div>
+        <div class="field"><label>Responsable</label><input id="mcResponsable" placeholder="Nombre y apellido"></div>
+        <div class="field"><label>Email</label><input id="mcEmail" placeholder="tu@email.com"></div>
+        <div class="field"><label>Teléfono</label><input id="mcTelefono" placeholder="+54 9 ..."></div>
+        <div class="field"><button class="btn" onclick="guardarMiCuenta()" style="width:100%;">Guardar</button></div>
+      </div>
+      <div class="note">Estos datos son solo informativos — se guardan en este navegador y no se comparten en ningún lado.</div>
+    </div>
+
+    <div class="card">
+      <h2>Acceso de administrador</h2>
+      <div class="form-grid">
+        <div class="field"><label>Usuario</label><input id="mcAdminUsuario" placeholder="admin"></div>
+        <div class="field"><label>Nueva contraseña (dejar vacío para no cambiarla)</label><input id="mcAdminClave" type="text" placeholder="••••••••"></div>
+        <div class="field"><button class="btn" onclick="guardarAdminCred()" style="width:100%;">Actualizar acceso</button></div>
+      </div>
+      <div class="note">Este es el usuario y contraseña con los que entrás como administrador. Los vendedores tienen su propio usuario y contraseña, cargados en la sección Usuarios.</div>
+    </div>
+
+    <div class="card">
+      <h2>Zona de datos</h2>
+      <div class="note" style="margin-top:0; margin-bottom:14px;">Esto borra todo lo cargado en la app en este navegador — stock, ventas, clientes, caja, proveedores, consignaciones, reparaciones, comercios, usuarios, sueldos, actividad y fotos — para poder probarla desde cero. No se puede deshacer.</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:span 2;"><label>Escribí BORRAR para confirmar</label><input id="confirmarBorrado" placeholder="BORRAR"></div>
+        <div class="field"><button class="btn danger" onclick="borrarTodosLosDatos()" style="width:100%;">Borrar todos los datos y empezar de cero</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULO ACTIVIDAD -->
+  <div id="moduloActividad" style="display:none;">
+    <header class="top"><h1>Actividad</h1></header>
+    <div class="card">
+      <h2>Últimos movimientos</h2>
+      <div id="actividadLista"></div>
+      <div class="empty" id="actividadEmpty" style="display:none;">Todavía no hay actividad registrada.</div>
+      <div class="note">Registra los eventos principales (ventas, pagos, altas) a medida que van pasando en este navegador — no es un log completo de cada clic.</div>
+    </div>
+  </div>
+
 </main>
 
 <div id="printArea"></div>
