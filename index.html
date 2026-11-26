@@ -1754,224 +1754,6 @@ body.rol-usuario .solo-admin{display:none !important;}
       <div id="diagDetalleContenido"></div>
     </div>
   </div>
-
-</main>
-
-<div id="printArea"></div>
-
-<script>
-const MODELOS = [
-  "iPhone 11","iPhone 12","iPhone 12 Pro","iPhone 12 Pro Max",
-  "iPhone 13","iPhone 13 mini","iPhone 13 Pro","iPhone 13 Pro Max",
-  "iPhone 14","iPhone 14 Plus","iPhone 14 Pro","iPhone 14 Pro Max",
-  "iPhone 15","iPhone 15 Plus","iPhone 15 Pro","iPhone 15 Pro Max",
-  "iPhone 16","iPhone 16 Plus","iPhone 16 Pro","iPhone 16 Pro Max",
-  "iPhone 17","iPhone 17 Air","iPhone 17 Pro","iPhone 17 Pro Max",
-  "iPhone 18","iPhone 18 Pro","iPhone 18 Pro Max","iPhone 18 Fold"
-];
-
-function ls_get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
-function ls_set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
-function fmt(n){ return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0}); }
-function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function hoyISO(){ return new Date().toISOString().slice(0,10); }
-const MEDIOS_PAGO_LABELS = { efectivo:'💵 Efectivo', transferencia:'🏦 Transferencia', cripto:'₿ Cripto', debito:'💳 Débito', credito:'💳 Crédito' };
-
-    <div id="moduloMarketing" style="display:none;">
-    <header class="top"><h1>Marketing</h1></header>
-    <div class="card">
-      <h2>Inventario para publicar</h2>
-      <div class="search"><input id="buscarMarketing" placeholder="Buscar por modelo o color..." oninput="renderMarketing()"></div>
-      <div class="note" style="margin-top:0; margin-bottom:14px;">Solo se muestran los equipos "disponibles". Subí una foto a cada uno, y usá "Copiar descripción" para pegarla al publicar en la cuenta de Meta.</div>
-      <div class="mkt-grid" id="marketingGrid"></div>
-      <div class="empty" id="marketingEmpty" style="display:none;">No hay equipos disponibles para publicar ahora mismo.</div>
-    </div>
-  </div>
-
-  <!-- MODULO ANALISIS -->
-  <div id="moduloAnalisis" style="display:none;">
-    <header class="top"><h1>Rentabilidad</h1></header>
-
-    <div class="grid4">
-      <div class="mini-card profit"><label>Ganancia neta histórica (descontadas comisiones)</label><div class="val" id="anGananciaTotal">$ 0</div></div>
-      <div class="mini-card"><label>Ganancia promedio por venta</label><div class="val" id="anGananciaProm">$ 0</div></div>
-      <div class="mini-card"><label>Invertido en stock actual</label><div class="val" id="anInvertido">$ 0</div></div>
-      <div class="mini-card amber"><label>Deuda en consignaciones</label><div class="val" id="anDeudaConsig">$ 0</div></div>
-    </div>
-
-    <div class="card">
-      <h2>Ganancia por mes (últimos 6 meses)</h2>
-      <div class="bar-chart" id="anBarChart"></div>
-    </div>
-
-    <div class="card">
-      <h2>Cantidad de equipos vendidos</h2>
-      <div class="tabs">
-        <button class="tab active" id="anTabDiaBtn" onclick="cambiarPeriodoAnalisis('dia')">Por día</button>
-        <button class="tab" id="anTabSemanaBtn" onclick="cambiarPeriodoAnalisis('semana')">Por semana</button>
-        <button class="tab" id="anTabMesBtn" onclick="cambiarPeriodoAnalisis('mes')">Por mes</button>
-      </div>
-      <div style="overflow-x:auto;"><div class="bar-chart" id="anCantidadChart" style="min-width:560px;"></div></div>
-    </div>
-
-    <div class="grid2">
-      <div class="card">
-        <h2>Modelos más vendidos</h2>
-        <div id="anRankingModelos"></div>
-      </div>
-      <div class="card">
-        <h2>Resumen general</h2>
-        <div class="stat-pair">
-          <div class="stat"><label>Equipos vendidos (histórico)</label><div class="val" id="anCantVendidos">0</div></div>
-          <div class="stat"><label>Equipos en stock ahora</label><div class="val" id="anCantStock">0</div></div>
-        </div>
-        <div class="stat-pair" style="margin-top:18px;">
-          <div class="stat"><label>Accesorios vendidos (histórico)</label><div class="val" id="anCantVendidosAcc">0</div></div>
-          <div class="stat"><label>Accesorios en stock ahora</label><div class="val" id="anCantStockAcc">0</div></div>
-        </div>
-        <div class="rank-row" style="margin-top:18px;"><span>Valor del stock a precio sugerido</span><span class="num" id="anValorStock">$ 0</span></div>
-        <div class="rank-row"><span>Gastos totales (Caja)</span><span class="num" id="anGastos">$ 0</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODULO COMERCIOS -->
-  <div id="moduloComercios" style="display:none;">
-    <header class="top"><h1>Comercios</h1></header>
-
-    <div class="card">
-      <h2>Agregar comercio</h2>
-      <div class="form-grid">
-        <div class="field"><label>Nombre</label><input id="pvNombre" placeholder="Ej: Sucursal Centro"></div>
-        <div class="field"><label>Dirección</label><input id="pvDireccion" placeholder="Calle, número, ciudad"></div>
-        <div class="field"><label>Teléfono</label><input id="pvTelefono" placeholder="+54 9 ..."></div>
-        <div class="field"><label>Responsable</label><input id="pvResponsable" placeholder="Nombre y apellido"></div>
-        <div class="field"><button class="btn" onclick="agregarComercio()" style="width:100%;">Agregar</button></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Puntos de venta</h2>
-      <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Nombre</th><th>Dirección</th><th>Teléfono</th><th>Responsable</th><th>Vendido</th><th>Acciones</th></tr></thead>
-        <tbody id="comerciosBody"></tbody>
-      </table></div>
-      <div class="empty" id="comerciosEmpty" style="display:none;">Todavía no cargaste comercios.</div>
-      <div class="note">Por ahora Stock, Venta y Caja son compartidos entre todos los comercios (un solo inventario y una sola caja). Si más adelante necesitás separarlos por sucursal, lo armamos aparte.</div>
-    </div>
-  </div>
-
-  <!-- MODULO USUARIOS -->
-  <div id="moduloUsuarios" style="display:none;">
-    <header class="top"><h1>Usuarios</h1></header>
-
-    <div class="card card-destacada solo-admin">
-      <h2>Agregar vendedor</h2>
-      <div class="form-row">
-        <div class="field"><label>Nombre</label><input id="uNombre" placeholder="Nombre"></div>
-        <div class="field"><label>Apellido</label><input id="uApellido" placeholder="Apellido"></div>
-        <div class="field"><label>Teléfono</label><input id="uTelefono" placeholder="+54 9 ..."></div>
-        <div class="field"><label>Red social</label><input id="uRed" placeholder="Ej: Instagram, Tiktok..."></div>
-        <div class="field"><label>Alias / CBU / CVU</label><input id="uAlias" placeholder="Ej: mi.alias.mp"></div>
-        <div class="field"><label>Usuario (para iniciar sesión)</label><input id="uUsuario" placeholder="Ej: juan.perez"></div>
-        <div class="field"><label>Contraseña</label><input id="uClave" type="text" placeholder="Contraseña"></div>
-        <div class="field"><button class="btn" onclick="agregarUsuario()" style="width:100%;">Agregar</button></div>
-      </div>
-      <div class="note">El usuario y la contraseña son lo que esa persona va a usar para entrar al sistema con permisos limitados.</div>
-    </div>
-
-    <div class="card">
-      <h2>Vendedores</h2>
-      <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Teléfono</th><th>Red social</th><th>Alias/CBU/CVU</th><th>Equipos vendidos</th><th>Accesorios vendidos</th><th>Ganancia generada</th><th class="solo-admin">Acciones</th></tr></thead>
-        <tbody id="usuariosBody"></tbody>
-      </table></div>
-      <div class="empty" id="usuariosEmpty" style="display:none;">Todavía no cargaste vendedores.</div>
-      <div class="rank-row" style="margin-top:6px; border-bottom:none;"><span>Total de equipos vendidos por todos</span><span class="num" id="uTotalVendidos">0</span></div>
-    </div>
-
-    <div class="card">
-      <h2>Ranking de vendedores</h2>
-      <div style="overflow-x:auto;"><table>
-        <thead><tr><th>#</th><th>Vendedor</th><th>Ganancia hoy</th><th>Ganancia del mes</th></tr></thead>
-        <tbody id="rankingVendedoresBody"></tbody>
-      </table></div>
-      <div class="empty" id="rankingVendedoresEmpty" style="display:none;">Todavía no hay ventas de ningún vendedor.</div>
-      <div style="overflow-x:auto; margin-top:18px;"><div class="bar-chart" id="rankingVendedoresChart" style="min-width:400px;"></div></div>
-      <div class="note">Este ranking es solo para comparar el desempeño del mes — no se ve afectado por el botón "Pagar" de arriba. Cada venta cerrada desde la app de Mensajes suma una comisión de $10 USD al agente, y se habilita recién cuando esa venta se marca como "Entregar (Vendido)".</div>
-    </div>
-  </div>
-
-  <!-- MODULO SUELDOS -->
-  <div id="moduloSueldos" style="display:none;">
-    <header class="top"><h1>Sueldos</h1></header>
-
-    <div class="card">
-      <h2>Agregar empleado</h2>
-      <div class="form-grid">
-        <div class="field"><label>Nombre completo</label><input id="sNombre" placeholder="Nombre y apellido"></div>
-        <div class="field"><label>Email</label><input id="sEmail" placeholder="nombre@email.com"></div>
-        <div class="field"><label>Sueldo mensual (USD)</label><input id="sSueldo" type="number" placeholder="0"></div>
-        <div class="field"><button class="btn" onclick="agregarEmpleado()" style="width:100%;">Agregar</button></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Empleados</h2>
-      <div style="overflow-x:auto;"><table>
-        <thead><tr><th>Nombre completo</th><th>Email</th><th>Sueldo mensual</th><th>Último pago</th><th>Acciones</th></tr></thead>
-        <tbody id="empleadosBody"></tbody>
-      </table></div>
-      <div class="empty" id="empleadosEmpty" style="display:none;">Todavía no cargaste empleados.</div>
-      <div class="note">Al usar "Pagar sueldo" el monto se carga automáticamente como gasto en Caja.</div>
-    </div>
-  </div>
-
-  <!-- MODULO MI CUENTA -->
-  <div id="moduloMiCuenta" style="display:none;">
-    <header class="top"><h1>Mi cuenta</h1></header>
-    <div class="card">
-      <h2>Datos del negocio</h2>
-      <div class="form-grid">
-        <div class="field"><label>Nombre del negocio</label><input id="mcNegocio" placeholder="Ej: Aruba Apple"></div>
-        <div class="field"><label>Responsable</label><input id="mcResponsable" placeholder="Nombre y apellido"></div>
-        <div class="field"><label>Email</label><input id="mcEmail" placeholder="tu@email.com"></div>
-        <div class="field"><label>Teléfono</label><input id="mcTelefono" placeholder="+54 9 ..."></div>
-        <div class="field"><button class="btn" onclick="guardarMiCuenta()" style="width:100%;">Guardar</button></div>
-      </div>
-      <div class="note">Estos datos son solo informativos — se guardan en este navegador y no se comparten en ningún lado.</div>
-    </div>
-
-    <div class="card">
-      <h2>Acceso de administrador</h2>
-      <div class="form-grid">
-        <div class="field"><label>Usuario</label><input id="mcAdminUsuario" placeholder="admin"></div>
-        <div class="field"><label>Nueva contraseña (dejar vacío para no cambiarla)</label><input id="mcAdminClave" type="text" placeholder="••••••••"></div>
-        <div class="field"><button class="btn" onclick="guardarAdminCred()" style="width:100%;">Actualizar acceso</button></div>
-      </div>
-      <div class="note">Este es el usuario y contraseña con los que entrás como administrador. Los vendedores tienen su propio usuario y contraseña, cargados en la sección Usuarios.</div>
-    </div>
-
-    <div class="card">
-      <h2>Zona de datos</h2>
-      <div class="note" style="margin-top:0; margin-bottom:14px;">Esto borra todo lo cargado en la app en este navegador — stock, ventas, clientes, caja, proveedores, consignaciones, reparaciones, comercios, usuarios, sueldos, actividad y fotos — para poder probarla desde cero. No se puede deshacer.</div>
-      <div class="form-grid">
-        <div class="field" style="grid-column:span 2;"><label>Escribí BORRAR para confirmar</label><input id="confirmarBorrado" placeholder="BORRAR"></div>
-        <div class="field"><button class="btn danger" onclick="borrarTodosLosDatos()" style="width:100%;">Borrar todos los datos y empezar de cero</button></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODULO ACTIVIDAD -->
-  <div id="moduloActividad" style="display:none;">
-    <header class="top"><h1>Actividad</h1></header>
-    <div class="card">
-      <h2>Últimos movimientos</h2>
-      <div id="actividadLista"></div>
-      <div class="empty" id="actividadEmpty" style="display:none;">Todavía no hay actividad registrada.</div>
-      <div class="note">Registra los eventos principales (ventas, pagos, altas) a medida que van pasando en este navegador — no es un log completo de cada clic.</div>
-    </div>
-  </div>
 </main>
 
 <div id="printArea"></div>
@@ -8925,6 +8707,39 @@ renderReparaciones();
 })();
 
 // ===== MODULO DIAGNOSTICO =====
+const DIAG_CHECKLIST = [
+  { cat: 'Pantalla', items: ['Táctil funciona correctamente','True Tone activo','Brillo automático','Sin manchas/líneas/dead pixels'] },
+  { cat: 'Biometría', items: ['Face ID funciona','Touch ID funciona (si aplica)'] },
+  { cat: 'Cámaras', items: ['Cámara trasera (foto/video)','Cámara frontal (foto/video)','Flash LED','Estabilización óptica'] },
+  { cat: 'Audio', items: ['Auricular de llamada','Altavoz inferior','Micrófono principal','Micrófono secundario'] },
+  { cat: 'Conectividad', items: ['WiFi','Bluetooth','GPS/Ubicación','AirDrop','NFC'] },
+  { cat: 'Red Celular', items: ['Bandeja SIM / eSIM','Señal celular / Datos móviles','Llamadas de voz'] },
+  { cat: 'Sensores', items: ['Giroscopio/Acelerómetro','Sensor de proximidad','Brújula','Barómetro'] },
+  { cat: 'Botones', items: ['Botón de encendido','Volumen +','Volumen -','Silenciador/Acción'] },
+  { cat: 'Carga y Puertos', items: ['Lightning / USB-C (carga)','Lightning / USB-C (datos)','Carga inalámbrica MagSafe','Vibración (Taptic Engine)'] }
+];
+
+let diagEditId = null;
+
+async function cargarDatos(){
+  let lista = ls_get('diagnosticos', []);
+  if(sbClient){
+    try{
+      const { data, error } = await sbClient.from('crm_datos').select('valor').eq('clave','diagnosticos').maybeSingle();
+      if(!error && data && Array.isArray(data.valor)){ lista = data.valor; ls_set('diagnosticos', lista); }
+    }catch(e){ console.warn('No se pudo leer diagnósticos de la nube', e); }
+  }
+  return { diagnosticos: Array.isArray(lista) ? lista : [] };
+}
+
+async function guardarClave(clave, valor){
+  ls_set(clave, valor);
+  if(!sbClient) return false;
+  const { error } = await sbClient.from('crm_datos').upsert({ clave, valor, actualizado_en: new Date().toISOString() });
+  if(error){ console.error('No se pudo sincronizar '+clave, error); return false; }
+  return true;
+}
+
 function renderDiagChecklist(){
   const el = document.getElementById('diagChecklist');
   if(!el) return;
@@ -8986,7 +8801,7 @@ function diagGoStep(n){
     const icloud = document.getElementById('diagiCloud').value;
     if(icloud === 'activado'){
       document.getElementById('diagiCloudWarn').style.display = 'block';
-      mostrarToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
+      showToast('⛔ No se puede continuar: iCloud / Buscar mi iPhone está ACTIVADO','error');
       return;
     }
     document.getElementById('diagiCloudWarn').style.display = 'none';
@@ -9147,9 +8962,9 @@ async function guardarDiagnostico(){
   const modelo = document.getElementById('diagModelo').value;
   const icloud = document.getElementById('diagiCloud').value;
 
-  if(!imei || imei.length < 15){ mostrarToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
-  if(!modelo){ mostrarToast('Seleccioná un modelo','error'); return; }
-  if(icloud === 'activado'){ mostrarToast('⛔ No se puede guardar: iCloud activado','error'); return; }
+  if(!imei || imei.length < 15){ showToast('Ingresá un IMEI válido de 15 dígitos','error'); return; }
+  if(!modelo){ showToast('Seleccioná un modelo','error'); return; }
+  if(icloud === 'activado'){ showToast('⛔ No se puede guardar: iCloud activado','error'); return; }
 
   const checklist = getChecklistResults();
   let fallos = 0, oks = 0;
@@ -9207,11 +9022,11 @@ async function guardarDiagnostico(){
     if(idx >= 0) data.diagnosticos[idx] = diag;
     else data.diagnosticos.unshift(diag);
     await guardarClave('diagnosticos', data.diagnosticos);
-    mostrarToast('Diagnóstico guardado correctamente ✅');
+    showToast('Diagnóstico guardado correctamente ✅');
     registrarActividad('diagnostico', diag.modelo + ' IMEI:' + diag.imei + ' → ' + diag.veredicto.toUpperCase());
     document.getElementById('diagBtnPDF').style.display = 'inline-flex';
   } catch(e){
-    mostrarToast('Error al guardar: ' + e.message, 'error');
+    showToast('Error al guardar: ' + e.message, 'error');
   }
 }
 
@@ -9263,7 +9078,7 @@ async function renderDiagnosticos(){
 async function verDiagnostico(id){
   const data = await cargarDatos();
   const d = (data.diagnosticos||[]).find(x => x.id === id);
-  if(!d){ mostrarToast('Diagnóstico no encontrado','error'); return; }
+  if(!d){ showToast('Diagnóstico no encontrado','error'); return; }
 
   document.getElementById('diagListCard').style.display = 'none';
   document.getElementById('diagFormCard').style.display = 'none';
@@ -9307,6 +9122,141 @@ async function verDiagnostico(id){
       </div>
       <div style="padding:10px;border-radius:8px;background:rgba(231,76,60,0.08);text-align:center;">
         <div style="font-size:20px;font-weight:700;color:#e74c3c;">${d.fallos||0}</div>
+        <div style="font-size:11px;color:var(--txt3);">Fallos</div>
+      </div>
+    </div>
+    ${d.checklist ? '<h4 style="margin-bottom:8px;">Checklist de Hardware</h4>' + d.checklist.map(sec => `
+      <div style="margin-bottom:8px;">
+        <strong style="color:#00b4ff;">${sec.cat}</strong>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px;margin-top:4px;">
+          ${sec.items.map(it => {
+            const ic = it.val==='ok'?'✅':it.val==='fallo'?'❌':it.val==='na'?'➖':'⬜';
+            const cl = it.val==='fallo'?'color:#e74c3c;':'';
+            return '<div style="font-size:12px;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,0.03);'+cl+'">'+ic+' '+it.item+'</div>';
+          }).join('')}
+        </div>
+      </div>
+    `).join('') : ''}
+    ${d.fallosList && d.fallosList.length ? '<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(231,76,60,0.06);"><h4 style="color:#e74c3c;">Fallos detectados:</h4>'+d.fallosList.map(f=>'<div style="font-size:12px;color:var(--txt2);">❌ '+f+'</div>').join('')+'</div>' : ''}
+    ${d.piezasReemplazadas && d.piezasReemplazadas.length ? '<div style="margin-top:8px;"><strong>Piezas reemplazadas:</strong> '+d.piezasReemplazadas.join(', ')+'</div>' : ''}
+    ${d.obsEstetica ? '<div style="margin-top:8px;"><strong>Obs. estéticas:</strong> '+d.obsEstetica+'</div>' : ''}
+    ${d.obsHardware ? '<div style="margin-top:8px;"><strong>Obs. hardware:</strong> '+d.obsHardware+'</div>' : ''}
+    ${d.notasFinal ? '<div style="margin-top:8px;"><strong>Notas finales:</strong> '+d.notasFinal+'</div>' : ''}
+    ${d.tecnico ? '<div style="margin-top:8px;"><strong>Técnico:</strong> '+d.tecnico+'</div>' : ''}
+    <div style="margin-top:8px;font-size:11px;color:var(--txt3);">Registrado por: ${d.usuario||'—'} | ${d.fecha}</div>
+  `;
+}
+
+async function eliminarDiagnostico(id){
+  if(!confirm('¿Eliminar este diagnóstico?')) return;
+  const data = await cargarDatos();
+  data.diagnosticos = (data.diagnosticos||[]).filter(d => d.id !== id);
+  await guardarClave('diagnosticos', data.diagnosticos);
+  showToast('Diagnóstico eliminado');
+  renderDiagnosticos();
+}
+
+function diagGenerarPDF(){
+  const imei = document.getElementById('diagIMEI').value.trim();
+  const modelo = document.getElementById('diagModelo').value;
+  diagGenerarPDFData({
+    imei, modelo,
+    serial: document.getElementById('diagSerial').value.trim(),
+    capacidad: document.getElementById('diagCapacidad').value,
+    color: document.getElementById('diagColor').value.trim(),
+    cliente: document.getElementById('diagCliente').value.trim(),
+    icloud: document.getElementById('diagiCloud').value,
+    operador: document.getElementById('diagOperador').value,
+    enacom: document.getElementById('diagENACOM').value,
+    bateria: Number(document.getElementById('diagBateria').value) || 0,
+    ciclos: Number(document.getElementById('diagCiclos').value) || 0,
+    grado: document.getElementById('diagGrado').value,
+    checklist: getChecklistResults(),
+    notasFinal: document.getElementById('diagNotasFinal').value.trim(),
+    tecnico: document.getElementById('diagTecnico').value.trim(),
+    fecha: new Date().toLocaleDateString('es-AR')
+  });
+}
+
+async function diagGenerarPDFById(id){
+  const data = await cargarDatos();
+  const d = (data.diagnosticos||[]).find(x => x.id === id);
+  if(!d){ showToast('No encontrado','error'); return; }
+  diagGenerarPDFData(d);
+}
+
+function diagGenerarPDFDetalle(){
+  const titulo = document.getElementById('diagDetalleTitulo').textContent;
+  const contenido = document.getElementById('diagDetalleContenido').innerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico - ${titulo}</title>
+    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;}
+    h2,h3,h4{margin:8px 0;}table{width:100%;border-collapse:collapse;margin:8px 0;}td,th{padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:12px;}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}@media print{body{padding:12px;}}</style>
+  </head><body>
+    <h2 style="text-align:center;">Checkeo y Diagnóstico de iPhone</h2>
+    <h3 style="text-align:center;color:#666;">${titulo}</h3>
+    <hr>
+    ${contenido}
+    <div style="margin-top:24px;text-align:center;font-size:11px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
+function diagGenerarPDFData(d){
+  const vText = d.veredicto==='aprobado'?'APROBADO':d.veredicto==='observaciones'?'ACEPTADO CON OBSERVACIONES':'RECHAZADO';
+  const checklist = d.checklist || [];
+
+  let checklistHTML = '';
+  checklist.forEach(sec => {
+    checklistHTML += '<tr><td colspan="2" style="background:#f0f0f0;font-weight:600;">'+sec.cat+'</td></tr>';
+    sec.items.forEach(it => {
+      const ic = it.val==='ok'?'✅ OK':it.val==='fallo'?'❌ FALLO':it.val==='na'?'N/A':'⬜ Pendiente';
+      checklistHTML += '<tr><td>'+it.item+'</td><td style="text-align:center;'+(it.val==='fallo'?'color:red;font-weight:600;':'')+'">'+ic+'</td></tr>';
+    });
+  });
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Diagnóstico ${d.modelo} - ${d.imei}</title>
+    <style>body{font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#222;font-size:13px;}
+    h2{text-align:center;margin-bottom:4px;}table{width:100%;border-collapse:collapse;margin:12px 0;}td,th{padding:5px 8px;border:1px solid #ccc;text-align:left;}
+    .verdict{text-align:center;padding:16px;margin:12px 0;border:2px solid;border-radius:8px;}
+    @media print{body{padding:12px;}.no-print{display:none;}}</style>
+  </head><body>
+    <h2>Checkeo y Diagnóstico Completo de iPhone</h2>
+    <p style="text-align:center;color:#666;">Fecha: ${d.fecha} | Técnico: ${d.tecnico||'—'}</p>
+    <hr>
+    <h3>1. Datos del Equipo</h3>
+    <table>
+      <tr><td><strong>IMEI</strong></td><td style="font-family:monospace;">${d.imei}</td><td><strong>Serial</strong></td><td>${d.serial||'—'}</td></tr>
+      <tr><td><strong>Modelo</strong></td><td>${d.modelo}</td><td><strong>Capacidad</strong></td><td>${d.capacidad||'—'}</td></tr>
+      <tr><td><strong>Color</strong></td><td>${d.color||'—'}</td><td><strong>Cliente</strong></td><td>${d.cliente||'—'}</td></tr>
+      <tr><td><strong>iCloud</strong></td><td>${d.icloud==='desactivado'?'✅ Desactivado':'🚫 ACTIVADO'}</td><td><strong>Operador</strong></td><td>${d.operador==='liberado'?'✅ Liberado':'⚠️ Bloqueado'}</td></tr>
+      <tr><td><strong>ENACOM</strong></td><td colspan="3">${d.enacom==='habilitado'?'✅ Habilitado':d.enacom==='inhibido'?'🚫 Inhibido':'No verificado'}</td></tr>
+    </table>
+    <h3>2. Batería y Estado Estético</h3>
+    <table>
+      <tr><td><strong>Salud Batería</strong></td><td>${d.bateria||'?'}%</td><td><strong>Ciclos</strong></td><td>${d.ciclos||'?'}</td></tr>
+      <tr><td><strong>Grado General</strong></td><td colspan="3">${d.grado||'—'}</td></tr>
+    </table>
+    <h3>3. Checklist de Hardware</h3>
+    <table>${checklistHTML}</table>
+    <div class="verdict" style="border-color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">
+      <h2 style="margin:0;color:${d.veredicto==='aprobado'?'green':d.veredicto==='observaciones'?'orange':'red'};">${vText}</h2>
+    </div>
+    ${d.notasFinal?'<p><strong>Observaciones:</strong> '+d.notasFinal+'</p>':''}
+    <div style="margin-top:40px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Técnico</div></div>
+      <div style="text-align:center;width:45%;"><div style="border-top:1px solid #999;padding-top:4px;">Firma del Cliente</div></div>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:10px;color:#999;">Documento generado por Aruba Apple CRM — ${new Date().toLocaleString('es-AR')}</p>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
+// End Diagnostico Module
 
 </script>
 </body>
